@@ -8,12 +8,12 @@ interface HealthCheckResult {
 }
 
 interface HealthCheckOptions {
-  full?: boolean;      // 是否执行完整检查
-  service?: string;    // 指定检查特定服务
-  timeout?: number;    // 检查超时时间
+  full?: boolean;      // check all services
+  service?: string;    // check specific service
+  timeout?: number;    // check timeout
 }
 
-// 添加错误类型枚举
+// add test error type
 enum TestErrorType {
   SERVICE = 'service',
   VALIDATION = 'validation',
@@ -29,7 +29,7 @@ export class HealthController {
       logger.info('Health check started', { full, service, timeout });
       
       const checks = {
-        // 核心服务检查
+        // core services check
         ...((!service || service === 'database') && {
           database: await this.checkDatabase()
         }),
@@ -40,22 +40,21 @@ export class HealthController {
           server: await this.checkServer()
         }),
         
-        // 只在完整检查时执行的检查项
         ...(full && {
-          // 外部服务检查
+          // external services check
           externalApi: await this.checkExternalServices(),
           messageQueue: await this.checkMessageQueue(),
           
-          // 系统资源检查
+          // system resource check
           memory: await this.checkMemoryUsage(),
           disk: await this.checkDiskSpace(),
         }),
         
-        // 时间戳
+        // timestamp
         timestamp: new Date().toISOString()
       };
 
-      // 找出所有失败的检查
+      // find all failed checks
       const failedChecks = Object.fromEntries(
         Object.entries(checks).filter(([_, value]) =>
           value && 
@@ -83,7 +82,7 @@ export class HealthController {
     }
   }
 
-  // 核心服务检查
+  // check database
   private async checkDatabase(): Promise<HealthCheckResult> {
     // TODO: Add database health check
     return { status: true };
@@ -101,7 +100,7 @@ export class HealthController {
     };
   }
 
-  // 外部服务检查
+  // external services check
   private async checkExternalServices(): Promise<HealthCheckResult> {
     // TODO: Add external services health check
     return { status: true };
@@ -112,7 +111,7 @@ export class HealthController {
     return { status: true };
   }
 
-  // 系统资源检查
+  // system resource check
   private async checkMemoryUsage(): Promise<HealthCheckResult> {
     const used = process.memoryUsage();
     return {
@@ -126,12 +125,12 @@ export class HealthController {
     return { status: true };
   }
 
-  // 添加测试错误的方法
+  // add test error method
   testError = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const errorType = req.query.type as string;
       
-      // 验证错误类型
+      // validate error type
       if (!Object.values(TestErrorType).includes(errorType as TestErrorType)) {
         throw new ValidationError(
           `Invalid error type. Must be one of: ${Object.values(TestErrorType).join(', ')}`

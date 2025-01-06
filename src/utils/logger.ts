@@ -2,7 +2,7 @@ import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { env } from '../config/env';
 
-// 定义日志级别
+// define log levels
 const levels = {
   error: 0,
   warn: 1,
@@ -11,10 +11,10 @@ const levels = {
   debug: 4,
 };
 
-// 根据环境选择日志级别
+// set log level
 const level = env.NODE_ENV === 'development' ? 'debug' : 'warn';
 
-// 定义日志格式
+// define log format
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.errors({ stack: true }),
@@ -27,13 +27,13 @@ const format = winston.format.combine(
   })
 );
 
-// 创建 logger
+// create logger
 const logger = winston.createLogger({
   level,
   levels,
   format,
   transports: [
-    // 错误日志写入文件
+    // error log to file
     new DailyRotateFile({
       filename: 'logs/error-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
@@ -42,7 +42,7 @@ const logger = winston.createLogger({
       maxFiles: '14d',
       level: 'error',
     }),
-    // 所有日志写入文件
+    // all logs to file
     new DailyRotateFile({
       filename: 'logs/combined-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
@@ -53,7 +53,7 @@ const logger = winston.createLogger({
   ],
 });
 
-// 在开发环境下添加控制台输出
+
 if (env.NODE_ENV === 'development') {
   logger.add(
     new winston.transports.Console({

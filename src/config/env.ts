@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CorsOptions } from 'cors';
 
-// 环境变量验证 schema
+// Set up environment variables schema
 const envSchema = z.object({
   // Server
   PORT: z.string()
@@ -17,7 +17,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
 });
 
-// 验证环境变量
+// Validate environment variables
 const validateEnv = () => {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
@@ -26,10 +26,10 @@ const validateEnv = () => {
   return parsed.data;
 };
 
-// 验证并导出环境变量
+// Validate environment variables
 const validatedEnv = validateEnv();
 
-// 导出配置
+// Export environment variables
 export const env = {
   // Server
   PORT: validatedEnv.PORT,
@@ -42,7 +42,7 @@ export const env = {
     credentials: true
   } satisfies CorsOptions,
   
-  // 环境检查辅助函数
+  // Environment check helper functions
   isDevelopment: validatedEnv.NODE_ENV === 'development',
   isProduction: validatedEnv.NODE_ENV === 'production',
   isTest: validatedEnv.NODE_ENV === 'test',
