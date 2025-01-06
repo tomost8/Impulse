@@ -1,0 +1,30 @@
+### Basic health check
+GET http://localhost:3000/api/v1/health
+
+### Full health check
+GET http://localhost:3000/api/v1/health?full=true
+
+### Check specific service
+GET http://localhost:3000/api/v1/health?service=database
+
+### Check with custom timeout
+GET http://localhost:3000/api/v1/health?timeout=10000 
+
+### Test error handling (404 Not Found)
+GET http://localhost:3000/api/v1/not-exist 
+
+### Test Service Error
+GET http://localhost:3000/api/v1/health/test-error?type=service
+
+### Test Validation Error
+GET http://localhost:3000/api/v1/health/test-error?type=validation
+
+### Test Database Error
+GET http://localhost:3000/api/v1/health/test-error?type=database
+
+### Test Uncaught Error
+GET http://localhost:3000/api/v1/health/test-error?type=uncaught
+
+### Test Unknown Error
+GET http://localhost:3000/api/v1/health/test-error?type=unknown 
+
