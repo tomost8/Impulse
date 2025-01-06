@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import healthRoutes from './healthRoutes';
+import { createHealthRoutes } from './healthRoutes';
+
+export const createV1Router = () => {
+  const v1Router = Router();
+  v1Router.use('/health', createHealthRoutes());
+  return v1Router;
+};
 
 const router = Router();
-
-// API version 1
-const v1Router = Router();
-v1Router.use('/health', healthRoutes);
-
-// Mount versioned routes
-router.use('/v1', v1Router);
-
+router.use('/v1', createV1Router());
 export default router; 

@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import { HealthController } from '../controllers/healthController';
+import { HealthService } from '../services/healthService';
+import { createValidator } from '../middlewares/validator';
+import { healthCheckSchema } from '../schemas/health.schema';
 
-const router = Router();
-const healthController = new HealthController();
+export const createHealthRoutes = () => {
+  const router = Router();
+  const healthService = new HealthService();
+  const healthController = new HealthController(healthService);
 
-router.get('/', healthController.check);
-router.get('/test-error', healthController.testError);
+  router.get('/', createValidator(healthCheckSchema), healthController.check);
+  router.get('/test-error', healthController.testError);
 
-export default router; 
+  return router;
+}; 

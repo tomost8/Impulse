@@ -2,15 +2,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { createApp } from './core/app';
-import { setupApiErrorHandlers } from './errors/handlers/apiErrors';
+import { setupApiErrorHandlers } from './middlewares/errorHandler';
 import routes from './routes/router';
 import logger from './utils/logger';
 import { env } from './config/env';
-import { setupProcessErrors } from './errors/handlers/processErrors';
-import { setupGracefulShutdown } from './core/processHandler';
-
-// Setup process errors handler
-setupProcessErrors();
+import { setupProcessHandlers } from './core/processManager';
 
 async function startServer() {
   try {
@@ -25,8 +21,8 @@ async function startServer() {
       logger.info(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
     });
 
-    // Setup graceful shutdown
-    setupGracefulShutdown(server);
+    // Setup all process handlers
+    setupProcessHandlers(server);
 
   } catch (error) {
     logger.error('Server Startup Error:', error);

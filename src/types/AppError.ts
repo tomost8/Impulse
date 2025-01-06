@@ -27,4 +27,4 @@ export class ServiceError extends AppError {
     this.details = details;
   }
   public details?: Record<string, any>;
-}
+} 
