@@ -22,6 +22,6 @@ export interface HealthCheckResult {
 }
 
 export interface HealthCheckResponse {
-  status: string;
-  checks: Record<string, any>;
+  status: 'ok' | 'error';
+  checks: Record<string, HealthCheckResult>;
 } 

@@ -1,6 +1,6 @@
 import { ServiceError, ValidationError, DatabaseError } from '../core/AppError';
 import logger from '../utils/logger';
-import { HealthCheckResult, IHealthCheck } from '../interfaces/health';
+import { HealthCheckResult, IHealthCheck, HealthCheckOptions, HealthCheckResponse } from '../interfaces/health';
 import { TestErrorType } from '../constants';
 
 export class HealthService implements IHealthCheck {
@@ -65,25 +65,17 @@ export class HealthService implements IHealthCheck {
         setTimeout(() => {
           throw new Error('Test uncaught error');
         }, 0);
-        throw new Error('Test uncaught error');
       default:
         throw new ValidationError('Unknown error type');
     }
   }
 
-  async performHealthCheck(options: { 
-    full?: boolean; 
-    service?: string; 
-    timeout?: number;
-  }): Promise<{
-    status: string;
-    checks: Record<string, any>;
-  }> {
+  async performHealthCheck(options: HealthCheckOptions): Promise<HealthCheckResponse> {
     const { full = false, service, timeout = 5000 } = options;
     
     logger.info('Health check started', { full, service, timeout });
     
-    const checks = {
+    const checks: Record<string, HealthCheckResult> = {
       // core services check
       ...((!service || service === 'database') && {
         database: await this.checkDatabase()
@@ -103,31 +95,30 @@ export class HealthService implements IHealthCheck {
         // system resource check
         memory: await this.checkMemoryUsage(),
         disk: await this.checkDiskSpace(),
-      }),
-      
-      // timestamp
+      })
+    };
+
+    // Add timestamp as metadata
+    const metadata = {
       timestamp: new Date().toISOString()
     };
 
     // find all failed checks
     const failedChecks = Object.fromEntries(
       Object.entries(checks).filter(([_, value]) =>
-        value && 
-        typeof value === 'object' && 
-        'status' in value && 
-        !value.status
+        value && !value.status
       )
     );
 
     if (Object.keys(failedChecks).length > 0) {
-      logger.error('Health check failed', failedChecks);
+      logger.error('Health check failed', { ...failedChecks, ...metadata });
       throw new ServiceError(
         'Service health check failed',
         failedChecks
       );
     }
 
-    logger.info('Health check completed successfully', checks);
+    logger.info('Health check completed successfully', { ...checks, ...metadata });
     return {
       status: 'ok',
       checks

@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { HealthService } from '../services/healthService';
-import { IHealthCheck } from '../interfaces/health';
-
-interface HealthCheckOptions {
-  full?: boolean;      // check all services
-  service?: string;    // check specific service
-  timeout?: number;    // check timeout
-}
+import { HealthCheckOptions, IHealthCheck } from '../interfaces/health';
 
 export class HealthController {
   constructor(private readonly healthService: IHealthCheck) {}

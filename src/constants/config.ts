@@ -3,9 +3,6 @@ export const CONFIG = {
     PREFIX: '/api',
     VERSION: 'v1',
   },
-  CORS: {
-    METHODS: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] as const,
-  },
   SECURITY: {
     HEADERS: {
       NOSNIFF: 'nosniff',
