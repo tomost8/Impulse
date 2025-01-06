@@ -4,3 +4,10 @@ export const ERROR_MESSAGES = {
   SERVER_ERROR: 'Internal server error',
   SERVICE_UNAVAILABLE: 'Service unavailable',
 } as const; 
+
+export enum TestErrorType {
+  SERVICE = 'SERVICE',
+  VALIDATION = 'VALIDATION',
+  DATABASE = 'DATABASE',
+  UNCAUGHT = 'UNCAUGHT'
+}

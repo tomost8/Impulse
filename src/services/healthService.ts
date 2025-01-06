@@ -1,7 +1,7 @@
-import { HealthCheckResult, TestErrorType } from '../types/health';
-import { ServiceError, ValidationError, DatabaseError } from '../types/AppError';
+import { ServiceError, ValidationError, DatabaseError } from '../core/AppError';
 import logger from '../utils/logger';
-import { IHealthCheck } from '../interfaces/health';
+import { HealthCheckResult, IHealthCheck } from '../interfaces/health';
+import { TestErrorType } from '../constants';
 
 export class HealthService implements IHealthCheck {
   async checkDatabase(): Promise<HealthCheckResult> {

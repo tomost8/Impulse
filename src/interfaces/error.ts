@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { AppError } from '../types/AppError';
+import { AppError } from '../core/AppError';
 
 export interface IErrorHandler {
   handleUncaughtException(error: Error): void;

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction, Application } from 'express';
-import { AppError } from '../types/AppError';
+import { AppError } from '../core/AppError';
 import { ErrorService } from '../services/errorService';
 
 const errorService = new ErrorService();

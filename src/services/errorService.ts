@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { IErrorHandler, IErrorResponse } from '../interfaces/error';
-import { AppError, ServiceError } from '../types/AppError';
+import { AppError, ServiceError } from '../core/AppError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../constants';
 import { env } from '../config/env';
 import logger from '../utils/logger';
