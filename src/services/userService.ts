@@ -43,10 +43,7 @@ export class UsersService {
    */
   async findAll(): Promise<User[]> {
     try {
-      logger.debug('Fetching all users');
-      const users = await this.prisma.user.findMany();
-      logger.info('Successfully fetched all users', { count: users.length });
-      return users;
+      return await this.prisma.user.findMany();
     } catch (error: any) {
       logger.error('Failed to fetch users', {
         error: error.message,
@@ -73,24 +70,13 @@ export class UsersService {
    */
   async findById(id: number): Promise<User | null> {
     try {
-      logger.debug('Finding user by ID', { userId: id });
       const user = await this.prisma.user.findUnique({
         where: { id },
       });
       
-      if (user) {
-        logger.info('Successfully found user', { userId: id });
-      } else {
-        logger.warn('User not found', { userId: id });
-      }
-      
       return user;
     } catch (error: any) {
-      logger.error('Failed to find user', {
-        userId: id,
-        error: error.message,
-        stack: error.stack
-      });
+
       throw error;
     }
   }
@@ -114,29 +100,15 @@ export class UsersService {
    */
   async create(input: CreateUserInput): Promise<User> {
     try {
-      logger.debug('Creating new user', { 
-        email: input.email,
-        name: input.name 
-      });
-      
       const user = await this.prisma.user.create({
         data: input,
       });
       
-      logger.info('Successfully created user', { 
-        userId: user.id,
-        email: user.email 
-      });
-      
       return user;
     } catch (error: any) {
-      logger.error('Failed to create user', {
-        input: { email: input.email, name: input.name },
-        error: error.message,
-        stack: error.stack
-      });
 
-      // Handle unique constraint violation for email
+
+      // 处理已知的错误情况
       if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
         throw new ValidationError(`User with email ${input.email} already exists`);
       }
@@ -164,34 +136,17 @@ export class UsersService {
    */
   async update(id: number, input: UpdateUserInput): Promise<User> {
     try {
-      logger.debug('Updating user', { 
-        userId: id,
-        updates: input 
-      });
-
       const user = await this.prisma.user.update({
         where: { id },
         data: input,
       });
       
-      logger.info('Successfully updated user', { 
-        userId: id,
-        updates: input 
-      });
-      
       return user;
     } catch (error: any) {
-      logger.error('Failed to update user', {
-        userId: id,
-        updates: input,
-        error: error.message,
-        stack: error.stack
-      });
+
       
       if (error.code === 'P2025') {
-        const notFoundError = new NotFoundError(`User with ID ${id} not found`);
-        logger.warn('User not found during update', { userId: id });
-        throw notFoundError;
+        throw new NotFoundError(`User with ID ${id} not found`);
       }
       
       throw error;
@@ -212,25 +167,15 @@ export class UsersService {
    * ```
    */
   async delete(id: number): Promise<void> {
-    try {
-      logger.debug('Deleting user', { userId: id });
-      
+    try {      
       await this.prisma.user.delete({
         where: { id },
       });
-      
-      logger.info('Successfully deleted user', { userId: id });
     } catch (error: any) {
-      logger.error('Failed to delete user', {
-        userId: id,
-        error: error.message,
-        stack: error.stack
-      });
+
       
       if (error.code === 'P2025') {
-        const notFoundError = new NotFoundError(`User with ID ${id} not found`);
-        logger.warn('User not found during deletion', { userId: id });
-        throw notFoundError;
+        throw new NotFoundError(`User with ID ${id} not found`);
       }
       
       throw error;

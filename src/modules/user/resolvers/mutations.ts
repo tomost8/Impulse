@@ -1,9 +1,11 @@
-import { Resolver, Mutation, Arg, Int } from 'type-graphql';
+import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
 import { User, UserResponse } from '../schema/types';
 import { CreateUserInput, UpdateUserInput } from '../schema/inputs';
 import { UsersService } from '../../../services/userService';
 import { ValidationError } from '../../../modules/common/errors/graphql.error';
+import { LogOperationMiddleware } from '../../common/middleware/loggerMiddleware';
+import logger from '../../../config/logger';
 
 /**
  * GraphQL mutation resolvers for User-related operations
@@ -30,6 +32,7 @@ import { ValidationError } from '../../../modules/common/errors/graphql.error';
  */
 @Service()
 @Resolver(User)
+@UseMiddleware(LogOperationMiddleware)
 export class UserMutations {
   constructor(private usersService: UsersService) {}
 
@@ -63,24 +66,21 @@ export class UserMutations {
   async createUser(@Arg('input') input: CreateUserInput): Promise<UserResponse> {
     try {
       const user = await this.usersService.create(input);
+      
+      logger.info('User creation successful', { 
+        userId: user.id,
+        email: user.email 
+      });
+
       return {
         success: true,
         user
       };
     } catch (error) {
-      if (error instanceof ValidationError) {
-        return {
-          success: false,
-          errors: [{
-            field: 'email',
-            message: error.message
-          }]
-        };
-      }
       return {
         success: false,
         errors: [{
-          field: 'general',
+          field: error instanceof ValidationError ? 'email' : 'general',
           message: error instanceof Error ? error.message : 'Failed to create user'
         }]
       };
@@ -121,6 +121,12 @@ export class UserMutations {
   ): Promise<UserResponse> {
     try {
       const user = await this.usersService.update(id, input);
+      
+      logger.info('User update successful', { 
+        userId: user.id,
+        updates: input 
+      });
+
       return {
         success: true,
         user
@@ -159,6 +165,9 @@ export class UserMutations {
   async deleteUser(@Arg('id', () => Int) id: number): Promise<UserResponse> {
     try {
       await this.usersService.delete(id);
+      
+      logger.info('User deletion successful', { userId: id });
+
       return {
         success: true
       };

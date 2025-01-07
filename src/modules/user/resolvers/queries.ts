@@ -1,7 +1,9 @@
-import { Resolver, Query, Arg, Int } from 'type-graphql';
+import { Resolver, Query, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
 import { User, UserResponse, UsersResponse } from '../schema/types';
 import { UsersService } from '../../../services/userService';
+import { LogOperationMiddleware } from '../../common/middleware/loggerMiddleware';
+import logger from '../../../config/logger';
 
 /**
  * GraphQL query resolvers for User-related operations
@@ -22,6 +24,7 @@ import { UsersService } from '../../../services/userService';
  */
 @Service()
 @Resolver(User)
+@UseMiddleware(LogOperationMiddleware)
 export class UserQueries {
   constructor(private usersService: UsersService) {}
 
@@ -95,6 +98,7 @@ export class UserQueries {
     try {
       const user = await this.usersService.findById(id);
       if (!user) {
+        logger.warn('User not found', { userId: id });
         return {
           success: false,
           errors: [{
@@ -103,11 +107,22 @@ export class UserQueries {
           }]
         };
       }
-      return {
-        success: true,
-        user
-      };
-    } catch (error) {
+
+      logger.info('Successfully fetched user', { 
+        userId: user.id,
+        email: user.email 
+      });
+
+      return { success: true, user };
+    } catch (error: any) {
+      logger.error('Failed to fetch user', {
+        userId: id,
+        error: error.message,
+        stack: error.stack,
+        code: error.code,  // Prisma error code
+        meta: error.meta   // Prisma metadata
+      });
+
       return {
         success: false,
         errors: [{

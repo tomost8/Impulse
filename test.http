@@ -176,7 +176,7 @@ Content-Type: application/json
 {
   "query": "query($id: Int!) { user(id: $id) { success user { id email name createdAt updatedAt } errors { field message } } }",
   "variables": {
-    "id": 8
+    "id": 2
   }
 }
 
@@ -215,7 +215,7 @@ Content-Type: application/json
 {
   "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success user { id email name } errors { field message } } }",
   "variables": {
-    "id": 2,
+    "id": 8,
     "input": {
       "name": "Updated Name"
     }

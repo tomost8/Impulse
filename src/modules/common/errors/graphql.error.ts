@@ -29,20 +29,31 @@ export class BaseGraphQLError extends GraphQLError {
     });
     this.status = status;
 
-    // 记录错误创建
-    logger.error('GraphQL error created', {
-      message,
+    // 根据错误类型使用不同的日志级别
+    const logLevel = this.getLogLevel(code);
+    logger[logLevel](`GraphQL Error: ${message}`, {
       code,
       status,
-      timestamp,
-      extensions
+      ...extensions
     });
+  }
+
+  private getLogLevel(code: ErrorCode): 'error' | 'warn' | 'info' {
+    switch (code) {
+      case ErrorCode.VALIDATION_ERROR:
+      case ErrorCode.BAD_REQUEST:
+        return 'warn';
+      case ErrorCode.AUTHENTICATION_ERROR:
+      case ErrorCode.AUTHORIZATION_ERROR:
+        return 'info';
+      default:
+        return 'error';
+    }
   }
 }
 
 export class ValidationError extends BaseGraphQLError {
   constructor(message: string, details?: Record<string, any>) {
-    logger.debug('Creating validation error', { message, details });
     super(message, ErrorCode.VALIDATION_ERROR, 400, { details });
   }
 }
@@ -63,21 +74,18 @@ export class AuthorizationError extends BaseGraphQLError {
 
 export class NotFoundError extends BaseGraphQLError {
   constructor(message: string) {
-    logger.debug('Creating not found error', { message });
     super(message, ErrorCode.NOT_FOUND, 404);
   }
 }
 
 export class BadRequestError extends BaseGraphQLError {
   constructor(message: string, details?: Record<string, any>) {
-    logger.debug('Creating bad request error', { message, details });
     super(message, ErrorCode.BAD_REQUEST, 400, { details });
   }
 }
 
 export class InternalError extends BaseGraphQLError {
   constructor(message: string = 'Internal server error') {
-    logger.debug('Creating internal error', { message });
     super(message, ErrorCode.INTERNAL_ERROR, 500);
   }
 } 
