@@ -4,6 +4,9 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// Prisma Error Reference
+// https://www.prisma.io/docs/reference/api-reference/error-reference
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -21,4 +24,6 @@ model User {
   name        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("users")
 }

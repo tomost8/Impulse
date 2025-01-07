@@ -1,11 +1,17 @@
 import { PrismaClient } from '@prisma/client';
+import { Container } from 'typedi';
 
-declare global {
-  var prisma: PrismaClient | undefined;
-}
+// 创建 Prisma 客户端实例
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
-export const prisma = global.prisma || new PrismaClient();
+// 注册到依赖注入容器
+Container.set(PrismaClient, prisma);
 
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
-}
+// 优雅关闭处理
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
+
+export default prisma;

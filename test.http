@@ -1,75 +1,234 @@
+### Health Check Tests ###
+
 ### Basic health check
 GET http://localhost:3000/api/v1/health
 
 ### Full health check
 GET http://localhost:3000/api/v1/health?full=true
 
-### Check specific service
-GET http://localhost:3000/api/v1/health?service=database
+### Check database component
+GET http://localhost:3000/api/v1/health?component=database
+
+### Check redis component
+GET http://localhost:3000/api/v1/health?component=redis
+
+### Check server component
+GET http://localhost:3000/api/v1/health?component=server
+
+### Check memory component
+GET http://localhost:3000/api/v1/health?component=memory
+
+### Check disk component
+GET http://localhost:3000/api/v1/health?component=disk
+
+### Check external API component
+GET http://localhost:3000/api/v1/health?component=externalApi
+
+### Check message queue component
+GET http://localhost:3000/api/v1/health?component=messageQueue
 
 ### Check with custom timeout
 GET http://localhost:3000/api/v1/health?timeout=10000
 
-### Test error handling (404 Not Found)
-GET http://localhost:3000/api/v1/not-exist 
+### Error Testing ###
 
-### Test Service Error
-GET http://localhost:3000/api/v1/health/test-error?type=SERVICE
-
-
-### Test Validation Error
+### 1. Validation Error (400)
 GET http://localhost:3000/api/v1/health/test-error?type=VALIDATION
 
-### Test Database Error
-GET http://localhost:3000/api/v1/health/test-error?type=DATABASE
+### 2. Authentication Error (401)
+GET http://localhost:3000/api/v1/health/test-error?type=AUTHENTICATION
 
-### Test Uncaught Error
-GET http://localhost:3000/api/v1/health/test-error?type=UNCAUGHT
+### 3. Authorization Error (403)
+GET http://localhost:3000/api/v1/health/test-error?type=AUTHORIZATION
 
-### Test Unknown Error
-GET http://localhost:3000/api/v1/health/test-error?type=unknown 
+### 4. Not Found Error (404)
+GET http://localhost:3000/api/v1/health/test-error?type=NOT_FOUND
 
-// test.http (添加以下内容)
+### 5. Bad Request Error (400)
+GET http://localhost:3000/api/v1/health/test-error?type=BAD_REQUEST
 
-### User API Tests ###
+### 6. Internal Error (500)
+GET http://localhost:3000/api/v1/health/test-error?type=INTERNAL
 
-### Create User
-POST http://localhost:3000/api/v1/users
+### 7. Service Error (500)
+GET http://localhost:3000/api/v1/health/test-error?type=SERVICE
+
+### 8. Unknown Error (500)
+GET http://localhost:3000/api/v1/health/test-error?type=UNKNOWN
+
+### Expected Responses ###
+
+# 1. Validation Error Response:
+# {
+#   "error": "Invalid input data",
+#   "extensions": {
+#     "code": "VALIDATION_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z",
+#     "details": {
+#       "field": "email",
+#       "constraint": "format"
+#     }
+#   }
+# }
+
+# 2. Authentication Error Response:
+# {
+#   "error": "Invalid or expired token",
+#   "extensions": {
+#     "code": "AUTHENTICATION_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 3. Authorization Error Response:
+# {
+#   "error": "Insufficient permissions",
+#   "extensions": {
+#     "code": "AUTHORIZATION_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 4. Not Found Error Response:
+# {
+#   "error": "Resource not found",
+#   "extensions": {
+#     "code": "NOT_FOUND",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 5. Bad Request Error Response:
+# {
+#   "error": "Invalid request parameters",
+#   "extensions": {
+#     "code": "BAD_REQUEST",
+#     "timestamp": "2024-01-20T12:34:56.789Z",
+#     "details": {
+#       "param": "id",
+#       "reason": "must be a number"
+#     }
+#   }
+# }
+
+# 6. Internal Error Response:
+# {
+#   "error": "Unexpected server error",
+#   "extensions": {
+#     "code": "INTERNAL_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 7. Service Error Response:
+# {
+#   "error": "Service Error",
+#   "extensions": {
+#     "code": "INTERNAL_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 8. Unknown Error Response:
+# {
+#   "error": "Unknown error type",
+#   "extensions": {
+#     "code": "INTERNAL_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+### Process Management Tests ###
+
+# 1. Start the server with:
+# npm run dev
+#
+# 2. Test graceful shutdown with different signals:
+#    a. SIGTERM: kill -15 <PID>
+#    b. SIGINT: Press Ctrl+C in terminal
+#    c. SIGUSR2: kill -12 <PID>
+#
+# 3. Check logs for:
+#    - Shutdown signal received
+#    - Resource cleanup
+#    - Server close
+#    - Process exit
+#
+# 4. Verify database connections:
+#    - Run health check before shutdown
+#    - Try to make requests during shutdown
+#    - Check database state after restart
+
+### GraphQL User API Tests ###
+
+### Query - Get All Users
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "name": "Test User"
+  "query": "query { users { success users { id email name createdAt updatedAt } errors { field message } } }"
 }
 
-### Create User - Invalid Email
-POST http://localhost:3000/api/v1/users
+### Query - Get User by ID
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "email": "invalid-email",
-  "name": "Test User"
+  "query": "query($id: Int!) { user(id: $id) { success user { id email name createdAt updatedAt } errors { field message } } }",
+  "variables": {
+    "id": 2
+  }
 }
 
-### Create User - Missing Required Field
-POST http://localhost:3000/api/v1/users
+### Mutation - Create User
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "name": "Test User"
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email name createdAt updatedAt } errors { field message } } }",
+  "variables": {
+    "input": {
+      "email": "test@example.com",
+      "name": "Test User"
+    }
+  }
 }
 
-### Get All Users
-GET http://localhost:3000/api/v1/users
-
-### Get User by Email
-GET http://localhost:3000/api/v1/users?email=test@example.com
-
-### Create Duplicate User (to test unique constraint)
-POST http://localhost:3000/api/v1/users
+### Mutation - Create User with Invalid Email
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "name": "Another User"
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email name } errors { field message } } }",
+  "variables": {
+    "input": {
+      "email": "invalid-email",
+      "name": "Test User"
+    }
+  }
+}
+
+### Mutation - Update User
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success user { id email name } errors { field message } } }",
+  "variables": {
+    "id": 1,
+    "input": {
+      "name": "Updated Name"
+    }
+  }
+}
+
+### Mutation - Delete User
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!) { deleteUser(id: $id) { success errors { field message } } }",
+  "variables": {
+    "id": 2
+  }
 }
