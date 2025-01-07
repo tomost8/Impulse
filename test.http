@@ -1,32 +1,142 @@
+### Health Check Tests ###
+
 ### Basic health check
 GET http://localhost:3000/api/v1/health
 
 ### Full health check
 GET http://localhost:3000/api/v1/health?full=true
 
-### Check specific service
+### Check database services
 GET http://localhost:3000/api/v1/health?service=database
+
+### Check redis services
+GET http://localhost:3000/api/v1/health?service=redis
+
+### Check server services
+GET http://localhost:3000/api/v1/health?service=server
+
+### Check memory services 
+GET http://localhost:3000/api/v1/health?service=memory
+
+### Check disk services
+GET http://localhost:3000/api/v1/health?service=disk
+
+### Check externalApi services
+GET http://localhost:3000/api/v1/health?service=externalApi
+
+### Check messageQueue services
+GET http://localhost:3000/api/v1/health?service=messageQueue
 
 ### Check with custom timeout
 GET http://localhost:3000/api/v1/health?timeout=10000
 
-### Test error handling (404 Not Found)
-GET http://localhost:3000/api/v1/not-exist 
+### Error Testing ###
 
-### Test Service Error
-GET http://localhost:3000/api/v1/health/test-error?type=SERVICE
-
-### Test Validation Error
+### 1. Validation Error (400)
 GET http://localhost:3000/api/v1/health/test-error?type=VALIDATION
 
-### Test Database Error
-GET http://localhost:3000/api/v1/health/test-error?type=DATABASE
+### 2. Authentication Error (401)
+GET http://localhost:3000/api/v1/health/test-error?type=AUTHENTICATION
 
-### Test Uncaught Error
-GET http://localhost:3000/api/v1/health/test-error?type=UNCAUGHT
+### 3. Authorization Error (403)
+GET http://localhost:3000/api/v1/health/test-error?type=AUTHORIZATION
 
-### Test Unknown Error
-GET http://localhost:3000/api/v1/health/test-error?type=unknown 
+### 4. Not Found Error (404)
+GET http://localhost:3000/api/v1/health/test-error?type=NOT_FOUND
+
+### 5. Bad Request Error (400)
+GET http://localhost:3000/api/v1/health/test-error?type=BAD_REQUEST
+
+### 6. Internal Error (500)
+GET http://localhost:3000/api/v1/health/test-error?type=INTERNAL
+
+### 7. Service Error (500)
+GET http://localhost:3000/api/v1/health/test-error?type=SERVICE
+
+### 8. Unknown Error (500)
+GET http://localhost:3000/api/v1/health/test-error?type=UNKNOWN
+
+### Expected Responses ###
+
+# 1. Validation Error Response:
+# {
+#   "error": "Invalid input data",
+#   "extensions": {
+#     "code": "VALIDATION_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z",
+#     "details": {
+#       "field": "email",
+#       "constraint": "format"
+#     }
+#   }
+# }
+
+# 2. Authentication Error Response:
+# {
+#   "error": "Invalid or expired token",
+#   "extensions": {
+#     "code": "AUTHENTICATION_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 3. Authorization Error Response:
+# {
+#   "error": "Insufficient permissions",
+#   "extensions": {
+#     "code": "AUTHORIZATION_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 4. Not Found Error Response:
+# {
+#   "error": "Resource not found",
+#   "extensions": {
+#     "code": "NOT_FOUND",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 5. Bad Request Error Response:
+# {
+#   "error": "Invalid request parameters",
+#   "extensions": {
+#     "code": "BAD_REQUEST",
+#     "timestamp": "2024-01-20T12:34:56.789Z",
+#     "details": {
+#       "param": "id",
+#       "reason": "must be a number"
+#     }
+#   }
+# }
+
+# 6. Internal Error Response:
+# {
+#   "error": "Unexpected server error",
+#   "extensions": {
+#     "code": "INTERNAL_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 7. Service Error Response:
+# {
+#   "error": "Service Error",
+#   "extensions": {
+#     "code": "INTERNAL_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
+
+# 8. Unknown Error Response:
+# {
+#   "error": "Unknown error type",
+#   "extensions": {
+#     "code": "INTERNAL_ERROR",
+#     "timestamp": "2024-01-20T12:34:56.789Z"
+#   }
+# }
 
 ### Process Management Tests ###
 
@@ -48,12 +158,6 @@ GET http://localhost:3000/api/v1/health/test-error?type=unknown
 #    - Run health check before shutdown
 #    - Try to make requests during shutdown
 #    - Check database state after restart
-#
-# Expected Results:
-# - All signals should trigger graceful shutdown
-# - Resources should be cleaned up properly
-# - No hanging connections
-# - Logs should show proper shutdown sequence
 
 ### GraphQL User API Tests ###
 

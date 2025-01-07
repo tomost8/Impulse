@@ -1,0 +1,49 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/index.ts", "./src/modules/**/*.ts"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "name": "Backend API Documentation",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": false,
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Modules",
+    "User",
+    "Health",
+    "System",
+    "Common",
+    "Types",
+    "Errors",
+    "Utils",
+    "*"
+  ],
+  "searchInComments": true,
+  "navigationLinks": {
+    "GitHub": "https://github.com/Impulse-Solutions-Group/Impulse"
+  },
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": true
+  },
+  "theme": "default",
+  "darkHighlightTheme": "dark-plus",
+  "lightHighlightTheme": "light-plus",
+  "cleanOutputDir": true,
+  "hideGenerator": true,
+  "sourceLinkTemplate": "https://github.com/Impulse-Solutions-Group/Impulse/blob/{gitRevision}/{path}#L{line}",
+  "gitRevision": "refactor-graphql",
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "intentionallyNotExported": ["CreateUserInput", "UpdateUserInput"],
+  "blockTags": ["@implements", "@todo"],
+  "treatWarningsAsErrors": false,
+  "logLevel": "Verbose"
+} 

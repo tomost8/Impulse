@@ -109,7 +109,7 @@ describe('Health Routes', () => {
         .expect(500);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Service Error');
+      expect(response.body.error).toBe('Service Error');
     });
 
     it('should handle VALIDATION error', async () => {
@@ -119,7 +119,7 @@ describe('Health Routes', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Validation Error');
+      expect(response.body.error).toBe('Invalid input data');
     });
 
     it('should handle unknown error type', async () => {
@@ -129,7 +129,7 @@ describe('Health Routes', () => {
         .expect(500);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Unknown Error');
+      expect(response.body.error).toBe('Unknown error type');
     });
   });
 }); 

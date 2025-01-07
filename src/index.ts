@@ -4,13 +4,26 @@ import { createApp } from './app';
 import logger from './config/logger';
 import { Container } from 'typedi';
 import { ProcessService } from './modules/system/process.service';
+import { ErrorService } from './modules/common/errors/error.service';
 
 async function bootstrap() {
   try {
     const app = await createApp();
+    const errorService = Container.get(ErrorService);
+
+    process.on('uncaughtException', (error) => {
+      errorService.handleUncaughtException(error);
+      process.exit(1);
+    });
+
+    process.on('unhandledRejection', (reason) => {
+      errorService.handleUnhandledRejection(reason);
+    });
+
     const server = app.listen(env.PORT, () => {
       logger.info(`🚀 Server ready at http://localhost:${env.PORT}`);
       logger.info(`🚀 GraphQL ready at http://localhost:${env.PORT}/graphql`);
+      logger.info(`🌍 Environment: ${env.NODE_ENV}`);
     });
 
     // setup signal handlers
@@ -22,4 +35,7 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  logger.error('Fatal error during bootstrap:', error);
+  process.exit(1);
+});

@@ -35,19 +35,19 @@ export class ErrorService {
       extensions: error.extensions,
     });
 
-    // 如果是已知的 GraphQL 错误，直接返回
+    // if the error is a known GraphQL error, return it
     if (error instanceof GraphQLError && error.extensions?.code) {
       return error;
     }
 
-    // 未知错误，转换为内部错误
+    // if the error is unknown, convert it to an internal error
     const internalError = new InternalError(
       process.env.NODE_ENV === 'production' 
         ? 'Internal server error' 
         : error.message
     );
 
-    // 在开发环境下添加原始错误信息
+    // add the original error to the internal error in development
     if (process.env.NODE_ENV === 'development') {
       Object.assign(internalError.extensions, {
         originalError: {

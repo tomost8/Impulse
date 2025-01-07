@@ -14,15 +14,15 @@ export class ProcessService implements IProcessManager {
 
   async cleanup(): Promise<void> {
     try {
-      // 断开数据库连接
+      // disconnect from database
       await this.prisma.$disconnect();
       
-      // TODO: 添加其他清理逻辑
-      // - Redis 连接
-      // - 消息队列连接
-      // - 临时文件
-      // - 缓存
-      
+      // TODO: add other cleanup logic
+      // - Redis connection
+      // - Message queue connection
+      // - Temporary files
+      // - Cache
+
       logger.info('Resources cleaned up successfully');
     } catch (error) {
       logger.error('Error during cleanup:', error);
@@ -52,7 +52,7 @@ export class ProcessService implements IProcessManager {
       }
     };
 
-    // 设置进程错误处理
+    // set up process error handlers
     process.on('uncaughtException', (error) => {
       this.errorService.handleUncaughtException(error);
       this.cleanup().finally(() => process.exit(1));
@@ -63,7 +63,7 @@ export class ProcessService implements IProcessManager {
       this.cleanup().finally(() => process.exit(1));
     });
 
-    // 设置优雅关闭
+    // set up graceful shutdown
     ['SIGTERM', 'SIGINT'].forEach((signal) => {
       process.on(signal, () => gracefulShutdown(signal));
     });

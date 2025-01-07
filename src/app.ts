@@ -10,17 +10,18 @@ import { ErrorService } from './modules/common/errors/error.service';
 import { GraphQLFormattedError } from 'graphql';
 import { createHealthRoutes } from './modules/health/health.routes';
 import { requestLogger } from './config/logger';
+import { env } from './config/env';
 
 export async function createApp() {
   const app = express();
 
   // middleware
-  app.use(cors());
+  app.use(cors(env.CORS));
   app.use(helmet());
   app.use(json());
   app.use(requestLogger);
 
-  // create Apollo Server
+  // GraphQL setup
   const schema = await createSchema();
   const errorService = Container.get(ErrorService);
   
@@ -37,10 +38,25 @@ export async function createApp() {
   await server.start();
 
   // GraphQL middleware
-  app.use('/graphql', expressMiddleware(server));
-
+  app.use('/graphql', 
+    // GraphQL middleware
+    expressMiddleware(server, {
+      context: async ({ req }) => ({
+        // TODO: add user authentication
+        req
+      })
+    })
+  );
   // health check routes
   app.use('/api/v1/health', createHealthRoutes());
+
+  // error handling
+  app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    errorService.handleUncaughtException(err);
+    res.status(500).json({
+      error: env.isProduction ? 'Internal Server Error' : err.message
+    });
+  });
 
   return app;
 } 
