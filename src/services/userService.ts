@@ -1,8 +1,9 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { User, CreateUserInput, UpdateUserInput } from './user.schema';
-import logger from '../../config/logger';
-import { NotFoundError } from '../common/errors/graphql.error';
+import { User } from '../modules/user/schema/types';
+import { CreateUserInput, UpdateUserInput } from '../modules/user/schema/inputs';
+import logger from '../config/logger';
+import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 
 /**
  * Service handling user-related business logic
@@ -15,17 +16,17 @@ import { NotFoundError } from '../common/errors/graphql.error';
  * 
  * @example
  * ```typescript
- * const userService = Container.get(UserService);
+ * const usersService = Container.get(UsersService);
  * 
  * // Create a new user
- * const newUser = await userService.create({
+ * const newUser = await usersService.create({
  *   email: "john@example.com",
  *   name: "John Doe"
  * });
  * ```
  */
 @Service()
-export class UserService {
+export class UsersService {
   constructor(private prisma: PrismaClient) {}
 
   /**
@@ -36,7 +37,7 @@ export class UserService {
    * 
    * @example
    * ```typescript
-   * const users = await userService.findAll();
+   * const users = await usersService.findAll();
    * users.forEach(user => console.log(user.email));
    * ```
    */
@@ -64,7 +65,7 @@ export class UserService {
    * 
    * @example
    * ```typescript
-   * const user = await userService.findById(1);
+   * const user = await usersService.findById(1);
    * if (user) {
    *   console.log(`Found user: ${user.name}`);
    * }
@@ -104,7 +105,7 @@ export class UserService {
    * 
    * @example
    * ```typescript
-   * const newUser = await userService.create({
+   * const newUser = await usersService.create({
    *   email: "jane@example.com",
    *   name: "Jane Doe"
    * });
@@ -134,6 +135,12 @@ export class UserService {
         error: error.message,
         stack: error.stack
       });
+
+      // Handle unique constraint violation for email
+      if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+        throw new ValidationError(`User with email ${input.email} already exists`);
+      }
+      
       throw error;
     }
   }
@@ -149,7 +156,7 @@ export class UserService {
    * 
    * @example
    * ```typescript
-   * const updatedUser = await userService.update(1, {
+   * const updatedUser = await usersService.update(1, {
    *   name: "Jane Smith"
    * });
    * console.log(`Updated user name: ${updatedUser.name}`);
@@ -200,7 +207,7 @@ export class UserService {
    * 
    * @example
    * ```typescript
-   * await userService.delete(1);
+   * await usersService.delete(1);
    * console.log('User deleted successfully');
    * ```
    */

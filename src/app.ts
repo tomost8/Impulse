@@ -11,7 +11,7 @@ import { Container } from 'typedi';
 import { createSchema } from './config/graphql';
 import { ErrorService } from './modules/common/errors/error.service';
 import { GraphQLFormattedError } from 'graphql';
-import { createHealthRoutes } from './modules/health/health.routes';
+import { createHealthRoutes } from './server/health/routes';
 import { requestLogger } from './config/logger';
 import { env } from './config/env';
 

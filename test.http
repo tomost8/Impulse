@@ -6,26 +6,26 @@ GET http://localhost:3000/api/v1/health
 ### Full health check
 GET http://localhost:3000/api/v1/health?full=true
 
-### Check database services
-GET http://localhost:3000/api/v1/health?service=database
+### Check database component
+GET http://localhost:3000/api/v1/health?component=database
 
-### Check redis services
-GET http://localhost:3000/api/v1/health?service=redis
+### Check redis component
+GET http://localhost:3000/api/v1/health?component=redis
 
-### Check server services
-GET http://localhost:3000/api/v1/health?service=server
+### Check server component
+GET http://localhost:3000/api/v1/health?component=server
 
-### Check memory services 
-GET http://localhost:3000/api/v1/health?service=memory
+### Check memory component
+GET http://localhost:3000/api/v1/health?component=memory
 
-### Check disk services
-GET http://localhost:3000/api/v1/health?service=disk
+### Check disk component
+GET http://localhost:3000/api/v1/health?component=disk
 
-### Check externalApi services
-GET http://localhost:3000/api/v1/health?service=externalApi
+### Check external API component
+GET http://localhost:3000/api/v1/health?component=externalApi
 
-### Check messageQueue services
-GET http://localhost:3000/api/v1/health?service=messageQueue
+### Check message queue component
+GET http://localhost:3000/api/v1/health?component=messageQueue
 
 ### Check with custom timeout
 GET http://localhost:3000/api/v1/health?timeout=10000
@@ -166,7 +166,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query { users { id email name createdAt updatedAt } }"
+  "query": "query { users { success users { id email name createdAt updatedAt } errors { field message } } }"
 }
 
 ### Query - Get User by ID
@@ -174,9 +174,9 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query($id: Int!) { user(id: $id) { id email name createdAt updatedAt } }",
+  "query": "query($id: Int!) { user(id: $id) { success user { id email name createdAt updatedAt } errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 8
   }
 }
 
@@ -185,7 +185,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { id email name createdAt updatedAt } }",
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email name createdAt updatedAt } errors { field message } } }",
   "variables": {
     "input": {
       "email": "test@example.com",
@@ -199,7 +199,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { id email name } }",
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email name } errors { field message } } }",
   "variables": {
     "input": {
       "email": "invalid-email",
@@ -213,9 +213,9 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { id email name } }",
+  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success user { id email name } errors { field message } } }",
   "variables": {
-    "id": 1,
+    "id": 2,
     "input": {
       "name": "Updated Name"
     }
@@ -227,8 +227,8 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($id: Int!) { deleteUser(id: $id) }",
+  "query": "mutation($id: Int!) { deleteUser(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 2
   }
 }

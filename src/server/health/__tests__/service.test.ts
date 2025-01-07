@@ -1,7 +1,11 @@
+// Mock environment variables
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+process.env.JWT_SECRET = 'test-secret';
+
 import 'reflect-metadata';
 import { Container } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { HealthService } from '../health.service';
+import { SystemHealthService } from '../service';
 import { 
   ValidationError, 
   InternalError, 
@@ -9,23 +13,26 @@ import {
   AuthorizationError,
   NotFoundError,
   BadRequestError
-} from '../../common/errors/graphql.error';
+} from '../../../modules/common/errors/graphql.error';
 
 jest.mock('../../../config/logger');
 
-describe('HealthService', () => {
-  let healthService: HealthService;
+describe('SystemHealthService', () => {
+  let healthService: SystemHealthService;
   let prisma: PrismaClient;
 
   beforeAll(async () => {
     prisma = new PrismaClient();
     Container.set(PrismaClient, prisma);
-    healthService = Container.get(HealthService);
+    healthService = Container.get(SystemHealthService);
   });
 
   afterAll(async () => {
     await prisma.$disconnect();
     jest.useRealTimers();
+    // Clean up environment variables
+    delete process.env.DATABASE_URL;
+    delete process.env.JWT_SECRET;
   });
 
   beforeEach(() => {
@@ -37,13 +44,13 @@ describe('HealthService', () => {
     jest.clearAllTimers();
   });
 
-  describe('performHealthCheck', () => {
+  describe('checkHealth', () => {
     it('should perform basic health check', async () => {
-      const result = await healthService.performHealthCheck({});
+      const result = await healthService.checkHealth({});
       
       expect(result).toEqual({
         status: 'ok',
-        checks: {
+        components: {
           database: { status: true },
           redis: { status: true },
           server: expect.objectContaining({
@@ -56,11 +63,11 @@ describe('HealthService', () => {
     });
 
     it('should perform full health check', async () => {
-      const result = await healthService.performHealthCheck({ full: true });
+      const result = await healthService.checkHealth({ full: true });
       
       expect(result).toEqual({
         status: 'ok',
-        checks: {
+        components: {
           database: { status: true },
           redis: { status: true },
           server: expect.objectContaining({
@@ -82,12 +89,12 @@ describe('HealthService', () => {
       });
     });
 
-    it('should check specific service', async () => {
-      const result = await healthService.performHealthCheck({ service: 'database' });
+    it('should check specific component', async () => {
+      const result = await healthService.checkHealth({ component: 'database' });
       
       expect(result).toEqual({
         status: 'ok',
-        checks: {
+        components: {
           database: { status: true },
         },
         timestamp: expect.any(String),
@@ -102,8 +109,8 @@ describe('HealthService', () => {
         }) as any
       );
 
-      const promise = healthService.performHealthCheck({ 
-        service: 'database',
+      const promise = healthService.checkHealth({ 
+        component: 'database',
         timeout: 100 
       });
 
@@ -112,7 +119,7 @@ describe('HealthService', () => {
       
       expect(result).toEqual({
         status: 'error',
-        checks: {
+        components: {
           database: {
             status: false,
             details: expect.stringContaining('Database check timed out'),
@@ -123,78 +130,71 @@ describe('HealthService', () => {
     });
   });
 
-  describe('testError', () => {
+  describe('simulateError', () => {
     it('should throw ValidationError', async () => {
-      const error = await healthService.testError('VALIDATION').catch(e => e);
+      const error = await healthService.simulateError('VALIDATION').catch((e: Error) => e);
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.message).toBe('Invalid input data');
-      expect(error.extensions.details).toEqual({
-        field: 'email',
-        constraint: 'format'
-      });
+      expect(error.message).toBe('Validation error test');
     });
 
     it('should throw AuthenticationError', async () => {
-      const error = await healthService.testError('AUTHENTICATION').catch(e => e);
+      const error = await healthService.simulateError('AUTHENTICATION').catch((e: Error) => e);
       expect(error).toBeInstanceOf(AuthenticationError);
-      expect(error.message).toBe('Invalid or expired token');
+      expect(error.message).toBe('Authentication error test');
     });
 
     it('should throw AuthorizationError', async () => {
-      const error = await healthService.testError('AUTHORIZATION').catch(e => e);
+      const error = await healthService.simulateError('AUTHORIZATION').catch((e: Error) => e);
       expect(error).toBeInstanceOf(AuthorizationError);
-      expect(error.message).toBe('Insufficient permissions');
+      expect(error.message).toBe('Authorization error test');
     });
 
     it('should throw NotFoundError', async () => {
-      const error = await healthService.testError('NOT_FOUND').catch(e => e);
+      const error = await healthService.simulateError('NOT_FOUND').catch((e: Error) => e);
       expect(error).toBeInstanceOf(NotFoundError);
-      expect(error.message).toBe('Resource not found');
+      expect(error.message).toBe('Not found error test');
     });
 
     it('should throw BadRequestError', async () => {
-      const error = await healthService.testError('BAD_REQUEST').catch(e => e);
+      const error = await healthService.simulateError('BAD_REQUEST').catch((e: Error) => e);
       expect(error).toBeInstanceOf(BadRequestError);
-      expect(error.message).toBe('Invalid request parameters');
-      expect(error.extensions.details).toEqual({
-        param: 'id',
-        reason: 'must be a number'
-      });
+      expect(error.message).toBe('Bad request error test');
     });
 
     it('should throw InternalError', async () => {
-      const error = await healthService.testError('INTERNAL').catch(e => e);
+      const error = await healthService.simulateError('INTERNAL').catch((e: Error) => e);
       expect(error).toBeInstanceOf(InternalError);
-      expect(error.message).toBe('Unexpected server error');
+      expect(error.message).toBe('Internal error test');
     });
 
     it('should throw InternalError for unknown type', async () => {
-      const error = await healthService.testError('UNKNOWN').catch(e => e);
+      const error = await healthService.simulateError('UNKNOWN').catch((e: Error) => e);
       expect(error).toBeInstanceOf(InternalError);
-      expect(error.message).toBe('Unknown error type');
+      expect(error.message).toBe('Internal error test');
     });
 
     it('should include correct status codes', async () => {
-      const validationError = await healthService.testError('VALIDATION').catch(e => e);
-      expect(validationError.status).toBe(400);
+      const validationError = await healthService.simulateError('VALIDATION').catch((e: Error) => e);
+      expect((validationError as ValidationError).status).toBe(400);
 
-      const authError = await healthService.testError('AUTHENTICATION').catch(e => e);
-      expect(authError.status).toBe(401);
+      const authError = await healthService.simulateError('AUTHENTICATION').catch((e: Error) => e);
+      expect((authError as AuthenticationError).status).toBe(401);
 
-      const forbiddenError = await healthService.testError('AUTHORIZATION').catch(e => e);
-      expect(forbiddenError.status).toBe(403);
+      const forbiddenError = await healthService.simulateError('AUTHORIZATION').catch((e: Error) => e);
+      expect((forbiddenError as AuthorizationError).status).toBe(403);
 
-      const notFoundError = await healthService.testError('NOT_FOUND').catch(e => e);
-      expect(notFoundError.status).toBe(404);
+      const notFoundError = await healthService.simulateError('NOT_FOUND').catch((e: Error) => e);
+      expect((notFoundError as NotFoundError).status).toBe(404);
 
-      const internalError = await healthService.testError('INTERNAL').catch(e => e);
-      expect(internalError.status).toBe(500);
+      const internalError = await healthService.simulateError('INTERNAL').catch((e: Error) => e);
+      expect((internalError as InternalError).status).toBe(500);
     });
 
     it('should include timestamp in extensions', async () => {
-      const error = await healthService.testError('VALIDATION').catch(e => e);
-      expect(error.extensions.timestamp).toBeDefined();
-      expect(new Date(error.extensions.timestamp).getTime()).not.toBeNaN();
+      const error = await healthService.simulateError('VALIDATION').catch((e: Error) => e);
+      const timestamp = (error as ValidationError).extensions.timestamp;
+      expect(timestamp).toBeDefined();
+      expect(typeof timestamp === 'string' && new Date(timestamp).getTime()).not.toBeNaN();
     });
   });
 }); 

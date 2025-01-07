@@ -1,12 +1,17 @@
 import { Service } from 'typedi';
 import { Server } from 'http';
-import { IProcessManager } from './process.types';
-import logger from '../../config/logger';
 import { PrismaClient } from '@prisma/client';
-import { ErrorService } from '../common/errors/error.service';
+import { ErrorService } from '../../modules/common/errors/error.service';
+import { ServerLifecycleManager } from './interfaces';
+import logger from '../../config/logger';
 
+/**
+ * Implementation of server lifecycle management
+ * 
+ * Handles graceful shutdown, resource cleanup, and process signal management
+ */
 @Service()
-export class ProcessService implements IProcessManager {
+export class ServerLifecycleManagerImpl implements ServerLifecycleManager {
   constructor(
     private prisma: PrismaClient,
     private errorService: ErrorService

@@ -1,28 +1,33 @@
 import 'reflect-metadata';
 import { Container } from 'typedi';
-import { ProcessService } from '../process.service';
+import { ServerLifecycleManagerImpl } from '../manager';
+import { ErrorService } from '../../../modules/common/errors/error.service';
+import { PrismaClient } from '@prisma/client';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { Server } from 'http';
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
-import { ErrorService } from '../../common/errors/error.service';
 
-jest.mock('../../common/errors/error.service');
+jest.mock('../../../config/logger');
+jest.mock('../../../modules/common/errors/error.service');
 
-describe('ProcessService', () => {
-  let processService: ProcessService;
+describe('ServerLifecycleManager', () => {
+  let lifecycleManager: ServerLifecycleManagerImpl;
   let server: Server;
-  let prisma: PrismaClient;
-  let errorService: ErrorService;
+  let prisma: DeepMockProxy<PrismaClient>;
+  let errorService: DeepMockProxy<ErrorService>;
   let processExitSpy: jest.SpyInstance;
   let processOnSpy: jest.SpyInstance;
   let eventHandlers: { [key: string]: Function } = {};
 
   beforeAll(async () => {
-    prisma = new PrismaClient();
-    errorService = new ErrorService();
+    // Mock services
+    prisma = mockDeep<PrismaClient>();
+    errorService = mockDeep<ErrorService>();
+    
     Container.set(PrismaClient, prisma);
     Container.set(ErrorService, errorService);
-    processService = Container.get(ProcessService);
+    lifecycleManager = Container.get(ServerLifecycleManagerImpl);
+    
     const app = express();
     server = app.listen(3001); // 使用不同的端口避免冲突
 
@@ -51,28 +56,28 @@ describe('ProcessService', () => {
   });
 
   it('should cleanup resources', async () => {
-    await expect(processService.cleanup()).resolves.not.toThrow();
+    await expect(lifecycleManager.cleanup()).resolves.not.toThrow();
   });
 
   it('should shutdown server gracefully', async () => {
-    await expect(processService.shutdownServer(server)).resolves.not.toThrow();
+    await expect(lifecycleManager.shutdownServer(server)).resolves.not.toThrow();
   });
 
   it('should handle cleanup errors gracefully', async () => {
     // 模拟数据库断开连接失败
-    jest.spyOn(prisma, '$disconnect').mockRejectedValueOnce(new Error('Disconnect failed'));
+    prisma.$disconnect.mockRejectedValueOnce(new Error('Disconnect failed'));
     
-    await expect(processService.cleanup()).rejects.toThrow('Disconnect failed');
+    await expect(lifecycleManager.cleanup()).rejects.toThrow('Disconnect failed');
   });
 
   it('should handle server shutdown errors gracefully', async () => {
     const badServer = new Server();
-    await expect(processService.shutdownServer(badServer)).resolves.not.toThrow();
+    await expect(lifecycleManager.shutdownServer(badServer)).resolves.not.toThrow();
   });
 
   describe('setupSignalHandlers', () => {
     it('should setup signal handlers', () => {
-      processService.setupSignalHandlers(server);
+      lifecycleManager.setupSignalHandlers(server);
       expect(processOnSpy).toHaveBeenCalledWith('uncaughtException', expect.any(Function));
       expect(processOnSpy).toHaveBeenCalledWith('unhandledRejection', expect.any(Function));
       expect(processOnSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
@@ -80,8 +85,8 @@ describe('ProcessService', () => {
     });
 
     it('should handle uncaught exceptions correctly', async () => {
-      const cleanupSpy = jest.spyOn(processService, 'cleanup').mockResolvedValue();
-      processService.setupSignalHandlers(server);
+      const cleanupSpy = jest.spyOn(lifecycleManager, 'cleanup').mockResolvedValue();
+      lifecycleManager.setupSignalHandlers(server);
       const error = new Error('Test error');
       await eventHandlers['uncaughtException'](error);
       expect(errorService.handleUncaughtException).toHaveBeenCalledWith(error);
@@ -91,8 +96,8 @@ describe('ProcessService', () => {
     });
 
     it('should handle unhandled rejections correctly', async () => {
-      const cleanupSpy = jest.spyOn(processService, 'cleanup').mockResolvedValue();
-      processService.setupSignalHandlers(server);
+      const cleanupSpy = jest.spyOn(lifecycleManager, 'cleanup').mockResolvedValue();
+      lifecycleManager.setupSignalHandlers(server);
       const reason = new Error('Test rejection');
       await eventHandlers['unhandledRejection'](reason);
       expect(errorService.handleUnhandledRejection).toHaveBeenCalledWith(reason);
@@ -102,9 +107,9 @@ describe('ProcessService', () => {
     });
 
     it('should handle graceful shutdown correctly', async () => {
-      const cleanupSpy = jest.spyOn(processService, 'cleanup').mockResolvedValue();
-      const shutdownSpy = jest.spyOn(processService, 'shutdownServer').mockResolvedValue();
-      processService.setupSignalHandlers(server);
+      const cleanupSpy = jest.spyOn(lifecycleManager, 'cleanup').mockResolvedValue();
+      const shutdownSpy = jest.spyOn(lifecycleManager, 'shutdownServer').mockResolvedValue();
+      lifecycleManager.setupSignalHandlers(server);
       await eventHandlers['SIGTERM']();
       expect(cleanupSpy).toHaveBeenCalled();
       expect(shutdownSpy).toHaveBeenCalledWith(server);

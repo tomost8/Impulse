@@ -14,15 +14,20 @@ A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `dat
 """
 scalar DateTimeISO
 
+type FieldError {
+  field: String!
+  message: String!
+}
+
 type Mutation {
-  createUser(input: CreateUserInput!): User!
-  deleteUser(id: Int!): Boolean!
-  updateUser(id: Int!, input: UpdateUserInput!): User!
+  createUser(input: CreateUserInput!): UserResponse!
+  deleteUser(id: Int!): UserResponse!
+  updateUser(id: Int!, input: UpdateUserInput!): UserResponse!
 }
 
 type Query {
-  user(id: Int!): User
-  users: [User!]!
+  user(id: Int!): UserResponse!
+  users: UsersResponse!
 }
 
 input UpdateUserInput {
@@ -38,4 +43,16 @@ type User {
   id: Int!
   name: String
   updatedAt: DateTimeISO!
+}
+
+type UserResponse {
+  errors: [FieldError!]
+  success: Boolean!
+  user: User
+}
+
+type UsersResponse {
+  errors: [FieldError!]
+  success: Boolean!
+  users: [User!]
 }

@@ -1,22 +1,21 @@
 import 'reflect-metadata';
 import { Container } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { UserService } from '../user.service';
+import { UsersService } from '../../../services/userService';
 import { NotFoundError } from '../../common/errors/graphql.error';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { IsFirebasePushId } from 'class-validator';
 
 jest.mock('../../../config/logger');
 
-describe('UserService', () => {
-  let userService: UserService;
+describe('UsersService', () => {
+  let usersService: UsersService;
   let prisma: DeepMockProxy<PrismaClient>;
 
   beforeAll(() => {
     // Mock Prisma client
     prisma = mockDeep<PrismaClient>();
     Container.set(PrismaClient, prisma);
-    userService = Container.get(UserService);
+    usersService = Container.get(UsersService);
   });
 
   beforeEach(() => {
@@ -25,18 +24,17 @@ describe('UserService', () => {
 
   describe('findAll', () => {
     it('should return all users', async () => {
-
-        const createDate = new Date();  
-        const updateDate = new Date();
+      const createDate = new Date();  
+      const updateDate = new Date();
       // Arrange
       const mockUsers = [
-        { id: 1, email: 'user1@example.com',firebaseUid: 'firebaseUid1', name: 'User 1', createdAt: createDate, updatedAt: updateDate },
-        { id: 2, email: 'user2@example.com',firebaseUid: 'firebaseUid2', name: 'User 2', createdAt: createDate, updatedAt: updateDate }
+        { id: 1, email: 'user1@example.com', firebaseUid: 'firebaseUid1', name: 'User 1', createdAt: createDate, updatedAt: updateDate },
+        { id: 2, email: 'user2@example.com', firebaseUid: 'firebaseUid2', name: 'User 2', createdAt: createDate, updatedAt: updateDate }
       ];
       prisma.user.findMany.mockResolvedValue(mockUsers);
 
       // Act
-      const result = await userService.findAll();
+      const result = await usersService.findAll();
 
       // Assert
       expect(result).toEqual(mockUsers);
@@ -49,7 +47,7 @@ describe('UserService', () => {
       prisma.user.findMany.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.findAll()).rejects.toThrow(error);
+      await expect(usersService.findAll()).rejects.toThrow(error);
     });
   });
 
@@ -62,7 +60,7 @@ describe('UserService', () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
 
       // Act
-      const result = await userService.findById(1);
+      const result = await usersService.findById(1);
 
       // Assert
       expect(result).toEqual(mockUser);
@@ -76,7 +74,7 @@ describe('UserService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       // Act
-      const result = await userService.findById(1);
+      const result = await usersService.findById(1);
 
       // Assert
       expect(result).toBeNull();
@@ -88,7 +86,7 @@ describe('UserService', () => {
       prisma.user.findUnique.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.findById(1)).rejects.toThrow(error);
+      await expect(usersService.findById(1)).rejects.toThrow(error);
     });
   });
 
@@ -102,7 +100,7 @@ describe('UserService', () => {
       prisma.user.create.mockResolvedValue(mockUser);
 
       // Act
-      const result = await userService.create(input);
+      const result = await usersService.create(input);
 
       // Assert
       expect(result).toEqual(mockUser);
@@ -118,7 +116,7 @@ describe('UserService', () => {
       prisma.user.create.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.create(input)).rejects.toThrow(error);
+      await expect(usersService.create(input)).rejects.toThrow(error);
     });
   });
 
@@ -127,12 +125,12 @@ describe('UserService', () => {
       // Arrange
       const createDate = new Date();  
       const updateDate = new Date();
-      const input = { name: 'Updated Name',firebaseUid: 'firebaseUid1',createdAt: createDate, updatedAt: updateDate, };
+      const input = { name: 'Updated Name', firebaseUid: 'firebaseUid1', createdAt: createDate, updatedAt: updateDate };
       const mockUser = { id: 1, email: 'test@example.com', ...input };
       prisma.user.update.mockResolvedValue(mockUser);
 
       // Act
-      const result = await userService.update(1, input);
+      const result = await usersService.update(1, input);
 
       // Assert
       expect(result).toEqual(mockUser);
@@ -150,7 +148,7 @@ describe('UserService', () => {
       prisma.user.update.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.update(1, input))
+      await expect(usersService.update(1, input))
         .rejects
         .toThrow(NotFoundError);
     });
@@ -162,20 +160,20 @@ describe('UserService', () => {
       prisma.user.update.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.update(1, input)).rejects.toThrow(error);
+      await expect(usersService.update(1, input)).rejects.toThrow(error);
     });
   });
 
   describe('delete', () => {
     it('should delete user successfully', async () => {
-        const createDate = new Date();  
-        const updateDate = new Date();
+      const createDate = new Date();  
+      const updateDate = new Date();
       // Arrange
       const mockUser = { id: 1, email: 'test@example.com', firebaseUid: 'firebaseUid1', name: 'User 1', createdAt: createDate, updatedAt: updateDate };
       prisma.user.delete.mockResolvedValue(mockUser);
 
       // Act
-      await userService.delete(1);
+      await usersService.delete(1);
 
       // Assert
       expect(prisma.user.delete).toHaveBeenCalledWith({
@@ -190,7 +188,7 @@ describe('UserService', () => {
       prisma.user.delete.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.delete(1))
+      await expect(usersService.delete(1))
         .rejects
         .toThrow(NotFoundError);
     });
@@ -201,7 +199,7 @@ describe('UserService', () => {
       prisma.user.delete.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(userService.delete(1)).rejects.toThrow(error);
+      await expect(usersService.delete(1)).rejects.toThrow(error);
     });
   });
 }); 

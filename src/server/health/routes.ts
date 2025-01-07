@@ -1,23 +1,23 @@
 import { Router } from 'express';
 import { Container } from 'typedi';
-import { HealthController } from './health.controller';
-import { validateRequest } from '../common/validators/zod.validator';
-import { healthCheckQuerySchema } from './health.schema';
+import { HealthController } from './controller';
+import { validateRequest } from '../../modules/common/validators/zod.validator';
+import { healthCheckQuerySchema } from './schemas';
 
 export function createHealthRoutes(controller?: HealthController) {
   const router = Router();
   const healthController = controller || Container.get(HealthController);
 
-  // Health check endpoints
+  // Health check endpoint
   router.get(
     '/',
     validateRequest(healthCheckQuerySchema),
     async (req, res, next) => {
       try {
-        const { full, service, timeout } = req.query;
+        const { full, component, timeout } = req.query;
         const result = await healthController.checkHealth({
           full: !!full,
-          service: service?.toString(),
+          component: component?.toString(),
           timeout: timeout ? parseInt(timeout.toString()) : undefined,
         });
         res.json(result);
@@ -27,10 +27,11 @@ export function createHealthRoutes(controller?: HealthController) {
     }
   );
 
+  // Error simulation endpoint
   router.get('/test-error', async (req, res, next) => {
     try {
       const { type = 'UNCAUGHT' } = req.query;
-      await healthController.testError(type.toString());
+      await healthController.simulateError(type.toString());
       res.json({ message: 'No error occurred' });
     } catch (error) {
       next(error);
