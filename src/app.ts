@@ -1,9 +1,12 @@
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import { json } from 'body-parser';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { Container } from 'typedi';
 import { createSchema } from './config/graphql';
 import { ErrorService } from './modules/common/errors/error.service';
@@ -17,16 +20,23 @@ export async function createApp() {
 
   // middleware
   app.use(cors(env.CORS));
-  app.use(helmet());
+  // app.use(helmet());
   app.use(json());
   app.use(requestLogger);
 
   // GraphQL setup
   const schema = await createSchema();
   const errorService = Container.get(ErrorService);
+
+  const httpServer = http.createServer(app);
+
   
   const server = new ApolloServer({
     schema,
+    plugins: [
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+      ApolloServerPluginLandingPageLocalDefault()
+    ],
     formatError: (formattedError: GraphQLFormattedError) => {
       if ('originalError' in formattedError) {
         return errorService.formatError(formattedError as any);

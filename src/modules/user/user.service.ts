@@ -1,6 +1,8 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
 import { User, CreateUserInput, UpdateUserInput } from './user.schema';
+import logger from '../../config/logger';
+import { NotFoundError } from '../common/errors/graphql.error';
 
 /**
  * Service handling user-related business logic
@@ -39,7 +41,18 @@ export class UserService {
    * ```
    */
   async findAll(): Promise<User[]> {
-    return this.prisma.user.findMany();
+    try {
+      logger.debug('Fetching all users');
+      const users = await this.prisma.user.findMany();
+      logger.info('Successfully fetched all users', { count: users.length });
+      return users;
+    } catch (error: any) {
+      logger.error('Failed to fetch users', {
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   /**
@@ -58,9 +71,27 @@ export class UserService {
    * ```
    */
   async findById(id: number): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { id },
-    });
+    try {
+      logger.debug('Finding user by ID', { userId: id });
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+      });
+      
+      if (user) {
+        logger.info('Successfully found user', { userId: id });
+      } else {
+        logger.warn('User not found', { userId: id });
+      }
+      
+      return user;
+    } catch (error: any) {
+      logger.error('Failed to find user', {
+        userId: id,
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   /**
@@ -81,9 +112,30 @@ export class UserService {
    * ```
    */
   async create(input: CreateUserInput): Promise<User> {
-    return this.prisma.user.create({
-      data: input,
-    });
+    try {
+      logger.debug('Creating new user', { 
+        email: input.email,
+        name: input.name 
+      });
+      
+      const user = await this.prisma.user.create({
+        data: input,
+      });
+      
+      logger.info('Successfully created user', { 
+        userId: user.id,
+        email: user.email 
+      });
+      
+      return user;
+    } catch (error: any) {
+      logger.error('Failed to create user', {
+        input: { email: input.email, name: input.name },
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 
   /**
@@ -104,10 +156,39 @@ export class UserService {
    * ```
    */
   async update(id: number, input: UpdateUserInput): Promise<User> {
-    return this.prisma.user.update({
-      where: { id },
-      data: input,
-    });
+    try {
+      logger.debug('Updating user', { 
+        userId: id,
+        updates: input 
+      });
+
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: input,
+      });
+      
+      logger.info('Successfully updated user', { 
+        userId: id,
+        updates: input 
+      });
+      
+      return user;
+    } catch (error: any) {
+      logger.error('Failed to update user', {
+        userId: id,
+        updates: input,
+        error: error.message,
+        stack: error.stack
+      });
+      
+      if (error.code === 'P2025') {
+        const notFoundError = new NotFoundError(`User with ID ${id} not found`);
+        logger.warn('User not found during update', { userId: id });
+        throw notFoundError;
+      }
+      
+      throw error;
+    }
   }
 
   /**
@@ -124,8 +205,28 @@ export class UserService {
    * ```
    */
   async delete(id: number): Promise<void> {
-    await this.prisma.user.delete({
-      where: { id },
-    });
+    try {
+      logger.debug('Deleting user', { userId: id });
+      
+      await this.prisma.user.delete({
+        where: { id },
+      });
+      
+      logger.info('Successfully deleted user', { userId: id });
+    } catch (error: any) {
+      logger.error('Failed to delete user', {
+        userId: id,
+        error: error.message,
+        stack: error.stack
+      });
+      
+      if (error.code === 'P2025') {
+        const notFoundError = new NotFoundError(`User with ID ${id} not found`);
+        logger.warn('User not found during deletion', { userId: id });
+        throw notFoundError;
+      }
+      
+      throw error;
+    }
   }
 } 
