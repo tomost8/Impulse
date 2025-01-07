@@ -16,7 +16,6 @@ GET http://localhost:3000/api/v1/not-exist
 ### Test Service Error
 GET http://localhost:3000/api/v1/health/test-error?type=SERVICE
 
-
 ### Test Validation Error
 GET http://localhost:3000/api/v1/health/test-error?type=VALIDATION
 
@@ -29,47 +28,103 @@ GET http://localhost:3000/api/v1/health/test-error?type=UNCAUGHT
 ### Test Unknown Error
 GET http://localhost:3000/api/v1/health/test-error?type=unknown 
 
-// test.http (添加以下内容)
+### Process Management Tests ###
 
-### User API Tests ###
+# 1. Start the server with:
+# npm run dev
+#
+# 2. Test graceful shutdown with different signals:
+#    a. SIGTERM: kill -15 <PID>
+#    b. SIGINT: Press Ctrl+C in terminal
+#    c. SIGUSR2: kill -12 <PID>
+#
+# 3. Check logs for:
+#    - Shutdown signal received
+#    - Resource cleanup
+#    - Server close
+#    - Process exit
+#
+# 4. Verify database connections:
+#    - Run health check before shutdown
+#    - Try to make requests during shutdown
+#    - Check database state after restart
+#
+# Expected Results:
+# - All signals should trigger graceful shutdown
+# - Resources should be cleaned up properly
+# - No hanging connections
+# - Logs should show proper shutdown sequence
 
-### Create User
-POST http://localhost:3000/api/v1/users
+### GraphQL User API Tests ###
+
+### Query - Get All Users
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "name": "Test User"
+  "query": "query { users { id email name createdAt updatedAt } }"
 }
 
-### Create User - Invalid Email
-POST http://localhost:3000/api/v1/users
+### Query - Get User by ID
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "email": "invalid-email",
-  "name": "Test User"
+  "query": "query($id: Int!) { user(id: $id) { id email name createdAt updatedAt } }",
+  "variables": {
+    "id": 1
+  }
 }
 
-### Create User - Missing Required Field
-POST http://localhost:3000/api/v1/users
+### Mutation - Create User
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "name": "Test User"
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { id email name createdAt updatedAt } }",
+  "variables": {
+    "input": {
+      "email": "test@example.com",
+      "name": "Test User"
+    }
+  }
 }
 
-### Get All Users
-GET http://localhost:3000/api/v1/users
-
-### Get User by Email
-GET http://localhost:3000/api/v1/users?email=test@example.com
-
-### Create Duplicate User (to test unique constraint)
-POST http://localhost:3000/api/v1/users
+### Mutation - Create User with Invalid Email
+POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "name": "Another User"
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { id email name } }",
+  "variables": {
+    "input": {
+      "email": "invalid-email",
+      "name": "Test User"
+    }
+  }
+}
+
+### Mutation - Update User
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { id email name } }",
+  "variables": {
+    "id": 1,
+    "input": {
+      "name": "Updated Name"
+    }
+  }
+}
+
+### Mutation - Delete User
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!) { deleteUser(id: $id) }",
+  "variables": {
+    "id": 1
+  }
 }

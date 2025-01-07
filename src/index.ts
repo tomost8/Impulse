@@ -1,33 +1,25 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-import { createApp } from './core/app';
-import { setupApiErrorHandlers } from './middlewares/errorHandler';
-import routes from './routes/router';
-import logger from './utils/logger';
+import 'reflect-metadata';
 import { env } from './config/env';
-import { setupProcessHandlers } from './core/processManager';
+import { createApp } from './app';
+import logger from './config/logger';
+import { Container } from 'typedi';
+import { ProcessService } from './modules/system/process.service';
 
-async function startServer() {
+async function bootstrap() {
   try {
-    // TODO: connect to database
-    // await connectToDatabase();
-    
-    const app = createApp();
-    app.use('/api', routes);
-    setupApiErrorHandlers(app);
-    
+    const app = await createApp();
     const server = app.listen(env.PORT, () => {
-      logger.info(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
+      logger.info(`🚀 Server ready at http://localhost:${env.PORT}`);
+      logger.info(`🚀 GraphQL ready at http://localhost:${env.PORT}/graphql`);
     });
 
-    // Setup all process handlers
-    setupProcessHandlers(server);
-
+    // setup signal handlers
+    const processService = Container.get(ProcessService);
+    processService.setupSignalHandlers(server);
   } catch (error) {
-    logger.error('Server Startup Error:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
-startServer();
+bootstrap();
