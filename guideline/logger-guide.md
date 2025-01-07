@@ -16,6 +16,43 @@ const levels = {
 }
 ```
 
+### When to Use Each Level
+
+1. **error (0)**: Use for critical issues that need immediate attention
+   - System crashes or unrecoverable situations
+   - Database connection failures
+   - Unhandled exceptions
+   - Any issue that prevents core functionality
+   - Security breaches or authentication failures
+
+2. **warn (1)**: Use for potentially harmful situations that don't require immediate action
+   - Resource usage nearing limits
+   - Expected errors (e.g., "User not found")
+   - Deprecated feature usage
+   - Authentication retries
+   - Non-critical configuration issues
+
+3. **info (2)**: Use for tracking normal application behavior
+   - Application startup/shutdown
+   - User actions (login, logout)
+   - Significant state changes
+   - Scheduled task execution
+   - Feature flags status
+
+4. **http (3)**: Use for HTTP request/response logging
+   - API endpoints access
+   - Request duration
+   - Response status codes
+   - Client information
+   - API version usage
+
+5. **debug (4)**: Use for detailed information useful during development
+   - Function entry/exit points
+   - Variable values during execution
+   - SQL queries
+   - Cache hits/misses
+   - Detailed flow control information
+
 ## Basic Usage
 
 ### Importing the Logger
