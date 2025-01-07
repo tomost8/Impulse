@@ -29,3 +29,47 @@ GET http://localhost:3000/api/v1/health/test-error?type=UNCAUGHT
 ### Test Unknown Error
 GET http://localhost:3000/api/v1/health/test-error?type=unknown 
 
+// test.http (添加以下内容)
+
+### User API Tests ###
+
+### Create User
+POST http://localhost:3000/api/v1/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "name": "Test User"
+}
+
+### Create User - Invalid Email
+POST http://localhost:3000/api/v1/users
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "name": "Test User"
+}
+
+### Create User - Missing Required Field
+POST http://localhost:3000/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Test User"
+}
+
+### Get All Users
+GET http://localhost:3000/api/v1/users
+
+### Get User by Email
+GET http://localhost:3000/api/v1/users?email=test@example.com
+
+### Create Duplicate User (to test unique constraint)
+POST http://localhost:3000/api/v1/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "name": "Another User"
+}
