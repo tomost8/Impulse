@@ -32,9 +32,18 @@ input CreateCommunityInput {
 }
 
 input CreateUserInput {
+  dob: DateTimeISO
   email: String!
-  firebaseUid: String
-  name: String
+  fcm_token: String
+  first_name: String!
+  gender: String!
+  last_name: String!
+  password: String!
+  profile_picture: String
+  role: String
+  searchable: Boolean
+  timezone: String!
+  username: String!
 }
 
 """
@@ -69,18 +78,36 @@ input UpdateCommunityInput {
 }
 
 input UpdateUserInput {
+  dob: DateTimeISO
   email: String
-  firebaseUid: String
-  name: String
+  fcm_token: String
+  first_name: String
+  gender: String
+  last_name: String
+  password: String
+  profile_picture: String
+  role: String
+  searchable: Boolean
+  timezone: String
+  username: String
 }
 
 type User {
-  createdAt: DateTimeISO!
+  created_at: DateTimeISO!
+  dob: DateTimeISO
   email: String!
-  firebaseUid: String
+  fcm_token: String
+  first_name: String!
+  gender: String!
   id: Int!
-  name: String
-  updatedAt: DateTimeISO!
+  last_name: String!
+  profile_picture: String
+  role: String!
+  searchable: Boolean!
+  status: String!
+  timezone: String!
+  updated_at: DateTimeISO!
+  username: String!
 }
 
 type UserResponse {

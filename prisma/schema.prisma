@@ -20,10 +20,20 @@ datasource db {
 model User {
   id               Int         @id @default(autoincrement())
   email            String      @unique
-  firebaseUid      String?     @unique
-  name             String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  password         String      @default("$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm")
+  first_name       String
+  last_name        String
+  username         String
+  dob              DateTime?   @db.Date
+  gender           String
+  profile_picture  String?
+  role             String      @default("user")
+  status           String      @default("active")
+  timezone         String
+  searchable       Boolean     @default(true)
+  fcm_token        String?
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @default(now()) @updatedAt
   communitiesOwned Community[]
 
   @@map("users")
