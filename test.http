@@ -166,7 +166,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query { users { success users { id email name createdAt updatedAt } errors { field message } } }"
+  "query": "query { users { success users { id email first_name last_name username gender role status searchable created_at updated_at } errors { field message } } }"
 }
 
 ### Query - Get User by ID
@@ -174,9 +174,9 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query($id: Int!) { user(id: $id) { success user { id email name createdAt updatedAt } errors { field message } } }",
+  "query": "query($id: Int!) { user(id: $id) { success user { id email first_name last_name username gender role status searchable created_at updated_at } errors { field message } } }",
   "variables": {
-    "id": 2
+    "id": 20
   }
 }
 
@@ -185,25 +185,16 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email name createdAt updatedAt } errors { field message } } }",
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email first_name last_name } errors { field message } } }",
   "variables": {
     "input": {
       "email": "test@example.com",
-      "name": "Test User"
-    }
-  }
-}
-
-### Mutation - Create User with Invalid Email
-POST http://localhost:3000/graphql
-Content-Type: application/json
-
-{
-  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email name } errors { field message } } }",
-  "variables": {
-    "input": {
-      "email": "invalid-email",
-      "name": "Test User"
+      "password": "password123",
+      "first_name": "John",
+      "last_name": "Doe",
+      "username": "johndoe",
+      "gender": "male",
+      "timezone": "UTC"
     }
   }
 }
@@ -213,11 +204,12 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success user { id email name } errors { field message } } }",
+  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success user { id email first_name last_name } errors { field message } } }",
   "variables": {
     "id": 1,
     "input": {
-      "name": "Updated Name"
+      "first_name": "Jane",
+      "last_name": "Smith"
     }
   }
 }
@@ -229,6 +221,25 @@ Content-Type: application/json
 {
   "query": "mutation($id: Int!) { deleteUser(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 2
+    "id": 1
+  }
+}
+
+### Query - Get Users with Minimal Fields
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { users { success users { id username email } errors { field message } } }"
+}
+
+### Query - Get User Profile Info
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query($id: Int!) { user(id: $id) { success user { username profile_picture} errors { field message } } }",
+  "variables": {
+    "id": 20
   }
 }

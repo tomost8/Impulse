@@ -32,21 +32,57 @@ export class User {
   @Field(() => String)
   email!: string;
 
-  /** User's display name */
-  @Field(() => String, { nullable: true })
-  name!: string | null;
+  /** User's first name */
+  @Field(() => String)
+  first_name!: string;
 
-  /** Firebase authentication UID */
+  /** User's last name */
+  @Field(() => String)
+  last_name!: string;
+
+  /** User's username */
+  @Field(() => String)
+  username!: string;
+
+  /** User's date of birth */
+  @Field(() => Date, { nullable: true })
+  dob!: Date | null;
+
+  /** User's gender */
+  @Field(() => String)
+  gender!: string;
+
+  /** User's profile picture */
   @Field(() => String, { nullable: true })
-  firebaseUid!: string | null;
+  profile_picture!: string | null;
+
+  /** User's role */
+  @Field(() => String)
+  role!: string;
+
+  /** User's status */
+  @Field(() => String)
+  status!: string;
+
+  /** User's timezone */
+  @Field(() => String)
+  timezone!: string;
+
+  /** User's searchable flag */
+  @Field(() => Boolean)
+  searchable!: boolean;
+
+  /** User's FCM token */
+  @Field(() => String, { nullable: true })
+  fcm_token!: string | null;
 
   /** Timestamp of when the user was created */
   @Field(() => Date)
-  createdAt!: Date;
+  created_at!: Date;
 
   /** Timestamp of the last update to the user */
   @Field(() => Date)
-  updatedAt!: Date;
+  updated_at!: Date;
 }
 
 @ObjectType()
