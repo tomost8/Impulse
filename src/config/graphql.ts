@@ -1,11 +1,12 @@
 import { buildSchema } from 'type-graphql';
 import { Container } from 'typedi';
 import { UserQueries, UserMutations } from '../modules/user';
+import { CommunityQueries, CommunityMutations } from '../modules/community';
 import './prisma'; // 确保 Prisma 客户端被初始化
 
 export const createSchema = async () => {
   return buildSchema({
-    resolvers: [UserQueries, UserMutations],
+    resolvers: [UserQueries, UserMutations, CommunityQueries, CommunityMutations],
     container: Container,
     validate: { forbidUnknownValues: false },
     emitSchemaFile: process.env.NODE_ENV !== 'production', // 只在非生产环境生成 schema 文件

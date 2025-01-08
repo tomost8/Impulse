@@ -3,6 +3,34 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+type CommunitiesResponse {
+  communities: [Community!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type Community {
+  createdAt: DateTimeISO!
+  description: String
+  id: Int!
+  influencer: User!
+  influencerId: Int!
+  name: String!
+  updatedAt: DateTimeISO!
+}
+
+type CommunityResponse {
+  community: Community
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+input CreateCommunityInput {
+  description: String
+  influencerId: Int!
+  name: String!
+}
+
 input CreateUserInput {
   email: String!
   firebaseUid: String
@@ -20,14 +48,24 @@ type FieldError {
 }
 
 type Mutation {
+  createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createUser(input: CreateUserInput!): UserResponse!
+  deleteCommunity(id: Int!): CommunityResponse!
   deleteUser(id: Int!): UserResponse!
+  updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
   updateUser(id: Int!, input: UpdateUserInput!): UserResponse!
 }
 
 type Query {
+  communities: CommunitiesResponse!
+  community(id: Int!): CommunityResponse!
   user(id: Int!): UserResponse!
   users: UsersResponse!
+}
+
+input UpdateCommunityInput {
+  description: String
+  name: String!
 }
 
 input UpdateUserInput {

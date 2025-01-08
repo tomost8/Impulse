@@ -232,3 +232,65 @@ Content-Type: application/json
     "id": 2
   }
 }
+
+### GraphQL User API Tests ###
+
+### Query - Get All Communities
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query Communities { communities { success communities { id name description influencer { id name email createdAt updatedAt } influencerId createdAt updatedAt } errors { field message } } }"
+}
+
+### Query - Get Community by ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query Community($id: Int!) { community(id: $id) { success community { id name description influencer { id name email createdAt updatedAt } influencerId createdAt updatedAt } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Mutation - Create Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation CreateCommunity($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description influencer { id name email createdAt updatedAt } influencerId createdAt updatedAt } errors { field message } } }",
+  "variables": {
+    "input": {
+      "name": "community init without description",
+      "influencerId": 2,
+      "description": null
+    }
+  }
+}
+
+### Mutation - Update Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!, $input: UpdateCommunityInput!) { updateCommunity(id: $id, input: $input) { success community { id name description influencer { id name email createdAt updatedAt } influencerId createdAt updatedAt } errors { field message } } }",
+  "variables": {
+    "id": 2,
+    "input": {
+      "name": "community but with updated description",
+      "description": "new description"
+    }
+  }
+}
+
+### Mutation - Delete Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!) { deleteCommunity(id: $id) { success errors { field message } } }",
+  "variables": {
+    "id": 2
+  }
+}
