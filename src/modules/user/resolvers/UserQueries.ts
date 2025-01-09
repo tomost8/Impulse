@@ -1,8 +1,9 @@
-import { Resolver, Query, Arg, Int, UseMiddleware } from 'type-graphql';
+import { Resolver, Query, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
 import { User, UserResponse, UsersResponse } from '../schema/userTypes';
 import { UsersService } from '../../../services/userService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
+import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
 import logger from '../../../config/logger';
 
 /**
@@ -27,6 +28,70 @@ import logger from '../../../config/logger';
 @UseMiddleware(LogOperationMiddleware)
 export class UserQueries {
   constructor(private usersService: UsersService) {}
+
+  /**
+   * Query to get the current authenticated user
+   * 
+   * @returns Response containing the current user's information
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   me {
+   *     success
+   *     user {
+   *       id
+   *       email
+   *       name
+   *     }
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => UserResponse)
+  @UseMiddleware(authMiddleware)
+  async me(@Ctx() ctx: AuthContext): Promise<UserResponse> {
+    try {
+      const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+      
+      if (!user) {
+        logger.warn('Current user not found in database', { 
+          firebaseUid: ctx.user.uid 
+        });
+        return {
+          success: false,
+          errors: [{
+            field: 'auth',
+            message: 'Current user not found'
+          }]
+        };
+      }
+
+      logger.info('Successfully fetched current user', { 
+        userId: user.id,
+        email: user.email
+      });
+
+      return { success: true, user };
+    } catch (error: any) {
+      logger.error('Failed to fetch current user', {
+        error: error.message,
+        stack: error.stack
+      });
+
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch current user'
+        }]
+      };
+    }
+  }
 
   /**
    * Query to fetch all users

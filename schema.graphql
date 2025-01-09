@@ -18,6 +18,7 @@ type Mutation {
 }
 
 type Query {
+  me: UserResponse!
   user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!
 }
