@@ -1,5 +1,5 @@
 import { MiddlewareFn } from "type-graphql";
-import logger from "../../../config/logger";
+import logger from "../config/logger";
 
 /**
  * Middleware for logging GraphQL operations

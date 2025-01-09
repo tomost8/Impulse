@@ -160,63 +160,97 @@ GET http://localhost:3000/api/v1/health/test-error?type=UNKNOWN
 #    - Check database state after restart
 
 ### GraphQL User API Tests ###
+@baseUrl = http://localhost:3000
+@authToken = dev-token-123
 
-### Query - Get All Users
-POST http://localhost:3000/graphql
+### Mutation - Firebase Authentication login/create
+POST {{baseUrl}}/graphql
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { users { success users { id email first_name last_name username gender role status searchable created_at updated_at } errors { field message } } }"
+  "query": "mutation { firebaseAuth { success user { id email firebase_uid first_name last_name role status } errors { field message } } }"
+}
+
+
+### Mutation - update User Profile
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
+  "variables": {
+    "input": {
+      "first_name": "001",
+      "last_name": "tester",
+      "username": "test001",
+      "gender": "male",
+      "dob": "2024-01-02",
+      "status": "active"
+    }
+  }
+}
+
+### Query - Get All Users
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { users { success users { id email firebase_uid first_name last_name username gender role status searchable last_login_at created_at updated_at } errors { field message } } }"
 }
 
 ### Query - Get User by ID
-POST http://localhost:3000/graphql
+POST {{baseUrl}}/graphql
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($id: Int!) { user(id: $id) { success user { id email first_name last_name username gender role status searchable created_at updated_at } errors { field message } } }",
+  "query": "query($id: Int!) { user(id: $id) { success user { id email firebase_uid first_name last_name username gender profile_picture role status timezone searchable last_login_at } errors { field message } } }",
   "variables": {
-    "id": 20
+    "id": 1
   }
 }
 
-### Mutation - Create User
-POST http://localhost:3000/graphql
+
+### Query - Get User by Firebase UID
+POST {{baseUrl}}/graphql
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
-  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email first_name last_name } errors { field message } } }",
+  "query": "query($firebase_uid: String!) { user(firebase_uid: $firebase_uid) { success user { id email firebase_uid first_name last_name username gender profile_picture role status timezone searchable last_login_at } errors { field message } } }",
   "variables": {
-    "input": {
-      "email": "test@example.com",
-      "password": "password123",
-      "first_name": "John",
-      "last_name": "Doe",
-      "username": "johndoe",
-      "gender": "male",
-      "timezone": "UTC"
-    }
+    "firebase_uid": "dev-test-001"
   }
 }
 
-### Mutation - Update User
-POST http://localhost:3000/graphql
+
+
+### Query - Get Current User (Me)
+POST {{baseUrl}}/graphql
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
-  "query": "mutation($id: Int!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success user { id email first_name last_name } errors { field message } } }",
-  "variables": {
-    "id": 1,
-    "input": {
-      "first_name": "Jane",
-      "last_name": "Smith"
-    }
-  }
+  "query": "query { me { success user { id email first_name last_name username status last_login_at } errors { field message } } }"
 }
 
-### Mutation - Delete User
-POST http://localhost:3000/graphql
+
+### Query - Get User Profile (Minimal Fields)
+POST {{baseUrl}}/graphql
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { users { success users { id username email profile_picture } errors { field message } } }"
+}
+
+### Mutation - Delete User (Admin Only)
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
   "query": "mutation($id: Int!) { deleteUser(id: $id) { success errors { field message } } }",
@@ -225,21 +259,11 @@ Content-Type: application/json
   }
 }
 
-### Query - Get Users with Minimal Fields
-POST http://localhost:3000/graphql
+### Mutation - Deactivate Own Account
+POST {{baseUrl}}/graphql
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { users { success users { id username email } errors { field message } } }"
-}
-
-### Query - Get User Profile Info
-POST http://localhost:3000/graphql
-Content-Type: application/json
-
-{
-  "query": "query($id: Int!) { user(id: $id) { success user { username profile_picture} errors { field message } } }",
-  "variables": {
-    "id": 20
-  }
+  "query": "mutation { deactivateAccount { success errors { field message } } }"
 }

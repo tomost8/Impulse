@@ -20,20 +20,21 @@ datasource db {
 model User {
   id                Int       @id @default(autoincrement())
   email             String    @unique
-  password          String    @default("$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm")
-  first_name        String
-  last_name         String
-  username          String
+  firebase_uid      String   @unique
+  first_name        String?
+  last_name         String?
+  username          String?
   dob               DateTime? @db.Date
-  gender            String
+  gender            String?
   profile_picture   String?
   role              String    @default("user")
-  status            String    @default("active")
-  timezone          String
+  status            String    @default("pending")
+  timezone          String?
   searchable        Boolean   @default(true)
   fcm_token         String?
   created_at        DateTime  @default(now())
   updated_at        DateTime  @default(now()) @updatedAt
+  last_login_at     DateTime?  
 
   @@map("users")
 }

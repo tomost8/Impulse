@@ -32,25 +32,29 @@ export class User {
   @Field(() => String)
   email!: string;
 
+  /** User's firebase uid */
+  @Field(() => String, { nullable: true })
+  firebase_uid!: string | null;
+
   /** User's first name */
-  @Field(() => String)
-  first_name!: string;
+  @Field(() => String, { nullable: true })
+  first_name!: string | null;
 
   /** User's last name */
-  @Field(() => String)
-  last_name!: string;
+  @Field(() => String, { nullable: true })
+  last_name!: string | null;
 
   /** User's username */
-  @Field(() => String)
-  username!: string;
+  @Field(() => String, { nullable: true })
+  username!: string | null;
 
   /** User's date of birth */
   @Field(() => Date, { nullable: true })
   dob!: Date | null;
 
   /** User's gender */
-  @Field(() => String)
-  gender!: string;
+  @Field(() => String, { nullable: true })
+  gender!: string | null;
 
   /** User's profile picture */
   @Field(() => String, { nullable: true })
@@ -65,8 +69,8 @@ export class User {
   status!: string;
 
   /** User's timezone */
-  @Field(() => String)
-  timezone!: string;
+  @Field(() => String, { nullable: true })
+  timezone!: string | null;
 
   /** User's searchable flag */
   @Field(() => Boolean)
@@ -83,6 +87,10 @@ export class User {
   /** Timestamp of the last update to the user */
   @Field(() => Date)
   updated_at!: Date;
+
+  /** Timestamp of user's last login */
+  @Field(() => Date, { nullable: true })
+  last_login_at!: Date | null;
 }
 
 @ObjectType()

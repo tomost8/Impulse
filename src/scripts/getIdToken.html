@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Get Firebase ID Token</title>
+  <!-- Firebase App (必须) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <!-- Firebase Auth -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+  <h2>Firebase ID Token Generator</h2>
+  <button onclick="signInWithGoogle()">Sign in with Google</button>
+  <button onclick="copyToken()">Copy Token</button>
+  <pre id="token"></pre>
+
+  <script>
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "从Firebase Console获取",
+      authDomain: "quizdemov1.firebaseapp.com",
+      projectId: "quizdemov1"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    async function signInWithGoogle() {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
+        
+        document.getElementById('token').textContent = idToken;
+        console.log('ID Token:', idToken);
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('token').textContent = 'Error: ' + error.message;
+      }
+    }
+
+    function copyToken() {
+      const token = document.getElementById('token').textContent;
+      navigator.clipboard.writeText(token);
+      alert('Token copied to clipboard!');
+    }
+  </script>
+</body>
+</html> 

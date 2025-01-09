@@ -13,6 +13,9 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   JWT_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  FIREBASE_PROJECT_ID: z.string(),
+  FIREBASE_CLIENT_EMAIL: z.string(),
+  FIREBASE_PRIVATE_KEY: z.string(),
 });
 
 // Validate environment variables
@@ -35,6 +38,11 @@ export const env = {
   CORS_ORIGIN: validatedEnv.CORS_ORIGIN,
   JWT_SECRET: validatedEnv.JWT_SECRET,
   JWT_EXPIRES_IN: validatedEnv.JWT_EXPIRES_IN,
+  firebase: {
+    projectId: validatedEnv.FIREBASE_PROJECT_ID,
+    clientEmail: validatedEnv.FIREBASE_CLIENT_EMAIL,
+    privateKey: validatedEnv.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
   CORS: {
     origin: validatedEnv.CORS_ORIGIN,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] as string[],

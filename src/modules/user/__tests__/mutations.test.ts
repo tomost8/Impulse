@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import { Container } from 'typedi';
-import { UserMutations } from '../resolvers/mutations';
+import { UserMutations } from '../resolvers/UserMutations';
 import { UsersService } from '../../../services/userService';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { CreateUserInput, UpdateUserInput } from '../schema/inputs';
-import { User } from '../schema/types';
+import { CreateUserInput, UpdateUserInput } from '../schema/userInputs';
+import { User } from '../schema/userTypes';
 
 describe('UserMutations', () => {
   let mutations: UserMutations;

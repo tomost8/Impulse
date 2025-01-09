@@ -1,8 +1,8 @@
 import { Resolver, Query, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
-import { User, UserResponse, UsersResponse } from '../schema/types';
+import { User, UserResponse, UsersResponse } from '../schema/userTypes';
 import { UsersService } from '../../../services/userService';
-import { LogOperationMiddleware } from '../../common/middleware/loggerMiddleware';
+import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
 
 /**
@@ -94,33 +94,54 @@ export class UserQueries {
    * ```
    */
   @Query(() => UserResponse)
-  async user(@Arg('id', () => Int) id: number): Promise<UserResponse> {
+  async user(
+    @Arg('id', () => Int, { nullable: true }) id?: number,
+    @Arg('firebase_uid', () => String, { nullable: true }) firebase_uid?: string
+  ): Promise<UserResponse> {
     try {
-      const user = await this.usersService.findById(id);
-      if (!user) {
-        logger.warn('User not found', { userId: id });
+      let user;
+      
+      if (id) {
+        user = await this.usersService.findById(id);
+      } else if (firebase_uid) {
+        user = await this.usersService.findByFirebaseUid(firebase_uid);
+      } else {
         return {
           success: false,
           errors: [{
-            field: 'id',
-            message: `User with ID ${id} not found`
+            field: 'query',
+            message: 'Either id or firebase_uid must be provided'
+          }]
+        };
+      }
+
+      if (!user) {
+        const identifier = id ? `ID ${id}` : `Firebase UID ${firebase_uid}`;
+        logger.warn('User not found', { userId: id, firebaseUid: firebase_uid });
+        return {
+          success: false,
+          errors: [{
+            field: id ? 'id' : 'firebase_uid',
+            message: `User with ${identifier} not found`
           }]
         };
       }
 
       logger.info('Successfully fetched user', { 
         userId: user.id,
-        email: user.email 
+        email: user.email,
+        firebaseUid: user.firebase_uid
       });
 
       return { success: true, user };
     } catch (error: any) {
       logger.error('Failed to fetch user', {
         userId: id,
+        firebaseUid: firebase_uid,
         error: error.message,
         stack: error.stack,
-        code: error.code,  // Prisma error code
-        meta: error.meta   // Prisma metadata
+        code: error.code,
+        meta: error.meta
       });
 
       return {
