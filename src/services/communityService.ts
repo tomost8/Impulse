@@ -1,8 +1,8 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Community, CommunityMember } from '../modules/community/schema/types';
-import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/inputs';
-import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/inputs';
+import { Community, CommunityMember } from '../modules/community/schema/communityQueries';
+import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/communityInputs';
+import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/communityInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 
 /**

@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import './config/firebase';
 import express from 'express';
 import http from 'http';
 import cors from 'cors';

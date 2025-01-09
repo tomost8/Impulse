@@ -1,7 +1,7 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { User } from '../modules/user/schema/types';
-import { CreateUserInput, UpdateUserInput } from '../modules/user/schema/inputs';
+import { User } from '../modules/user/schema/userTypes';
+import { CreateUserInput, UpdateUserInput } from '../modules/user/schema/userInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 
 /**
@@ -37,6 +37,19 @@ export class UsersService {
   async findById(id: number): Promise<User | null> {
     return await this.prisma.user.findUnique({
       where: { id },
+    });
+  }
+
+  /**
+   * Find a user by their Firebase UID
+   * 
+   * @param firebaseUid - The unique identifier of the user
+   * @returns Promise resolving to the user if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findByFirebaseUid(firebaseUid: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({
+      where: { firebase_uid: firebaseUid },
     });
   }
 
@@ -83,6 +96,26 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+
+  /**
+   * Update a user by their Firebase UID
+   * 
+   * @param firebaseUid - Firebase UID of the user
+   * @param input - Updated user data
+   * @returns Promise resolving to the updated user
+   * @throws {NotFoundError} If user doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
+  async updateByFirebaseUid(firebaseUid: string, input: UpdateUserInput): Promise<User> {
+    const user = await this.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      throw new NotFoundError(`User with Firebase UID ${firebaseUid} not found`);
+    }
+    return await this.update(user.id, {
+      ...input,
+    });
   }
 
   /**

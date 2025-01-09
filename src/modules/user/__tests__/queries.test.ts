@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Container } from 'typedi';
-import { UserQueries } from '../resolvers/queries';
+import { UserQueries } from '../resolvers/UserQueries';
 import { UsersService } from '../../../services/userService';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 

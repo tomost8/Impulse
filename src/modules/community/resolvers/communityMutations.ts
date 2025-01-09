@@ -1,13 +1,13 @@
 import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
-import { Community, CommunityResponse } from '../schema/types';
-import { CreateCommunityInput, UpdateCommunityInput } from '../schema/inputs';
+import { Community, CommunityResponse } from '../schema/communityQueries';
+import { CreateCommunityInput, UpdateCommunityInput } from '../schema/communityInputs';
 import { CommunitiesService } from '../../../services/communityService';
-import { CommunityMember, CommunityMemberResponse } from '../schema/types';
-import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../schema/inputs';
+import { CommunityMember, CommunityMemberResponse } from '../schema/communityQueries';
+import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../schema/communityInputs';
 import { CommunityMembersService } from '../../../services/communityService';
-import { ValidationError } from '../../../modules/common/errors/graphql.error';
-import { LogOperationMiddleware } from '../../common/middleware/loggerMiddleware';
+import { ValidationError } from '../../common/errors/graphql.error';
+import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
 
 /**

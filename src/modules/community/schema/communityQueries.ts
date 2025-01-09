@@ -1,6 +1,6 @@
 import { Field, ObjectType, Int } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
-import { User, FieldError } from '../../user/schema/types';
+import { User, FieldError } from '../../user/schema/userTypes';
 
 /**
  * Community entity representing a community in the system

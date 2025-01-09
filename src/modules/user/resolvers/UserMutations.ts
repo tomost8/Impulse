@@ -1,11 +1,12 @@
-import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
+import { Resolver, Mutation, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
-import { User, UserResponse } from '../schema/types';
-import { CreateUserInput, UpdateUserInput } from '../schema/inputs';
+import { User, UserResponse } from '../schema/userTypes';
+import { CreateUserInput, UpdateUserInput } from '../schema/userInputs';
 import { UsersService } from '../../../services/userService';
-import { ValidationError } from '../../../modules/common/errors/graphql.error';
-import { LogOperationMiddleware } from '../../common/middleware/loggerMiddleware';
+import { ValidationError } from '../../common/errors/graphql.error';
+import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { authMiddleware } from '../../../middleware/authMiddleware';
 
 /**
  * GraphQL mutation resolvers for User-related operations
@@ -62,35 +63,34 @@ export class UserMutations {
    * }
    * ```
    */
-  @Mutation(() => UserResponse)
-  async createUser(@Arg('input') input: CreateUserInput): Promise<UserResponse> {
-    try {
-      const user = await this.usersService.create(input);
+  // @Mutation(() => UserResponse)
+  // async createUser(@Arg('input') input: CreateUserInput): Promise<UserResponse> {
+  //   try {
+  //     const user = await this.usersService.create(input);
       
-      logger.info('User creation successful', { 
-        userId: user.id,
-        email: user.email 
-      });
+  //     logger.info('User creation successful', { 
+  //       userId: user.id,
+  //       email: user.email 
+  //     });
 
-      return {
-        success: true,
-        user
-      };
-    } catch (error) {
-      return {
-        success: false,
-        errors: [{
-          field: error instanceof ValidationError ? 'email' : 'general',
-          message: error instanceof Error ? error.message : 'Failed to create user'
-        }]
-      };
-    }
-  }
+  //     return {
+  //       success: true,
+  //       user
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       errors: [{
+  //         field: error instanceof ValidationError ? 'email' : 'general',
+  //         message: error instanceof Error ? error.message : 'Failed to create user'
+  //       }]
+  //     };
+  //   }
+  // }
 
   /**
-   * Mutation to update an existing user
+   * Mutation to update the current user's profile
    * 
-   * @param id - ID of the user to update
    * @param input - Updated user data
    * @returns Response containing the updated user or error details
    * 
@@ -98,13 +98,16 @@ export class UserMutations {
    * ```graphql
    * mutation {
    *   updateUser(
-   *     id: 1
-   *     input: { name: "Jane Doe" }
+   *     input: { 
+   *       first_name: "John",
+   *       last_name: "Doe"
+   *     }
    *   ) {
    *     success
    *     user {
    *       id
-   *       name
+   *       first_name
+   *       last_name
    *     }
    *     errors {
    *       field
@@ -115,28 +118,30 @@ export class UserMutations {
    * ```
    */
   @Mutation(() => UserResponse)
+  @UseMiddleware(authMiddleware)
   async updateUser(
-    @Arg('id', () => Int) id: number,
+    @Ctx() context: any,
     @Arg('input') input: UpdateUserInput
   ): Promise<UserResponse> {
     try {
-      const user = await this.usersService.update(id, input);
+      const { uid } = context.user;
+      const updatedUser = await this.usersService.updateByFirebaseUid(uid, input);
       
-      logger.info('User update successful', { 
-        userId: user.id,
-        updates: input 
+      logger.info('User profile update successful', { 
+        userId: updatedUser.id,
+        updates: input
       });
 
       return {
         success: true,
-        user
+        user: updatedUser
       };
     } catch (error) {
       return {
         success: false,
         errors: [{
-          field: 'general',
-          message: error instanceof Error ? error.message : 'Failed to update user'
+          field: 'profile',
+          message: error instanceof Error ? error.message : 'Failed to update profile'
         }]
       };
     }
@@ -177,6 +182,38 @@ export class UserMutations {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to delete user'
+        }]
+      };
+    }
+  }
+
+  @Mutation(() => UserResponse)
+  @UseMiddleware(authMiddleware)
+  async firebaseAuth(@Ctx() context: any): Promise<UserResponse> {
+    try {
+      const { uid, email } = context.user;
+      
+      // find user by firebase uid
+      let user = await this.usersService.findByFirebaseUid(uid);
+      
+      if (!user) {
+        // if user not found, create new user
+        user = await this.usersService.create({
+          email: email || 'test@example.com',  // 使用 token 中的邮箱或默认值
+          firebase_uid: uid,
+        });
+      }
+
+      return {
+        success: true,
+        user
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'auth',
+          message: error instanceof Error ? error.message : 'Authentication failed'
         }]
       };
     }
