@@ -12,32 +12,6 @@ import logger from '../../../config/logger';
 
 /**
  * GraphQL mutation resolvers for community-related operations
- * 
- * @example
- * ```graphql
- * mutation {
- *   createCommunity (input: {
- *     name: "community name"
- *     influencerId: 1
- *     description: "community description (optional)"
- *   }) {
- *     success
- *     community {
- *       id
- *       name
- *       description
- *       influencer {
- *          name
- *       }
- *       influencerId
- *     }
- *     errors {
- *       field
- *       message
- *     }
- *   }
- * }
- * ```
  */
 @Service()
 @Resolver(Community)
@@ -53,20 +27,31 @@ export class CommunityMutations {
    * 
    * @example
    * ```graphql
-   * mutation {
-   *   createCommunity (input: {
-   *     name: "community name"
-   *     influencerId: 1
-   *     description: "community description (optional)"
-   *   }) {
-   *     success
-   *     community {
-   *     }
-   *     errors {
-   *       field
-   *       message
-   *     }
-   *   }
+   * mutation { createCommunity (
+   *    input: {
+   *        name: "community name",
+   *        influencerId: 1,
+   *        description: "community description (optional)",
+   *        thumbnail: "community thumbnail (optional)"
+   *    }) {
+   *        success 
+   *        community { 
+   *            id 
+   *            name 
+   *            description 
+   *            thumbnail 
+   *            influencer { 
+   *                first_name 
+   *                last_name 
+   *                email 
+   *            } 
+   *            influencer_id 
+   *        } 
+   *        errors { 
+   *            field 
+   *            message 
+   *        }
+   *    }
    * }
    * ```
    */
@@ -74,11 +59,9 @@ export class CommunityMutations {
   async createCommunity(@Arg('input') input: CreateCommunityInput): Promise<CommunityResponse> {
     try {
       const community = await this.communitiesService.create(input);
-      
       logger.info('Community creation successful', { 
         communityId: community.id,
       });
-
       return {
         success: true,
         community
@@ -87,7 +70,7 @@ export class CommunityMutations {
       return {
         success: false,
         errors: [{
-          field: error instanceof ValidationError ? 'email' : 'general',
+          field: 'general',
           message: error instanceof Error ? error.message : 'Failed to create community'
         }]
       };
@@ -103,22 +86,33 @@ export class CommunityMutations {
    * 
    * @example
    * ```graphql
-   * mutation {
-   *   updateCommunity(
-   *     id: 1
-   *     input: { 
-   *        name: "community name"
-   *        description: "community description" 
-   *     }
-   *   ) {
-   *     success
-   *     community {
-   *     }
-   *     errors {
-   *       field
-   *       message
-   *     }
-   *   }
+   * mutation { 
+   *    updateCommunity (
+   *        id: 1,
+   *        input: {
+   *            name: "updated name",
+   *            description: "updated description",
+   *            thumbnail: "updated thumbnail"
+   *        }
+   *    ) {
+   *        success 
+   *        community { 
+   *            id 
+   *            name 
+   *            description 
+   *            thumbnail 
+   *            influencer { 
+   *                first_name 
+   *                last_name 
+   *                email 
+   *            } 
+   *            influencer_id 
+   *        } 
+   *        errors { 
+   *            field 
+   *            message 
+   *        }
+   *    }
    * }
    * ```
    */
@@ -129,12 +123,10 @@ export class CommunityMutations {
   ): Promise<CommunityResponse> {
     try {
       const community = await this.communitiesService.update(id, input);
-      
       logger.info('Community update successful', { 
-        communityId: community.id,
+        communityId: id,
         updates: input 
       });
-
       return {
         success: true,
         community
@@ -157,24 +149,22 @@ export class CommunityMutations {
    * 
    * @example
    * ```graphql
-   * mutation {
-   *   deleteCommunity(id: 1) {
-   *     success
-   *     errors {
-   *       field
-   *       message
-   *     }
-   *   }
-   * }
+   * mutation { deleteCommunity(id: 1) {
+   *    success
+   *    errors {
+   *        field
+   *        message
+   *    }
+   * }}
    * ```
    */
   @Mutation(() => CommunityResponse)
   async deleteCommunity(@Arg('id', () => Int) id: number): Promise<CommunityResponse> {
     try {
       await this.communitiesService.delete(id);
-      
-      logger.info('Community deletion successful', { communityId: id });
-
+      logger.info('Community deletion successful', { 
+        communityId: id 
+      });
       return {
         success: true
       };
@@ -193,11 +183,6 @@ export class CommunityMutations {
 
 /**
  * GraphQL mutation resolvers for member-related operations
- * 
- * @example
- * ```graphql
- * example
- * ```
  */
 @Service()
 @Resolver(CommunityMember)
@@ -206,14 +191,45 @@ export class CommunityMemberMutations {
   constructor(private communityMembersService: CommunityMembersService) {}
 
   /**
-   * Mutation to add a member to a community
-   * 
+   * Mutation to add a Community/User relation
+   * e.g. add a User to a Community
    * @param input - Community/User creation data
    * @returns Response containing the newly created Community/User relation or error details
    * 
    * @example
    * ```graphql
-   * example
+   * mutation { 
+   *    createCommunity(
+   *        input: {
+   *            community_id: 3,
+   *            user_id: 31
+   *        }
+   *    ) { 
+   *        success 
+   *        community_member { 
+   *            community { 
+   *                name 
+   *                influencer { 
+   *                    first_name 
+   *                    last_name 
+   *                } 
+   *                influencer_id 
+   *            } 
+   *            community_id 
+   *            user { 
+   *                first_name 
+   *                last_name 
+   *            } 
+   *            user_id 
+   *            role 
+   *            status 
+   *        }
+   *        errors { 
+   *            field 
+   *            message 
+   *        }
+   *    } 
+   * }
    * ```
    */
   @Mutation(() => CommunityMemberResponse)
@@ -221,7 +237,7 @@ export class CommunityMemberMutations {
     try {
       const community_member = await this.communityMembersService.create(input);
       
-      logger.info('Community request creation successful', { 
+      logger.info('Community/User relation creation successful', { 
         communityId: community_member.community_id,
         userId: community_member.user_id,
       });
@@ -234,23 +250,57 @@ export class CommunityMemberMutations {
       return {
         success: false,
         errors: [{
-          field: error instanceof ValidationError ? 'email' : 'general',
-          message: error instanceof Error ? error.message : 'Failed to create community'
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to create community/user relation'
         }]
       };
     }
   }
 
   /**
-   * Mutation to update an existing community
+   * Mutation to update the role/status of a User in a Community
    * 
-   * @param id - ID of the community to update
-   * @param input - Updated community data
-   * @returns Response containing the updated community or error details
+   * @param community_id - ID of the community to update from
+   * @param user_id - ID of the user to update
+   * @param input - Updated user role/status data
+   * @returns Response containing the updated community/user relation or error details
    * 
    * @example
    * ```graphql
-   * example
+   * mutation { 
+   *    updateCommunityMember(
+   *        community_id: 3,
+   *        user_id: 41, 
+   *        input: {
+   *            role: "member",
+   *            status: "approved"
+   *        }
+   *    ) { 
+   *        success 
+   *        community_member { 
+   *            community { 
+   *                name 
+   *                influencer { 
+   *                    first_name 
+   *                    last_name 
+   *                } 
+   *                influencer_id 
+   *            } 
+   *            community_id 
+   *            user { 
+   *                first_name 
+   *                last_name 
+   *            } 
+   *            user_id 
+   *            role 
+   *            status 
+   *        }
+   *        errors { 
+   *            field 
+   *            message 
+   *        }
+   *    } 
+   * }
    * ```
    */
   @Mutation(() => CommunityMemberResponse)
@@ -262,7 +312,7 @@ export class CommunityMemberMutations {
     try {
       const community_member = await this.communityMembersService.update(community_id, user_id, input);
       
-      logger.info('Community Member update successful', { 
+      logger.info('Community/User relation update successful', { 
         communityId: community_member.community_id,
         userId: community_member.user_id,
         updates: input 
@@ -277,27 +327,29 @@ export class CommunityMemberMutations {
         success: false,
         errors: [{
           field: 'general',
-          message: error instanceof Error ? error.message : 'Failed to update community'
+          message: error instanceof Error ? error.message : 'Failed to update community/user relation'
         }]
       };
     }
   }
 
   /**
-   * Mutation to delete a community
-   * @param id - ID of the community to delete
+   * Mutation to remove a Community/User Relation
+   * i.e. remove a Member from a Community
+   * @param community_id - ID of the community to delete from
+   * @param user_id - ID of the user to delete
    * @returns Response indicating success or failure
    * 
    * @example
    * ```graphql
    * mutation {
-   *   deleteCommunityMember(community_id: 1, user_id: 1) {
-   *     success
-   *     errors {
-   *       field
-   *       message
-   *     }
-   *   }
+   *    deleteCommunityMember(community_id: 1, user_id: 1) {
+   *        success
+   *        errors {
+   *            field
+   *            message
+   *        }
+   *    }
    * }
    * ```
    */
@@ -308,11 +360,11 @@ export class CommunityMemberMutations {
   ): Promise<CommunityMemberResponse> {
     try {
       await this.communityMembersService.delete(community_id, user_id);
-      
-      logger.info('User successfully removed/rejected from community', { 
+
+      logger.info('Community/User relation deletion successful', { 
         communityId: community_id,
         userId: user_id
-    });
+      });
 
       return {
         success: true
@@ -322,7 +374,7 @@ export class CommunityMemberMutations {
         success: false,
         errors: [{
           field: 'general',
-          message: error instanceof Error ? error.message : 'Failed to delete community'
+          message: error instanceof Error ? error.message : 'Failed to delete community/user relation'
         }]
       };
     }

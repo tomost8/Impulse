@@ -16,6 +16,7 @@ type Community {
   influencer: User!
   influencer_id: Int!
   name: String!
+  thumbnail: String
   updated_at: DateTimeISO!
 }
 
@@ -52,6 +53,7 @@ input CreateCommunityInput {
   description: String
   influencer_id: Int!
   name: String!
+  thumbnail: String
 }
 
 input CreateCommunityMemberInput {
@@ -107,6 +109,7 @@ type Query {
 input UpdateCommunityInput {
   description: String
   name: String!
+  thumbnail: String
 }
 
 input UpdateCommunityMemberInput {

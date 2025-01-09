@@ -270,7 +270,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query Communities { communities { success communities { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }"
+  "query": "query { communities { success communities { id name description thumbnail influencer { id first_name last_name email } influencer_id } errors { field message } } }"
 }
 
 ### Query - Get Community by ID
@@ -278,9 +278,9 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query Community($id: Int!) { community(id: $id) { success community { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }",
+  "query": "query ($id: Int!) { community(id: $id) { success community { id name description thumbnail influencer { id first_name last_name email } influencer_id } errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 7
   }
 }
 
@@ -289,12 +289,11 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation CreateCommunity($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }",
+  "query": "mutation ($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description thumbnail influencer { first_name last_name email } influencer_id } errors { field message } } }",
   "variables": {
     "input": {
-      "name": "community init without description",
-      "influencer_id": 3,
-      "description": null
+      "name": "community name",
+      "influencer_id": 2
     }
   }
 }
@@ -304,9 +303,9 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($id: Int!, $input: UpdateCommunityInput!) { updateCommunity(id: $id, input: $input) { success community { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }",
+  "query": "mutation ($id: Int!, $input: UpdateCommunityInput!) { updateCommunity(id: $id, input: $input) { success community { id name description influencer { id first_name last_name email } influencer_id } errors { field message } } }",
   "variables": {
-    "id": 1,
+    "id": 3,
     "input": {
       "name": "community but with updated description",
       "description": "new description"
@@ -321,7 +320,7 @@ Content-Type: application/json
 {
   "query": "mutation($id: Int!) { deleteCommunity(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 6
   }
 }
 
@@ -333,11 +332,11 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation ($input: CreateCommunityMemberInput!) { createCommunityMember(input: $input) { success } }",
+  "query": "mutation ($input: CreateCommunityMemberInput!) { createCommunityMember(input: $input) { success community_member { community { name influencer {first_name last_name } influencer_id } community_id user { first_name last_name } user_id } errors { field message } } }",
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 3
+      "user_id": 2
     }
   }
 }
@@ -347,7 +346,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query CommunityMembers( $communityId: Int!) { communityMembers(id: $communityId) {success community_members { user { first_name last_name } user_id } errors { field, message } } }",
+  "query": "query ($communityId: Int!) { communityMembers(id: $communityId) {success community_members { user { first_name last_name } user_id role status } errors { field message } } }",
   "variables": {
     "communityId": 1
   }
@@ -358,14 +357,14 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation ($input: UpdateCommunityMemberInput!, $userId: Int!, $communityId: Int!) { updateCommunityMember(input: $input, user_id: $userId, community_id: $communityId) { success community_member { user_id role status } } }",
+  "query": "mutation ($communityId: Int!, $userId: Int!, $input: UpdateCommunityMemberInput!) { updateCommunityMember(community_id: $communityId, user_id: $userId, input: $input) { success community_member { community { name influencer { first_name last_name } influencer_id } community_id user { first_name last_name } user_id role status } errors { field message } } }",
   "variables": {
+    "communityId": 1,
+    "userId": 2,
     "input": {
       "role": "member",
-      "status": "pending"
-    },
-    "communityId": 1,
-    "userId": 3
+      "status": "approved"
+    }
   }
 }
 
@@ -376,7 +375,7 @@ Content-Type: application/json
 {
   "query": "mutation ($userId: Int!, $communityId: Int!) { deleteCommunityMember(user_id: $userId, community_id: $communityId) { success errors { field message } } }",  
   "variables": {
-    "userId": 3,
-    "communityId": 1
+    "communityId": 1,
+    "userId": 2
   }
 }

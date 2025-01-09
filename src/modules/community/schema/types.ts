@@ -17,6 +17,7 @@ import { User, FieldError } from '../../user/schema/types';
  *   id: 1,
  *   name: "community name",
  *   description: "community description",
+ *   thumbnail: "community thumbnail"
  *   influencer: User,
  *   influencer_id: 1,
  *   created_at: new Date(),
@@ -37,6 +38,10 @@ export class Community {
   /** Community description */
   @Field(() => String, { nullable: true })
   description!: string | null;
+
+  /** Community thumbnail */
+  @Field(() => String, { nullable: true })
+  thumbnail!: string | null;
 
   /** Influencer leading the community */
   @Field(() => User)

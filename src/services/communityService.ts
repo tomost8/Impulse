@@ -53,15 +53,23 @@ export class CommunitiesService {
    */
   async create(input: CreateCommunityInput): Promise<Community> {
     try {
-        return await this.prisma.community.create({
+        let community = await this.prisma.community.create({
             data: input,
             include: { influencer: true },
         });
+        let owner_relation = await this.prisma.communityMembers.create({
+          data: {
+            community_id: community.id,
+            user_id: input.influencer_id,
+            role: "owner",
+            status: "approved",
+          }
+        });
+        return community;
     } catch (error: any) {
-      // Transform known error cases
-      //if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-      //  throw new ValidationError(`User with email ${input.email} already exists`);
-      //}
+      if (error.code === 'P2003') {
+        throw new NotFoundError(`Foreign key constraint violated: user with ID ${input.influencer_id} cannot be found`);
+      }
       throw error;
     }
   }
@@ -115,10 +123,10 @@ export class CommunitiesService {
 
 
 /**
- * Service handling Community/Member-related business logic
+ * Service handling Community member-related business logic
  * 
- * This service provides methods for managing Community/Member relations in the system,
- * including CRUD operations and Community/Member-specific business logic.
+ * This service provides methods for managing Community/User relations in the system,
+ * including CRUD operations and Community/User-specific business logic.
  * 
  * @remarks
  * Uses Prisma as the ORM for database operations
@@ -134,6 +142,12 @@ export class CommunityMembersService {
    * @throws {PrismaError} If database query fails
    */
   async findById(id: number): Promise<CommunityMember[] | null> {
+    let community = await this.prisma.community.findUnique({
+      where: { id }
+    });
+    if (!community) {
+      return null;
+    }
     return await this.prisma.communityMembers.findMany({
         where: { 
             community_id: id
@@ -170,6 +184,12 @@ export class CommunityMembersService {
             }
         });
     } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new Error(`There is alreay relation between user with ID ${input.user_id} and community with ID ${input.community_id}`);
+      }
+      if (error.code === 'P2003') {
+        throw new NotFoundError(`Foreign key constraint violated: either community with ID ${input.community_id} or user with ID ${input.user_id} cannot be found`);
+      }
       throw error;
     }
   }
@@ -205,7 +225,7 @@ export class CommunityMembersService {
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
-        throw new NotFoundError(`Community with ID ${community_id} not found`);
+        throw new NotFoundError(`Relation between user with ID ${user_id} and community with ID ${community_id} not found`);
       }
       throw error;
     }
@@ -229,7 +249,7 @@ export class CommunityMembersService {
         });
     } catch (error: any) {
       if (error.code === 'P2025') {
-        throw new NotFoundError(`Community with ID ${community_id} not found`);
+        throw new NotFoundError(`Relation between user with ID ${user_id} and community with ID ${community_id} not found`);
       }
       throw error;
     }

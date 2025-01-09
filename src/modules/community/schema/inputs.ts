@@ -11,7 +11,8 @@ import { IsInt, Length, IsOptional, IsString } from 'class-validator';
  * ```typescript
  * const input: CreateCommunityInput = {
  *    "name": "community name",
- *    "description": "comunity description (optional)",
+ *    "description": "community description (optional)",
+ *    "thumbnail": "community thumbnail (optional)"
  *    "influencer_id": 1
  * };
  * ```
@@ -30,6 +31,12 @@ export class CreateCommunityInput {
   @IsString({ message: 'Community description must be a string' })
   description?: string | null;
 
+  /** Optional community thumbnail */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Community thumbnail must be a string' })
+  thumbnail?: string | null;
+
   /** Influencer user id */
   @Field(() => Int)
   @IsInt({ message: 'Influencer id must be an int' })
@@ -46,7 +53,8 @@ export class CreateCommunityInput {
  * ```typescript
  * const update: UpdateCommunityInput = {
  *   "name": "updated community name",
- *   "description": "updated community description"
+ *   "description": "updated community description",
+ *   "thumbnail": "updated community thumbnail"
  * };
  * ```
  */
@@ -64,6 +72,12 @@ export class UpdateCommunityInput {
   @IsOptional()
   @IsString({ message: 'Community description must be a string' })
   description?: string | null;
+
+  /** Optional community thumbnail */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Community thumbnail must be a string' })
+  thumbnail?: string | null;
 } 
 
 
