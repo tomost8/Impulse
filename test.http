@@ -199,6 +199,25 @@ Content-Type: application/json
   }
 }
 
+### Mutation - Create User
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($input: CreateUserInput!) { createUser(input: $input) { success user { id email first_name last_name } errors { field message } } }",
+  "variables": {
+    "input": {
+      "email": "test2@example.com",
+      "password": "password123",
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "username": "janesmith",
+      "gender": "female",
+      "timezone": "UTC"
+    }
+  }
+}
+
 ### Mutation - Update User
 POST http://localhost:3000/graphql
 Content-Type: application/json
@@ -251,7 +270,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query Communities { communities { success communities { id name description influencer { id first_name last_name email } influencerId createdAt updatedAt } errors { field message } } }"
+  "query": "query Communities { communities { success communities { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }"
 }
 
 ### Query - Get Community by ID
@@ -259,7 +278,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query Community($id: Int!) { community(id: $id) { success community { id name description influencer { id first_name last_name email } influencerId createdAt updatedAt } errors { field message } } }",
+  "query": "query Community($id: Int!) { community(id: $id) { success community { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }",
   "variables": {
     "id": 1
   }
@@ -270,11 +289,11 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation CreateCommunity($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description influencer { id first_name last_name email } influencerId createdAt updatedAt } errors { field message } } }",
+  "query": "mutation CreateCommunity($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }",
   "variables": {
     "input": {
       "name": "community init without description",
-      "influencerId": 1,
+      "influencer_id": 3,
       "description": null
     }
   }
@@ -285,7 +304,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation($id: Int!, $input: UpdateCommunityInput!) { updateCommunity(id: $id, input: $input) { success community { id name description influencer { id first_name last_name email } influencerId createdAt updatedAt } errors { field message } } }",
+  "query": "mutation($id: Int!, $input: UpdateCommunityInput!) { updateCommunity(id: $id, input: $input) { success community { id name description influencer { id first_name last_name email } influencer_id created_at updated_at } errors { field message } } }",
   "variables": {
     "id": 1,
     "input": {
@@ -303,5 +322,61 @@ Content-Type: application/json
   "query": "mutation($id: Int!) { deleteCommunity(id: $id) { success errors { field message } } }",
   "variables": {
     "id": 1
+  }
+}
+
+
+### GraphQL Community Member API Tests ###
+
+### Mutation - Create Community Member
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateCommunityMemberInput!) { createCommunityMember(input: $input) { success } }",
+  "variables": {
+    "input": {
+      "community_id": 1,
+      "user_id": 3
+    }
+  }
+}
+
+### Query - Get Community Members by Community ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query CommunityMembers( $communityId: Int!) { communityMembers(id: $communityId) {success community_members { user { first_name last_name } user_id } errors { field, message } } }",
+  "variables": {
+    "communityId": 1
+  }
+}
+
+### Query - Update community member role/status
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: UpdateCommunityMemberInput!, $userId: Int!, $communityId: Int!) { updateCommunityMember(input: $input, user_id: $userId, community_id: $communityId) { success community_member { user_id role status } } }",
+  "variables": {
+    "input": {
+      "role": "member",
+      "status": "pending"
+    },
+    "communityId": 1,
+    "userId": 3
+  }
+}
+
+### Query - Delete member from community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($userId: Int!, $communityId: Int!) { deleteCommunityMember(user_id: $userId, community_id: $communityId) { success errors { field message } } }",  
+  "variables": {
+    "userId": 3,
+    "communityId": 1
   }
 }

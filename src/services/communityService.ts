@@ -1,7 +1,8 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Community } from '../modules/community/schema/types';
+import { Community, CommunityMember } from '../modules/community/schema/types';
 import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/inputs';
+import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/inputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 
 /**
@@ -104,6 +105,131 @@ export class CommunitiesService {
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundError(`Community with ID ${id} not found`);
+      }
+      throw error;
+    }
+  }
+} 
+
+
+
+
+/**
+ * Service handling Community/Member-related business logic
+ * 
+ * This service provides methods for managing Community/Member relations in the system,
+ * including CRUD operations and Community/Member-specific business logic.
+ * 
+ * @remarks
+ * Uses Prisma as the ORM for database operations
+ */
+@Service()
+export class CommunityMembersService {
+  constructor(private prisma: PrismaClient) {}
+  /**
+   * Find all members of a community given community ID
+   * 
+   * @param id - The unique identifier of the community
+   * @returns Promise resolving to the community members if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findById(id: number): Promise<CommunityMember[] | null> {
+    return await this.prisma.communityMembers.findMany({
+        where: { 
+            community_id: id
+        },
+        include: {
+          community: {
+            include: {
+              influencer: true
+            }
+          },
+          user: true
+        }
+    });
+  }
+
+  /**
+   * Add a user to a community
+   * 
+   * @param input - Community/Member creation data
+   * @returns Promise resolving to the created Community/Member relation
+   * @throws {PrismaError} If database operation fails
+   */
+  async create(input: CreateCommunityMemberInput): Promise<CommunityMember> {
+    try {
+        return await this.prisma.communityMembers.create({
+            data: input,
+            include: {
+              community: {
+                include: {
+                  influencer: true
+                }
+              },
+              user: true
+            }
+        });
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  /**
+   * Update role/status of a community member
+   * 
+   * @param community_id - ID of the community
+   * @param user_id - ID of the user
+   * @param input - Updated community data
+   * @returns Promise resolving to the updated community
+   * @throws {NotFoundError} If community doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
+  async update(community_id: number, user_id: number, input: UpdateCommunityMemberInput): Promise<CommunityMember> {
+    try {
+      return await this.prisma.communityMembers.update({
+        where: { 
+            community_id_user_id: {
+                community_id: community_id,
+                user_id: user_id,
+            }
+        },
+        data: input,
+        include: {
+          community: {
+            include: {
+              influencer: true
+            }
+          },
+          user: true
+        }
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundError(`Community with ID ${community_id} not found`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a user from a community
+   * 
+   * @param community_id - ID of the community
+   * @param user_id - ID of the user
+   * @throws {NotFoundError} If Community/Member relation doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
+  async delete(community_id: number, user_id: number): Promise<void> {
+    try {
+        await this.prisma.communityMembers.delete({
+            where: { community_id_user_id: {
+                community_id: community_id,
+                user_id: user_id,
+            } },
+        });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundError(`Community with ID ${community_id} not found`);
       }
       throw error;
     }

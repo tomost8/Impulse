@@ -10,9 +10,9 @@ import { IsInt, Length, IsOptional, IsString } from 'class-validator';
  * @example
  * ```typescript
  * const input: CreateCommunityInput = {
-      "name": "community name",
-      "influencerId": 1,
-      "description": "comunity description (optional)"
+ *    "name": "community name",
+ *    "description": "comunity description (optional)",
+ *    "influencer_id": 1
  * };
  * ```
  */
@@ -33,7 +33,7 @@ export class CreateCommunityInput {
   /** Influencer user id */
   @Field(() => Int)
   @IsInt({ message: 'Influencer id must be an int' })
-  influencerId!: number;
+  influencer_id!: number;
 }
 
 /**
@@ -45,8 +45,8 @@ export class CreateCommunityInput {
  * @example
  * ```typescript
  * const update: UpdateCommunityInput = {
- *   "name": "updated name",
- *   "description": "updated description"
+ *   "name": "updated community name",
+ *   "description": "updated community description"
  * };
  * ```
  */
@@ -64,4 +64,59 @@ export class UpdateCommunityInput {
   @IsOptional()
   @IsString({ message: 'Community description must be a string' })
   description?: string | null;
+} 
+
+
+/**
+ * Input type for creating a new community/user relation
+ * 
+ * @remarks
+ * This type is used in the createCommunityMember mutation
+ * 
+ * @example
+ * ```typescript
+ * const input: CreateCommunityMemberInput = {
+ *    "community_id": 1,
+ *    "user_id": 1
+ * };
+ * ```
+ */
+@InputType()
+export class CreateCommunityMemberInput {
+  /** Community ID */
+  @Field(() => Int)
+  @IsInt({ message: 'Community id must be an int' })
+  community_id!: number;
+
+  /** User ID */
+  @Field(() => Int)
+  @IsInt({ message: 'User id must be an int' })
+  user_id!: number;
+}
+
+/**
+ * Input type for updating a new community/user relation
+ * 
+ * @remarks
+ * All fields are optional as this is used for partial updates
+ * 
+ * @example
+ * const update: UpdateCommunityInput = {
+ *   "role": "member",
+ *   "status": "approved"
+ * };
+ */
+@InputType()
+export class UpdateCommunityMemberInput {
+  /** User role in community (optional) */
+  @Field(() => String, { nullable: true })
+  //@IsOptional()
+  @IsString({ message: 'User role must be a string' })
+  role!: string;
+
+  /** User status in community (optional) */
+  @Field(() => String, { nullable: true })
+  //@IsOptional()
+  @IsString({ message: 'User status must be a string' })
+  status!: string;
 } 

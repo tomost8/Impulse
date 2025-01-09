@@ -18,33 +18,52 @@ datasource db {
 
 // 示例模型
 model User {
-  id               Int         @id @default(autoincrement())
-  email            String      @unique
-  password         String      @default("$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm")
-  first_name       String
-  last_name        String
-  username         String
-  dob              DateTime?   @db.Date
-  gender           String
-  profile_picture  String?
-  role             String      @default("user")
-  status           String      @default("active")
-  timezone         String
-  searchable       Boolean     @default(true)
-  fcm_token        String?
-  created_at       DateTime    @default(now())
-  updated_at       DateTime    @default(now()) @updatedAt
-  communitiesOwned Community[]
+  id                    Int                @id @default(autoincrement())
+  email                 String             @unique
+  password              String             @default("$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm")
+  first_name            String
+  last_name             String
+  username              String
+  dob                   DateTime?          @db.Date
+  gender                String
+  profile_picture       String?
+  role                  String             @default("user")
+  status                String             @default("active")
+  timezone              String
+  searchable            Boolean            @default(true)
+  fcm_token             String?
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @default(now()) @updatedAt
+  communities_owned     Community[]
+  community_memberships CommunityMembers[]
 
   @@map("users")
 }
 
 model Community {
-  id           Int      @id @default(autoincrement())
-  name         String
-  description  String?
-  influencer   User     @relation(fields: [influencerId], references: [id])
-  influencerId Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                Int                @id @default(autoincrement())
+  name              String
+  description       String?
+  thumbnail         String?
+  influencer        User               @relation(fields: [influencer_id], references: [id])
+  influencer_id     Int
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  community_members CommunityMembers[]
+
+  @@map("community")
+}
+
+model CommunityMembers {
+  id           Int       @id @default(autoincrement())
+  community    Community @relation(fields: [community_id], references: [id])
+  community_id Int
+  user         User      @relation(fields: [user_id], references: [id])
+  user_id      Int
+  role         String    @default("member")
+  status       String    @default("pending")
+  joined_at    DateTime  @default(now())
+
+  @@unique([community_id, user_id])
+  @@map("community_members")
 }

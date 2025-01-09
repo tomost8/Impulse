@@ -10,13 +10,36 @@ type CommunitiesResponse {
 }
 
 type Community {
-  createdAt: DateTimeISO!
+  created_at: DateTimeISO!
   description: String
   id: Int!
   influencer: User!
-  influencerId: Int!
+  influencer_id: Int!
   name: String!
-  updatedAt: DateTimeISO!
+  updated_at: DateTimeISO!
+}
+
+type CommunityMember {
+  community: Community!
+  community_id: Int!
+  id: Int!
+  joined_at: DateTimeISO!
+  role: String!
+  status: String!
+  user: User!
+  user_id: Int!
+}
+
+type CommunityMemberResponse {
+  community_member: CommunityMember
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type CommunityMembersResponse {
+  community_members: [CommunityMember!]
+  errors: [FieldError!]
+  success: Boolean!
 }
 
 type CommunityResponse {
@@ -27,8 +50,13 @@ type CommunityResponse {
 
 input CreateCommunityInput {
   description: String
-  influencerId: Int!
+  influencer_id: Int!
   name: String!
+}
+
+input CreateCommunityMemberInput {
+  community_id: Int!
+  user_id: Int!
 }
 
 input CreateUserInput {
@@ -58,16 +86,20 @@ type FieldError {
 
 type Mutation {
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
+  createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
   createUser(input: CreateUserInput!): UserResponse!
   deleteCommunity(id: Int!): CommunityResponse!
+  deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
   deleteUser(id: Int!): UserResponse!
   updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
+  updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
   updateUser(id: Int!, input: UpdateUserInput!): UserResponse!
 }
 
 type Query {
   communities: CommunitiesResponse!
   community(id: Int!): CommunityResponse!
+  communityMembers(id: Int!): CommunityMembersResponse!
   user(id: Int!): UserResponse!
   users: UsersResponse!
 }
@@ -75,6 +107,11 @@ type Query {
 input UpdateCommunityInput {
   description: String
   name: String!
+}
+
+input UpdateCommunityMemberInput {
+  role: String
+  status: String
 }
 
 input UpdateUserInput {
