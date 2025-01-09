@@ -3,25 +3,66 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
-input CreateUserInput {
-  dob: DateTimeISO
-  email: String!
-  fcm_token: String
-  first_name: String!
-  gender: String!
-  last_name: String!
-  password: String!
-  profile_picture: String
-  role: String
-  searchable: Boolean
-  timezone: String!
-  username: String!
+type CommunitiesResponse {
+  communities: [Community!]
+  errors: [FieldError!]
+  success: Boolean!
 }
 
-"""
-A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format.
-"""
-scalar DateTimeISO
+type Community {
+  created_at: Date!
+  description: String
+  id: Int!
+  influencer: User!
+  influencer_id: Int!
+  name: String!
+  thumbnail: String
+  updated_at: Date!
+}
+
+type CommunityMember {
+  community: Community!
+  community_id: Int!
+  id: Int!
+  joined_at: Date!
+  role: String!
+  status: String!
+  user: User!
+  user_id: Int!
+}
+
+type CommunityMemberResponse {
+  community_member: CommunityMember
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type CommunityMembersResponse {
+  community_members: [CommunityMember!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type CommunityResponse {
+  community: Community
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+input CreateCommunityInput {
+  description: String
+  influencer_id: Int!
+  name: String!
+  thumbnail: String
+}
+
+input CreateCommunityMemberInput {
+  community_id: Int!
+  user_id: Int!
+}
+
+"""Date custom scalar type for YYYY-MM-DD format"""
+scalar Date
 
 type FieldError {
   field: String!
@@ -29,47 +70,69 @@ type FieldError {
 }
 
 type Mutation {
-  createUser(input: CreateUserInput!): UserResponse!
+  createCommunity(input: CreateCommunityInput!): CommunityResponse!
+  createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
+  deleteCommunity(id: Int!): CommunityResponse!
+  deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
   deleteUser(id: Int!): UserResponse!
-  updateUser(id: Int!, input: UpdateUserInput!): UserResponse!
+  firebaseAuth: UserResponse!
+  updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
+  updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
+  updateUser(input: UpdateUserInput!): UserResponse!
 }
 
 type Query {
-  user(id: Int!): UserResponse!
+  communities: CommunitiesResponse!
+  community(id: Int!): CommunityResponse!
+  communityMembers(id: Int!): CommunityMembersResponse!
+  me: UserResponse!
+  user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!
 }
 
+input UpdateCommunityInput {
+  description: String
+  name: String!
+  thumbnail: String
+}
+
+input UpdateCommunityMemberInput {
+  role: String
+  status: String
+}
+
 input UpdateUserInput {
-  dob: DateTimeISO
-  email: String
+  dob: Date
   fcm_token: String
   first_name: String
   gender: String
   last_name: String
-  password: String
   profile_picture: String
   role: String
   searchable: Boolean
+  status: String
   timezone: String
   username: String
 }
 
 type User {
-  created_at: DateTimeISO!
-  dob: DateTimeISO
+  created_at: Date!
+  dob: Date
   email: String!
   fcm_token: String
-  first_name: String!
-  gender: String!
+  firebase_uid: String
+  first_name: String
+  gender: String
   id: Int!
-  last_name: String!
+  last_login_at: Date
+  last_name: String
   profile_picture: String
   role: String!
   searchable: Boolean!
   status: String!
-  timezone: String!
-  updated_at: DateTimeISO!
-  username: String!
+  timezone: String
+  updated_at: Date!
+  username: String
 }
 
 type UserResponse {
