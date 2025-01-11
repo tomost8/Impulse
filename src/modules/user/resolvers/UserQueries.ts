@@ -71,10 +71,6 @@ export class UserQueries {
         };
       }
 
-      logger.info('Successfully fetched current user', { 
-        userId: user.id,
-        email: user.email
-      });
 
       return { success: true, user };
     } catch (error: any) {
@@ -192,11 +188,6 @@ export class UserQueries {
         };
       }
 
-      logger.info('Successfully fetched user', { 
-        userId: user.id,
-        email: user.email,
-        firebaseUid: user.firebase_uid
-      });
 
       return { success: true, user };
     } catch (error: any) {
