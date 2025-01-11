@@ -36,7 +36,8 @@ export class ActivitiesService {
       include: {
         post: {
           include: {
-            author: true
+            author: true,
+            post_targets: true
           }
         }
       }
@@ -56,7 +57,8 @@ export class ActivitiesService {
       include: {
         post: {
           include: {
-            author: true
+            author: true,
+            post_targets: true
           }
         }
       }
@@ -78,6 +80,8 @@ export class ActivitiesService {
    */
   async create(data: CreateActivityInput): Promise<Activity> {
     try {
+      console.log('Received postId:', data.postId);
+
       return await this.prisma.activity.create({
         data: {
           ...data,
@@ -86,7 +90,8 @@ export class ActivitiesService {
         include: {
           post: {
             include: {
-              author: true
+              author: true,
+              post_targets: true
             }
           }
         }
@@ -115,7 +120,8 @@ export class ActivitiesService {
         include: {
           post: {
             include: {
-              author: true
+              author: true,
+              post_targets: true
             }
           }
         }
@@ -145,7 +151,8 @@ export class ActivitiesService {
         include: {
           post: {
             include: {
-              author: true
+              author: true,
+              post_targets: true
             }
           }
         }
@@ -156,5 +163,23 @@ export class ActivitiesService {
       }
       throw error;
     }
+  }
+
+  async findByUserId(userId: number, options?: { skip?: number; take?: number; }): Promise<Activity[]> {
+    return await this.prisma.activity.findMany({
+      skip: options?.skip,
+      take: options?.take,
+      where: {
+        userId
+      },
+      include: {
+        post: {
+          include: {
+            author: true,
+            post_targets: true
+          }
+        }
+      }
+    });
   }
 } 

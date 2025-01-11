@@ -18,6 +18,8 @@
   "dependencies": {
     "@apollo/server": "^4.11.3",
     "@prisma/client": "^6.1.0",
+    "@types/bull": "^3.15.9",
+    "bull": "^4.16.5",
     "class-validator": "^0.14.1",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",

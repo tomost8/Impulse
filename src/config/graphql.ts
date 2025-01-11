@@ -4,7 +4,7 @@ import { UserQueries, UserMutations } from '../modules/user';
 
 import { CommunityQueries, CommunityMutations, CommunityMemberQueries, CommunityMemberMutations } from '../modules/community';
 import { ActivityQueries, ActivityMutations } from '../modules/activity';
-import { DateScalar } from '../modules/common/scalars/dateScalar';
+import { PostQueries, PostMutations } from '../modules/post';
 
 import './prisma'; // 确保 Prisma 客户端被初始化
 
@@ -18,7 +18,9 @@ export const createSchema = async () => {
       CommunityMemberQueries, 
       CommunityMemberMutations,
       ActivityQueries,
-      ActivityMutations
+      ActivityMutations,
+      PostQueries,
+      PostMutations
     ],
     container: Container,
     validate: { forbidUnknownValues: false },

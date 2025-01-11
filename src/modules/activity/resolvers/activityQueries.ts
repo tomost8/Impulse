@@ -60,4 +60,28 @@ export class ActivityQueries {
       };
     }
   }
+
+  @Query(() => ActivitiesResponse)
+  async activitiesByUserId(
+    @Arg('userId', () => Int) userId: number,
+    @Arg('skip', () => Int, { nullable: true }) skip?: number,
+    @Arg('take', () => Int, { nullable: true }) take?: number
+  ): Promise<ActivitiesResponse> {
+    try {
+      const activities = await this.activitiesService.findByUserId(userId, { skip, take });
+      return {
+        success: true,
+        activities
+      };
+    } catch (error) {
+      logger.error(`Failed to fetch activities for user with id ${userId}:`, error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch activities'
+        }]
+      };
+    }
+  }
 } 

@@ -36,6 +36,9 @@ export class Activity {
 
   @Field(() => Date)
   updatedAt: Date;
+
+  @Field(() => Int)
+  userId: number;
 }
 
 @ObjectType()

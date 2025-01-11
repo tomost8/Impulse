@@ -405,12 +405,26 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($skip: Int, $take: Int, $category: String, $status: String) { activities(skip: $skip, take: $take, category: $category, status: $status) { success activities { id category status post { id author { id first_name last_name } } } errors { field message } } }",
+  "query": "query($skip: Int, $take: Int, $category: String, $status: String) { activities(skip: $skip, take: $take, category: $category, status: $status) { success activities { id category scheduledDatetime duration status post { id author { id first_name last_name } } } } errors { field message } } }",
   "variables": {
     "skip": 0,
     "take": 10,
     "category": "social",
     "status": "pending"
+  }
+}
+
+### Query - Get Activities by User ID
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($userId: Int!, $skip: Int, $take: Int) { activitiesByUserId(userId: $userId, skip: $skip, take: $take) { success activities { id userId category scheduledDatetime duration status post { id author { id first_name last_name } } } errors { field message } } }",
+  "variables": {
+    "userId": 1,
+    "skip": 0,
+    "take": 10
   }
 }
 
@@ -422,7 +436,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "query($id: Int!) { activity(id: $id) { success activity { id category status post { id author { id first_name last_name } } } errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 6
   }
 }
 
@@ -435,8 +449,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id category scheduledDatetime duration status post { id author { id first_name last_name } } } errors { field message } } }",
   "variables": {
     "input": {
+      "userId": 1,
       "category": "social",
-      "scheduledDatetime": "2023-10-10T13:00:00Z",
+      "scheduledDatetime": "2025-01-11T13:00:00Z",
       "duration": 60
     }
   }
@@ -452,7 +467,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "id": 1,
     "input": {
-      "category": "event",
+      "name": "morning workout",
       "status": "completed"
     }
   }
@@ -469,3 +484,261 @@ Authorization: Bearer {{authToken}}
     "id": 3
   }
 }
+
+### GraphQL Post API Tests ###
+
+### Mutation - Create Post
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "input": {
+      "caption": "New Post",
+      "category": "news",
+      "authorId": 1,
+      "post_targets": [
+        {
+          "target_type": "user",
+          "target_id": 2
+        }
+      ]
+    }
+  }
+}
+
+### Mutation - Update Post
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($id: Int!, $input: UpdatePostInput!) { updatePost(id: $id, input: $input) { success post { id caption category post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "id": 1,
+    "input": {
+      "caption": "Updated Post"
+    }
+  }
+}
+
+### Mutation - Delete Post
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($id: Int!) { deletePost(id: $id) { success errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Query - Get All Posts
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($skip: Int, $take: Int, $category: String) { posts(skip: $skip, take: $take, category: $category) { success posts { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "skip": 0,
+    "take": 10,
+    "category": "news"
+  }
+}
+
+### Query - Get Post by ID
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($id: Int!) { post(id: $id) { success post { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Query - Get Posts by User ID
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($userId: Int!, $skip: Int, $take: Int) { postsByUserId(userId: $userId, skip: $skip, take: $take) { success posts { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "userId": 1,
+    "skip": 0,
+    "take": 10
+  }
+}
+
+### Mutation - Create Post with Multiple Friends
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "input": {
+      "caption": "Group Message to Friends",
+      "category": "social",
+      "authorId": 1,
+      "post_targets": [
+        { "target_type": "user", "target_id": 2 },
+        { "target_type": "user", "target_id": 3 },
+        { "target_type": "user", "target_id": 4 },
+        { "target_type": "user", "target_id": 5 },
+        { "target_type": "user", "target_id": 6 }
+        // ... 可以继续添加更多目标用户
+      ],
+      "media_urls": {
+        "images": [],
+        "videos": []
+      }
+    }
+  }
+}
+
+### Query - Get Post Targets Count
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($id: Int!) { post(id: $id) { success post { id caption category post_targets { id target_type target_id } _count { post_targets } } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Mutation - Create Post with Batch Processing
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption category } errors { field message } } }",
+  "variables": {
+    "input": {
+      "caption": "Batch Message to Friends",
+      "category": "social",
+      "authorId": 1,
+      "post_targets": [
+        { "target_type": "user", "target_id": 2 },
+        { "target_type": "user", "target_id": 3 }
+      ],
+      "batch_size": 20
+    }
+  }
+}
+
+### Mutation - Add Post Targets (Batch)
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: AddPostTargetsInput!) { addPostTargets(input: $input) { success count errors { field message } } }",
+  "variables": {
+    "input": {
+      "post_id": 1,
+      "targets": [
+        { "target_type": "user", "target_id": 4 },
+        { "target_type": "user", "target_id": 5 }
+      ]
+    }
+  }
+}
+
+### Query - Get Post Targets with Pagination
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($id: Int!, $skip: Int, $take: Int) { post(id: $id) { success post { id caption category post_targets(skip: $skip, take: $take) { id target_type target_id } _count { post_targets } } errors { field message } } }",
+  "variables": {
+    "id": 1,
+    "skip": 0,
+    "take": 20
+  }
+}
+
+### 创建带有100个目标用户的帖子
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "input": {
+      "caption": "Test Post with Many Targets",
+      "category": "social",
+      "authorId": 1,
+      "post_targets": [
+            {"target_type": "user", "target_id": 2},
+            {"target_type": "user", "target_id": 3},
+            {"target_type": "user", "target_id": 4},
+            {"target_type": "user", "target_id": 5},
+            {"target_type": "user", "target_id": 6},
+            {"target_type": "user", "target_id": 7},
+            {"target_type": "user", "target_id": 8},
+            {"target_type": "user", "target_id": 9},
+            {"target_type": "user", "target_id": 10},
+            {"target_type": "user", "target_id": 11},
+            {"target_type": "user", "target_id": 12},
+            {"target_type": "user", "target_id": 13},
+            {"target_type": "user", "target_id": 14},
+            {"target_type": "user", "target_id": 15},
+            {"target_type": "user", "target_id": 16},
+            {"target_type": "user", "target_id": 17},
+            {"target_type": "user", "target_id": 18},
+            {"target_type": "user", "target_id": 19},
+            {"target_type": "user", "target_id": 20},
+            {"target_type": "user", "target_id": 21},
+            {"target_type": "user", "target_id": 22},
+            {"target_type": "user", "target_id": 23},
+            {"target_type": "user", "target_id": 24},
+            {"target_type": "user", "target_id": 25},
+            {"target_type": "user", "target_id": 26},
+            {"target_type": "user", "target_id": 27},
+            {"target_type": "user", "target_id": 28},
+            {"target_type": "user", "target_id": 29},
+            {"target_type": "user", "target_id": 30}
+        // ... 为了测试方便，这里只列出10个目标用户
+      ],
+      "media_urls": {
+        "images": [],
+        "videos": []
+      }
+    }
+  }
+}
+
+### 查询帖子处理进度
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query($postId: Int!) { getPostTargetsProgress(postId: $postId) { processed total status } }",
+  "variables": {
+    "postId": 1  // 替换为实际的帖子ID
+  }
+}
+
+### 查询帖子详情（验证目标是否已创建）
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query($postId: Int!) { getPostById(id: $postId) { id caption category author { id first_name last_name } post_targets { id target_type target_id } } }",
+  "variables": {
+    "postId": 1  // 替换为实际的帖子ID
+  }
+}
+

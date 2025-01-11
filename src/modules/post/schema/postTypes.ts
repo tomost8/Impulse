@@ -37,20 +37,20 @@ export class Post {
   @Field(() => Date, { nullable: true })
   expires_at: Date | null;
 
-  @Field(() => [PostTarget], { nullable: true })
-  post_targets?: PostTarget[] | null;
+  @Field(() => [PostTarget])
+  post_targets: PostTarget[];
 
   @Field(() => [PostView], { nullable: true })
   post_views?: PostView[] | null;
+
+  @Field(() => String)
+  category: string;
 }
 
 @ObjectType()
 export class PostTarget {
   @Field(() => Int)
   id: number;
-
-  @Field(() => Post)
-  post: Post;
 
   @Field(() => Int)
   post_id: number;
@@ -63,6 +63,9 @@ export class PostTarget {
 
   @Field(() => Date)
   created_at: Date;
+
+  @Field(() => Post, { nullable: true })
+  post?: Post;
 }
 
 @ObjectType()
@@ -70,14 +73,14 @@ export class PostView {
   @Field(() => Int)
   id: number;
 
-  @Field(() => Post)
-  post: Post;
+  @Field(() => Post, { nullable: true })
+  post?: Post;
 
   @Field(() => Int)
   post_id: number;
 
-  @Field(() => User)
-  user: User;
+  @Field(() => User, { nullable: true })
+  user?: User;
 
   @Field(() => Int)
   user_id: number;
@@ -108,4 +111,16 @@ export class PostsResponse {
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
+}
+
+@ObjectType()
+export class PostTargetsProgress {
+  @Field()
+  processed: number;
+
+  @Field()
+  total: number;
+
+  @Field()
+  status: string;
 }
