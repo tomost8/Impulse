@@ -1,6 +1,7 @@
 import { Field, ObjectType, Int } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
 import { FieldError } from '../../common/types/errorTypes';
+import { DateScalar } from '../../common/scalars/dateScalar';
 
 /**
  * User entity representing a user in the system
@@ -50,7 +51,7 @@ export class User {
   username!: string | null;
 
   /** User's date of birth */
-  @Field(() => Date, { nullable: true })
+  @Field(() => DateScalar, { nullable: true })
   dob!: Date | null;
 
   /** User's gender */

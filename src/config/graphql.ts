@@ -23,8 +23,8 @@ export const createSchema = async () => {
     container: Container,
     validate: { forbidUnknownValues: false },
     emitSchemaFile: process.env.NODE_ENV !== 'production', // 只在非生产环境生成 schema 文件
-    scalarsMap: [
-      { type: Date, scalar: DateScalar }
-    ],
+    // scalarsMap: [
+    //   { type: Date, scalar: DateScalar }
+    // ],
   });
 }; 

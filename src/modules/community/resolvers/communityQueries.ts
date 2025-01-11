@@ -1,8 +1,7 @@
 import { Resolver, Query, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
-import { Community, CommunityResponse, CommunitiesResponse } from '../schema/communityQueries';
+import { Community, CommunityResponse, CommunitiesResponse ,CommunityMember, CommunityMemberResponse, CommunityMembersResponse} from '../schema/communityTypes';
 import { CommunitiesService } from '../../../services/communityService';
-import { CommunityMember, CommunityMemberResponse, CommunityMembersResponse } from '../schema/communityQueries';
 import { CommunityMembersService } from '../../../services/communityService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';

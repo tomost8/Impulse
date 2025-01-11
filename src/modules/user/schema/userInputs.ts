@@ -1,5 +1,6 @@
 import { Field, InputType } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString, IsDate } from 'class-validator';
+import { DateScalar } from '../../common/scalars/dateScalar';
 
 /**
  * Input type for creating a new user
@@ -47,7 +48,7 @@ export class CreateUserInput {
   username?: string;
 
   /** Date of birth of the new user */
-  @Field(() => Date, { nullable: true })
+  @Field(() => DateScalar, { nullable: true })
   @IsOptional()
   dob?: Date;
 
@@ -112,7 +113,7 @@ export class UpdateUserInput {
   username?: string;
 
   /** Date of birth */
-  @Field(() => Date, { nullable: true })
+  @Field(() => DateScalar, { nullable: true })
   @IsOptional()
   dob?: Date;
 

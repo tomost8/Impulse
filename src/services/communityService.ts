@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Community, CommunityMember } from '../modules/community/schema/communityQueries';
+import { Community, CommunityMember } from '../modules/community/schema/communityTypes';
 import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/communityInputs';
 import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/communityInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';

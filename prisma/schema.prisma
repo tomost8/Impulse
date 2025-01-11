@@ -75,20 +75,19 @@ model CommunityMembers {
 
 //activity
 model Activity {
-  id            Int       @id @default(autoincrement())
-  name          String?
-  description   String?
-  category      String
-  duration      Int?
-  scheduledDate DateTime? @map("scheduled_date")
-  startTime     DateTime? @map("start_time")
-  status        String    @default("pending")
-  post          Post?     @relation(fields: [postId], references: [id])
-  postId        Int?      @map("post_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id                Int       @id @default(autoincrement())
+  name              String?
+  description       String?
+  category          String
+  duration          Int?
+  scheduledDatetime DateTime? @map("scheduled_datetime")
+  status            String    @default("pending")
+  post              Post?     @relation(fields: [postId], references: [id])
+  postId            Int?      @map("post_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  @@index([scheduledDate])
+  @@index([scheduledDatetime])
   @@map("activities")
 }
 

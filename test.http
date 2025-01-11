@@ -232,7 +232,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { me { success user { id email first_name last_name username status last_login_at } errors { field message } } }"
+  "query": "query { me { success user { id email first_name last_name dob username status last_login_at } errors { field message } } }"
 }
 
 
@@ -432,10 +432,12 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id category status post { id author { id first_name last_name } } } errors { field message } } }",
+  "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id category scheduledDatetime duration status post { id author { id first_name last_name } } } errors { field message } } }",
   "variables": {
     "input": {
-      "category": "social"
+      "category": "social",
+      "scheduledDatetime": "2023-10-10T13:00:00Z",
+      "duration": 60
     }
   }
 }
@@ -464,6 +466,6 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deleteActivity(id: $id) { success activity { id category status } errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 3
   }
 }

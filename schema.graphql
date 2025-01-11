@@ -11,17 +11,16 @@ type ActivitiesResponse {
 
 type Activity {
   category: String!
-  createdAt: Date!
+  createdAt: DateTimeISO!
   description: String
   duration: Int
   id: Int!
   name: String
   post: Post
   postId: Int
-  scheduledDate: Date
-  startTime: Date
+  scheduledDatetime: DateTimeISO
   status: String!
-  updatedAt: Date!
+  updatedAt: DateTimeISO!
 }
 
 type ActivityResponse {
@@ -37,21 +36,21 @@ type CommunitiesResponse {
 }
 
 type Community {
-  created_at: Date!
+  created_at: DateTimeISO!
   description: String
   id: Int!
   influencer: User!
   influencer_id: Int!
   name: String!
   thumbnail: String
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type CommunityMember {
   community: Community!
   community_id: Int!
   id: Int!
-  joined_at: Date!
+  joined_at: DateTimeISO!
   role: String!
   status: String!
   user: User!
@@ -82,8 +81,7 @@ input CreateActivityInput {
   duration: Int
   name: String
   postId: Int
-  scheduledDate: Date
-  startTime: Date
+  scheduledDatetime: DateTimeISO
 }
 
 input CreateCommunityInput {
@@ -100,6 +98,11 @@ input CreateCommunityMemberInput {
 
 """Date custom scalar type for YYYY-MM-DD format"""
 scalar Date
+
+"""
+A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format.
+"""
+scalar DateTimeISO
 
 type FieldError {
   field: String!
@@ -131,18 +134,18 @@ type Post {
   author: User!
   author_id: Int!
   caption: String
-  created_at: Date!
-  expires_at: Date
+  created_at: DateTimeISO!
+  expires_at: DateTimeISO
   id: Int!
   is_deleted: Boolean!
   media_urls: JSON
   post_targets: [PostTarget!]
   post_views: [PostView!]
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type PostTarget {
-  created_at: Date!
+  created_at: DateTimeISO!
   id: Int!
   post: Post!
   post_id: Int!
@@ -156,7 +159,7 @@ type PostView {
   post_id: Int!
   user: User!
   user_id: Int!
-  viewed_at: Date!
+  viewed_at: DateTimeISO!
 }
 
 type Query {
@@ -176,8 +179,7 @@ input UpdateActivityInput {
   duration: Int
   name: String
   postId: Int
-  scheduledDate: Date
-  startTime: Date
+  scheduledDatetime: DateTimeISO
   status: String
 }
 
@@ -207,7 +209,7 @@ input UpdateUserInput {
 }
 
 type User {
-  created_at: Date!
+  created_at: DateTimeISO!
   dob: Date
   email: String!
   fcm_token: String
@@ -215,14 +217,14 @@ type User {
   first_name: String
   gender: String
   id: Int!
-  last_login_at: Date
+  last_login_at: DateTimeISO
   last_name: String
   profile_picture: String
   role: String!
   searchable: Boolean!
   status: String!
   timezone: String
-  updated_at: Date!
+  updated_at: DateTimeISO!
   username: String
 }
 

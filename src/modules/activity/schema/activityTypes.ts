@@ -20,10 +20,7 @@ export class Activity {
   duration: number | null;
 
   @Field(() => Date, { nullable: true })
-  scheduledDate: Date | null;
-
-  @Field(() => Date, { nullable: true })
-  startTime: Date | null;
+  scheduledDatetime: Date | null;
 
   @Field(() => String)
   status: string;
