@@ -40,6 +40,10 @@ model User {
   chats_created         Chat[]
   chat_memberships      ChatMember[]
 
+  posts      Post[]
+  post_views PostView[]
+
+  @@index([username])
   @@map("users")
 }
 
@@ -99,4 +103,69 @@ model ChatMember {
 
   @@unique([chat_id, user_id])
   @@map("chat_members")
+}
+
+//activity
+model Activity {
+  id            Int       @id @default(autoincrement())
+  name          String?
+  description   String?
+  category      String
+  duration      Int?
+  scheduledDate DateTime? @map("scheduled_date")
+  startTime     DateTime? @map("start_time")
+  status        String    @default("pending")
+  post          Post?     @relation(fields: [postId], references: [id])
+  postId        Int?      @map("post_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([scheduledDate])
+  @@map("activities")
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  author     User       @relation(fields: [author_id], references: [id])
+  author_id  Int
+  caption    String?
+  media_urls Json?
+  is_deleted Boolean    @default(false)
+  activities Activity[]
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  expires_at DateTime? // story类型设置24小时，chat类型为null
+
+  post_targets PostTarget[]
+  post_views   PostView[]
+
+  @@index([author_id, created_at])
+  @@index([expires_at, is_deleted])
+  @@map("posts")
+}
+
+model PostTarget {
+  id          Int      @id @default(autoincrement())
+  post        Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id     Int
+  target_type String // 'community', 'chat', 'group'
+  target_id   Int
+  created_at  DateTime @default(now())
+
+  @@unique([post_id, target_type, target_id])
+  @@index([target_type, target_id])
+  @@map("post_targets")
+}
+
+model PostView {
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id   Int
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id   Int
+  viewed_at DateTime @default(now())
+
+  @@unique([post_id, user_id])
+  @@index([user_id, viewed_at])
+  @@map("post_views")
 }
