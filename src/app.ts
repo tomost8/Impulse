@@ -16,6 +16,7 @@ import { GraphQLFormattedError } from 'graphql';
 import { createHealthRoutes } from './server/health/routes';
 import { requestLogger } from './config/logger';
 import { env } from './config/env';
+import { ActivityExpirationService } from './services/activityExpirationService';
 
 export async function createApp() {
   const app = express();
@@ -32,12 +33,24 @@ export async function createApp() {
 
   const httpServer = http.createServer(app);
 
+  // 初始化活动过期服务
+  const activityExpirationService = Container.get(ActivityExpirationService);
   
   const server = new ApolloServer({
     schema,
     plugins: [
       ApolloServerPluginDrainHttpServer({ httpServer }),
-      ApolloServerPluginLandingPageLocalDefault()
+      ApolloServerPluginLandingPageLocalDefault(),
+      {
+        async serverWillStart() {
+          return {
+            async drainServer() {
+              // 优雅关闭活动过期服务
+              await activityExpirationService.shutdown();
+            },
+          };
+        },
+      },
     ],
     formatError: (formattedError: GraphQLFormattedError) => {
       if ('originalError' in formattedError) {

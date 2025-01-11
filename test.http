@@ -187,6 +187,7 @@ Authorization: Bearer {{authToken}}
       "username": "test001",
       "gender": "male",
       "dob": "2024-01-02",
+      "timezone": "America/New_York",
       "status": "active"
     }
   }
@@ -465,7 +466,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!, $input: UpdateActivityInput!) { updateActivity(id: $id, input: $input) { success activity { id category status post { id author { id first_name last_name } } } errors { field message } } }",
   "variables": {
-    "id": 1,
+    "id": 18,
     "input": {
       "name": "morning workout",
       "status": "completed"
@@ -481,7 +482,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deleteActivity(id: $id) { success activity { id category status } errors { field message } } }",
   "variables": {
-    "id": 3
+    "id": 29
   }
 }
 
@@ -741,4 +742,147 @@ Content-Type: application/json
     "postId": 1  // 替换为实际的帖子ID
   }
 }
+
+### Activity Tests ###
+
+### 1. 创建用户并设置时区（如果还没有）
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id timezone } } }",
+  "variables": {
+    "input": {
+      "timezone": "Asia/Dubai"
+    }
+  }
+}
+
+### 2. 创建活动（用户本地时间 15:00）
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id name category scheduledDatetime status userId } } }",
+  "variables": {
+    "input": {
+      "name": "测试活动",
+      "category": "social",
+      "userId": 1,
+      "scheduledDatetime": "2025-01-11T21:00:00.000Z" 
+    }
+  }
+}
+
+### 3. 查询活动详情（验证时间是否正确存储）
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($id: Int!) { activity(id: $id) { success activity { id name scheduledDatetime status } } }",
+  "variables": {
+    "id": 20
+  }
+}
+
+### 4. 更新活动时间（改为当地时间 16:00）
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($id: Int!, $input: UpdateActivityInput!) { updateActivity(id: $id, input: $input) { success activity { id name scheduledDatetime status } } }",
+  "variables": {
+    "id": 20,
+    "input": {
+      "scheduledDatetime": "2025-01-22T16:00:00.000Z"  
+    }
+  }
+}
+
+### 5. 查询用户的所有活动
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($userId: Int!) { activitiesByUserId(userId: $userId) { success activities { id name scheduledDatetime status } } }",
+  "variables": {
+    "userId": 1
+  }
+}
+
+### 6. 创建即将过期的活动（当前时间前一天的活动）
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id name scheduledDatetime status } } }",
+  "variables": {
+    "input": {
+      "name": "即将过期的活动",
+      "category": "social",
+      "userId": 1,
+      "scheduledDatetime": "2025-01-11T23:00:00.000Z" 
+    }
+  }
+}
+
+### 7. 等待活动过期（第二天凌晨）后查询状态
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($id: Int!) { activity(id: $id) { success activity { id name scheduledDatetime status } } }",
+  "variables": {
+    "id": 2
+  }
+}
+
+### 8. 删除活动
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($id: Int!) { deleteActivity(id: $id) { success activity { id name status } } }",
+  "variables": {
+    "id": 31
+
+  }
+}
+
+### 测试步骤说明：
+
+# 1. 首先运行 Redis（如果还没有运行）：
+# docker run -d --name redis -p 6379:6379 redis
+
+# 2. 按顺序执行测试：
+# a. 运行测试 1：设置用户时区
+# b. 运行测试 2：创建一个活动（记下返回的 ID）
+# c. 运行测试 3：验证活动创建成功，注意 scheduledDatetime 是 ISO 8601 格式的 UTC 时间
+# d. 运行测试 4：更新活动时间
+# e. 运行测试 5：验证用户的所有活动
+# f. 运行测试 6：创建一个即将过期的活动
+# g. 等待到第二天凌晨
+# h. 运行测试 7：验证活动状态是否变为 expired
+# i. 运行测试 8：清理测试数据
+
+# 预期结果：
+# - 创建活动时，scheduledDatetime 必须是 ISO 8601 格式（例如：2024-01-22T15:00:00.000Z）
+# - 时间字符串必须包含毫秒和 Z 后缀（表示 UTC）
+# - 服务器会根据用户时区进行适当的转换
+# - 返回的时间也会是 ISO 8601 格式的 UTC 时间
+
+# 注意事项：
+# 1. 替换 userId 为实际的测试用户 ID
+# 2. 替换活动 ID 为实际创建的活动 ID
+# 3. 确保时间字符串格式正确（YYYY-MM-DDTHH:mm:ss.sssZ）
+# 4. 确保 Redis 服务正在运行
+# 5. 检查日志以验证过期任务的调度
 
