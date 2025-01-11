@@ -1,8 +1,8 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Chat, ChatMember } from '../modules/chat/schema/chatTypes';
-import { CreateChatInput, UpdateChatInput } from '../modules/chat/schema/chatInputs';
-import { CreateChatMemberInput, UpdateChatMemberInput } from '../modules/chat/schema/chatInputs';
+import { Chat, ChatMember, Message } from '../modules/chat/schema/chatTypes';
+import { CreateChatInput, CreateChatMemberInput, CreateMessageInput } from '../modules/chat/schema/chatInputs';
+import { UpdateChatInput, UpdateChatMemberInput } from '../modules/chat/schema/chatInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 
 /**
@@ -142,15 +142,32 @@ export class ChatMembersService {
    * @throws {PrismaError} If database query fails
    */
   async findById(id: number): Promise<ChatMember[] | null> {
-    let chat = await this.prisma.chat.findUnique({
-      where: { id }
-    });
-    if (!chat) {
-      return null;
-    }
     return await this.prisma.chatMember.findMany({
         where: { 
             chat_id: id
+        },
+        include: {
+          chat: {
+            include: {
+              creator: true
+            }
+          },
+          user: true
+        }
+    });
+  }
+
+  /**
+   * Find all chats of a user given user ID
+   * 
+   * @param id - The unique identifier of the user
+   * @returns Promise resolving to the chat/user relations if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findByUserId(id: number): Promise<ChatMember[] | null> {
+    return await this.prisma.chatMember.findMany({
+        where: { 
+            user_id: id
         },
         include: {
           chat: {
@@ -251,6 +268,80 @@ export class ChatMembersService {
       if (error.code === 'P2025') {
         throw new NotFoundError(`Relation between user with ID ${user_id} and chat with ID ${chat_id} not found`);
       }
+      throw error;
+    }
+  }
+} 
+
+
+
+
+/**
+ * Service handling message-related business logic
+ * 
+ * This service provides methods for managing messages in the system,
+ * including CRUD operations and message business logic.
+ * 
+ * @remarks
+ * Uses Prisma as the ORM for database operations
+ */
+@Service()
+export class MessagesService {
+  constructor(private prisma: PrismaClient) {}
+  /**
+   * Find all messages of a chat given chat ID
+   * 
+   * @param id - The unique identifier of the chat
+   * @returns Promise resolving to the chat messages if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findById(id: number): Promise<Message[] | null> {
+    return await this.prisma.message.findMany({
+        where: { 
+            chat_id: id
+        },
+        include: {
+          chat: {
+            include: {
+              creator: true
+            }
+          },
+          sender: true,
+          post: {
+            include: {
+              author: true
+            }
+          }
+        }
+    });
+  }
+
+  /**
+   * Create (send) a message
+   * 
+   * @param input - message data
+   * @returns Promise resolving to the created message
+   * @throws {PrismaError} If database operation fails
+   */
+  async create(input: CreateMessageInput): Promise<Message> {
+    try {
+        return await this.prisma.message.create({
+            data: input,
+            include: {
+              chat: {
+                include: {
+                  creator: true
+                }
+              },
+              sender: true,
+              post: {
+                include: {
+                  author: true
+                }
+              }
+            }
+        });
+    } catch (error: any) {
       throw error;
     }
   }

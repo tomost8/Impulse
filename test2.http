@@ -20,9 +20,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
   "variables": {
     "input": {
-      "first_name": "001",
-      "last_name": "tester",
-      "username": "test001",
+      "first_name": "John",
+      "last_name": "Doe",
+      "username": "johndoe",
       "gender": "male",
       "dob": "2024-01-02",
       "status": "active"
@@ -30,7 +30,40 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+### Mutation - update User 2 Profile
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
+  "variables": {
+    "input": {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "username": "janesmith",
+      "gender": "female",
+      "dob": "2024-01-11",
+      "status": "active"
+    }
+  }
+}
+
 ### GraphQL Community API Tests ###
+
+### Mutation - Create Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description thumbnail influencer { first_name last_name email } influencer_id } errors { field message } } }",
+  "variables": {
+    "input": {
+      "name": "community name 2",
+      "influencer_id": 1
+    }
+  }
+}
 
 ### Query - Get All Communities
 POST http://localhost:3000/graphql
@@ -47,21 +80,7 @@ Content-Type: application/json
 {
   "query": "query ($id: Int!) { community(id: $id) { success community { id name description thumbnail influencer { id first_name last_name email } influencer_id } errors { field message } } }",
   "variables": {
-    "id": 7
-  }
-}
-
-### Mutation - Create Community
-POST http://localhost:3000/graphql
-Content-Type: application/json
-
-{
-  "query": "mutation ($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description thumbnail influencer { first_name last_name email } influencer_id } errors { field message } } }",
-  "variables": {
-    "input": {
-      "name": "community name",
-      "influencer_id": 1
-    }
+    "id": 1
   }
 }
 
@@ -119,6 +138,17 @@ Content-Type: application/json
   }
 }
 
+### Query - Get User Communities by User ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($userId: Int!) { userCommunities(id: $userId) {success community_members { community { id name } community_id role status } errors { field message } } }",
+  "variables": {
+    "userId": 1
+  }
+}
+
 ### Query - Update community member role/status
 POST http://localhost:3000/graphql
 Content-Type: application/json
@@ -158,7 +188,7 @@ Content-Type: application/json
   "query": "mutation ($input: CreateChatInput!) { createChat(input: $input) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
   "variables": {
     "input": {
-      "type": "group",
+      "type": "group 2",
       "title": "secret group name",
       "creator_id": 1
     }
@@ -178,7 +208,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query ($id: Int!) { chat(id: $id) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
+  "query": "query ($id: Int!) { userChats(id: $id) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
   "variables": {
     "id": 1
   }
@@ -238,6 +268,17 @@ Content-Type: application/json
   "query": "query ($chatId: Int!) { chatMembers(id: $chatId) { success chat_members { user { first_name last_name } user_id role status } errors { field message } } }",
   "variables": {
     "chatId": 1
+  }
+}
+
+### Query - Get User Chats by User ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($userId: Int!) { userChats(id: $userId) { success chat_members { chat { title } chat_id role status } errors { field message } } }",
+  "variables": {
+    "userId": 1
   }
 }
 

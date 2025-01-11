@@ -1,6 +1,7 @@
 import { Field, ObjectType, Int } from 'type-graphql';
-import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
-import { User, FieldError } from '../../user/schema/userTypes';
+import { User } from '../../user/schema/userTypes';
+import { Post } from '../../post/schema/postTypes';
+import { FieldError } from '../../common/types/errorTypes';
 
 /**
  * Chat entity representing a chat group in the system
@@ -167,6 +168,94 @@ export class ChatMembersResponse {
 
   @Field(() => [ChatMember], { nullable: true })
   chat_members?: ChatMember[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+} 
+
+
+/**
+ * Message entity representing a chat message in the system
+ * 
+ * This class defines the structure of a message 
+ * and is used both as a GraphQL type and a database model.
+ * 
+ * @remarks
+ * All fields marked with `@Field` are exposed in the GraphQL schema
+ * 
+ * @example
+ * ```typescript
+ * const chat_member: ChatMember = {
+ *   id: 54,
+ *   chat: Chat,
+ *   chat_id: 6,
+ *   user: User
+ *   user_id: 20,
+ *   role: "member"
+ *   status: "approved"
+ *   updated_at: new Date()
+ * };
+ * ```
+ */
+@ObjectType()
+export class Message {
+  /** Unique identifier for message */
+  @Field(() => Int)
+  id!: number;
+
+  /** Chat */
+  @Field(() => Chat)
+  chat!: Chat;
+
+  /** Chat ID */
+  @Field(() => Int)
+  chat_id!: number;
+
+  /** Message sender */
+  @Field(() => User)
+  sender!: User;
+
+  /** Message sender ID */
+  @Field(() => Int)
+  sender_id!: number;
+
+  /** Content of message (null if post) */
+  @Field(() => String, { nullable: true })
+  content!: string | null;
+
+  /** Post that message is linked to (null if not linked) */
+  @Field(() => Post, { nullable: true })
+  post!: Post | null;
+
+  /** ID of linked post (null if not linked) */
+  @Field(() => Int, { nullable: true })
+  post_id!: number | null;
+
+  /** Timestamp of the when message was sent */
+  @Field(() => Date)
+  created_at!: Date;
+}
+
+
+@ObjectType()
+export class MessageResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => Message, { nullable: true })
+  message?: Message;
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+@ObjectType()
+export class MessagesResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [ChatMember], { nullable: true })
+  messages?: Message[];
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];

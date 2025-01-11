@@ -197,4 +197,59 @@ export class CommunityMemberQueries {
       };
     }
   }
+
+  /**
+   * Query to fetch all members of a community given community id
+   * 
+   * @returns Response containing array of all members of a community
+   * 
+   * @example
+   * ```graphql
+   * query { communityMembers(id: 1) {
+   *    success 
+   *    community_members { 
+   *        user { 
+   *            first_name 
+   *            last_name 
+   *        } 
+   *        user_id 
+   *        role 
+   *        status 
+   *    }
+   *    errors { 
+   *        field 
+   *        message 
+   *    } 
+   * }}
+   * 
+   * ```
+   */
+  @Query(() => CommunityMembersResponse)
+  async userCommunities(@Arg('id', () => Int) id: number): Promise<CommunityMembersResponse> {
+    try {
+      const community_members = await this.communityMembersService.findByUserId(id);
+      if (!community_members) {
+        logger.warn('Community not found', { communityId: id });
+        return {
+          success: false,
+          errors: [{
+            field: 'id',
+            message: `Community with ID ${id} not found`
+          }]
+        }
+      }
+      return {
+        success: true,
+        community_members
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch communities'
+        }]
+      };
+    }
+  }
 }

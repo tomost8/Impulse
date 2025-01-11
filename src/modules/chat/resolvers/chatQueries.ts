@@ -1,9 +1,9 @@
 import { Resolver, Query, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
 import { Chat, ChatResponse, ChatsResponse } from '../schema/chatTypes';
-import { ChatsService } from '../../../services/chatService';
 import { ChatMember, ChatMemberResponse, ChatMembersResponse } from '../schema/chatTypes';
-import { ChatMembersService } from '../../../services/chatService';
+import { Message, MessageResponse, MessagesResponse } from '../schema/chatTypes';
+import { ChatsService, ChatMembersService, MessagesService } from '../../../services/chatService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
 
@@ -185,6 +185,131 @@ export class ChatMemberQueries {
       return {
         success: true,
         chat_members
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch chats'
+        }]
+      };
+    }
+  }
+
+  /**
+   * Query to fetch all members of a chat given chat id
+   * 
+   * @returns Response containing array of all members of a chat
+   * 
+   * @example
+   * ```graphql
+   * query { chatMembers(id: 1) {
+   *    success 
+   *    chat_members { 
+   *        user { 
+   *            first_name 
+   *            last_name 
+   *        } 
+   *        user_id 
+   *        role 
+   *        status 
+   *    }
+   *    errors { 
+   *        field 
+   *        message 
+   *    } 
+   * }}
+   * 
+   * ```
+   */
+  @Query(() => ChatMembersResponse)
+  async userChats(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
+    try {
+      const chat_members = await this.chatMembersService.findByUserId(id);
+      if (!chat_members) {
+        logger.warn('User not found', { userId: id });
+        return {
+          success: false,
+          errors: [{
+            field: 'id',
+            message: `User with ID ${id} not found`
+          }]
+        }
+      }
+      return {
+        success: true,
+        chat_members
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch chats'
+        }]
+      };
+    }
+  }
+}
+
+
+
+
+
+
+/**
+ * GraphQL query resolvers for message-related operations
+ */
+@Service()
+@Resolver(Message)
+@UseMiddleware(LogOperationMiddleware)
+export class MessageQueries {
+  constructor(private messagesService: MessagesService) {}
+
+  /**
+   * Query to fetch all members of a chat given chat id
+   * 
+   * @returns Response containing array of all members of a chat
+   * 
+   * @example
+   * ```graphql
+   * query { chatMembers(id: 1) {
+   *    success 
+   *    chat_members { 
+   *        user { 
+   *            first_name 
+   *            last_name 
+   *        } 
+   *        user_id 
+   *        role 
+   *        status 
+   *    }
+   *    errors { 
+   *        field 
+   *        message 
+   *    } 
+   * }}
+   * 
+   * ```
+   */
+  @Query(() => MessagesResponse)
+  async Messages(@Arg('id', () => Int) id: number): Promise<MessagesResponse> {
+    try {
+      const messages = await this.messagesService.findById(id);
+      if (!messages) {
+        logger.warn('Chat not found', { chatId: id });
+        return {
+          success: false,
+          errors: [{
+            field: 'id',
+            message: `Chat with ID ${id} not found`
+          }]
+        }
+      }
+      return {
+        success: true,
+        messages
       };
     } catch (error) {
       return {

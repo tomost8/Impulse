@@ -142,15 +142,32 @@ export class CommunityMembersService {
    * @throws {PrismaError} If database query fails
    */
   async findById(id: number): Promise<CommunityMember[] | null> {
-    let community = await this.prisma.community.findUnique({
-      where: { id }
-    });
-    if (!community) {
-      return null;
-    }
     return await this.prisma.communityMember.findMany({
         where: { 
             community_id: id
+        },
+        include: {
+          community: {
+            include: {
+              influencer: true
+            }
+          },
+          user: true
+        }
+    });
+  }
+
+  /**
+   * Find all communities of a user given user ID
+   * 
+   * @param id - The unique identifier of the community
+   * @returns Promise resolving to the community members if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findByUserId(id: number): Promise<CommunityMember[] | null> {
+    return await this.prisma.communityMember.findMany({
+        where: { 
+            user_id: id
         },
         include: {
           community: {

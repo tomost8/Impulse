@@ -2,10 +2,11 @@ import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
 import { Chat, ChatResponse } from '../schema/chatTypes';
 import { CreateChatInput, UpdateChatInput } from '../schema/chatInputs';
-import { ChatsService } from '../../../services/chatService';
 import { ChatMember, ChatMemberResponse } from '../schema/chatTypes';
 import { CreateChatMemberInput, UpdateChatMemberInput } from '../schema/chatInputs';
-import { ChatMembersService } from '../../../services/chatService';
+import { Message, MessageResponse } from '../schema/chatTypes';
+import { CreateMessageInput } from '../schema/chatInputs';
+import { ChatsService, ChatMembersService, MessagesService } from '../../../services/chatService';
 import { ValidationError } from '../../common/errors/graphql.error';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
@@ -377,6 +378,87 @@ export class ChatMemberMutations {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to delete chat/user relation'
+        }]
+      };
+    }
+  }
+} 
+
+
+
+/**
+ * GraphQL mutation resolvers for message-related operations
+ */
+@Service()
+@Resolver(Message)
+@UseMiddleware(LogOperationMiddleware)
+export class MessageMutations {
+  constructor(private messagesService: MessagesService) {}
+
+  /**
+   * Mutation to add a message
+   * i.e. send a message to a Chat
+   * @param input - message creation data
+   * @returns Response containing the newly created message or error details
+   * 
+   * @example
+   * ```graphql
+   * mutation { 
+   *    createChat(
+   *        input: {
+   *            chat_id: 3,
+   *            sender_id: 31,
+   *            post_id: 45
+   *        }
+   *    ) { 
+   *        success 
+   *        chat_member { 
+   *            chat { 
+   *                type
+   *                title
+   *                creator { 
+   *                    first_name 
+   *                    last_name 
+   *                } 
+   *                creator_id 
+   *            } 
+   *            chat_id 
+   *            user { 
+   *                first_name 
+   *                last_name 
+   *            } 
+   *            user_id 
+   *            role 
+   *            status 
+   *        }
+   *        errors { 
+   *            field 
+   *            message 
+   *        }
+   *    } 
+   * }
+   * ```
+   */
+  @Mutation(() => MessageResponse)
+  async createChatMember(@Arg('input') input: CreateMessageInput): Promise<MessageResponse> {
+    try {
+      const message = await this.messagesService.create(input);
+      
+      logger.info('Chat/User relation creation successful', { 
+        chatId: message.chat_id,
+        senderId: message.sender_id,
+      });
+
+      return {
+        success: true,
+        message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to create chat/user relation'
         }]
       };
     }

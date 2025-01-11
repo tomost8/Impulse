@@ -42,6 +42,7 @@ model User {
 
   posts      Post[]
   post_views PostView[]
+  Message    Message[]
 
   @@index([username])
   @@map("users")
@@ -58,7 +59,7 @@ model Community {
   updated_at        DateTime          @updatedAt
   community_members CommunityMember[]
 
-  @@map("community")
+  @@map("communities")
 }
 
 model CommunityMember {
@@ -87,6 +88,7 @@ model Chat {
   created_at   DateTime     @default(now())
   updated_at   DateTime     @updatedAt
   chat_members ChatMember[]
+  Message      Message[]
 
   @@map("chats")
 }
@@ -103,6 +105,26 @@ model ChatMember {
 
   @@unique([chat_id, user_id])
   @@map("chat_members")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement()) @map("message_id")
+  chat       Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_id    Int      @map("conversation_id")
+  sender     User     @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  sender_id  Int
+  content    String?
+  post       Post?    @relation(fields: [post_id], references: [id])
+  post_id    Int?
+  created_at DateTime @default(now())
+
+  @@index([chat_id, created_at])
+  @@map("messages")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  type String
 }
 
 //activity
@@ -138,6 +160,7 @@ model Post {
 
   post_targets PostTarget[]
   post_views   PostView[]
+  Message      Message[]
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])

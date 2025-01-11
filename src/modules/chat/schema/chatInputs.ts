@@ -27,6 +27,7 @@ export class CreateChatInput {
 
   /** Chat title */
   @Field(() => String)
+  @IsOptional()
   @IsString({ message: 'Chat title must be a string' })
   @Length(1, 255, { message: 'Chat title must between 1 and 255 characters' })
   title?: string | null;
@@ -68,6 +69,7 @@ export class CreateChatInput {
 export class UpdateChatInput {
   /** Chat title */
   @Field(() => String)
+  @IsOptional()
   @IsString({ message: 'Chat title must be a string' })
   @Length(1, 255, { message: 'Chat title must between 1 and 255 characters' })
   title?: string | null;
@@ -139,3 +141,44 @@ export class UpdateChatMemberInput {
   @IsString({ message: 'User status must be a string' })
   status!: string;
 } 
+
+
+/**
+ * Input type for creating a new message
+ * 
+ * @remarks
+ * This type is used in the createMessage mutation
+ * 
+ * @example
+ * ```typescript
+ * const input: CreateMessageInput = {
+ *    chat_id: 1,
+ *    user_id: 1,
+ *    post_id: 1
+ * };
+ * ```
+ */
+@InputType()
+export class CreateMessageInput {
+  /** Chat ID */
+  @Field(() => Int)
+  @IsInt({ message: 'Chat id must be an int' })
+  chat_id!: number;
+
+  /** Sender ID */
+  @Field(() => Int)
+  @IsInt({ message: 'User id must be an int' })
+  sender_id!: number;
+
+  /** Message content */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Message must be a string' })
+  content?: string | null;
+
+  /** Post ID */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt({ message: 'Post ID must be an int' })
+  post_id?: number | null;
+}
