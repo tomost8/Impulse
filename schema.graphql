@@ -3,6 +3,53 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+type Chat {
+  created_at: Date!
+  creator: User!
+  creator_id: Int!
+  id: Int!
+  password: String
+  profile_pic: String
+  title: String
+  type: String!
+  updated_at: Date!
+}
+
+type ChatMember {
+  chat: Chat!
+  chat_id: Int!
+  id: Int!
+  joined_at: Date!
+  role: String!
+  status: String!
+  user: User!
+  user_id: Int!
+}
+
+type ChatMemberResponse {
+  chat_member: ChatMember
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type ChatMembersResponse {
+  chat_members: [ChatMember!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type ChatResponse {
+  chat: Chat
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type ChatsResponse {
+  chats: [Chat!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type CommunitiesResponse {
   communities: [Community!]
   errors: [FieldError!]
@@ -49,6 +96,19 @@ type CommunityResponse {
   success: Boolean!
 }
 
+input CreateChatInput {
+  creator_id: Int!
+  password: String
+  profile_pic: String
+  title: String!
+  type: String!
+}
+
+input CreateChatMemberInput {
+  chat_id: Int!
+  user_id: Int!
+}
+
 input CreateCommunityInput {
   description: String
   influencer_id: Int!
@@ -70,24 +130,44 @@ type FieldError {
 }
 
 type Mutation {
+  createChat(input: CreateChatInput!): ChatResponse!
+  createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
+  deleteChat(id: Int!): ChatResponse!
+  deleteChatMember(chat_id: Int!, user_id: Int!): ChatMemberResponse!
   deleteCommunity(id: Int!): CommunityResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
+  updateChat(id: Int!, input: UpdateChatInput!): ChatResponse!
+  updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
   updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
   updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
 }
 
 type Query {
+  chat(id: Int!): ChatResponse!
+  chatMembers(id: Int!): ChatMembersResponse!
+  chats: ChatsResponse!
   communities: CommunitiesResponse!
   community(id: Int!): CommunityResponse!
   communityMembers(id: Int!): CommunityMembersResponse!
   me: UserResponse!
   user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!
+}
+
+input UpdateChatInput {
+  password: String
+  profile_pic: String
+  title: String!
+}
+
+input UpdateChatMemberInput {
+  role: String
+  status: String
 }
 
 input UpdateCommunityInput {

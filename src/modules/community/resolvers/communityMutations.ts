@@ -1,9 +1,9 @@
 import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
-import { Community, CommunityResponse } from '../schema/communityQueries';
+import { Community, CommunityResponse } from '../schema/communityTypes';
 import { CreateCommunityInput, UpdateCommunityInput } from '../schema/communityInputs';
 import { CommunitiesService } from '../../../services/communityService';
-import { CommunityMember, CommunityMemberResponse } from '../schema/communityQueries';
+import { CommunityMember, CommunityMemberResponse } from '../schema/communityTypes';
 import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../schema/communityInputs';
 import { CommunityMembersService } from '../../../services/communityService';
 import { ValidationError } from '../../common/errors/graphql.error';
@@ -30,7 +30,7 @@ export class CommunityMutations {
    * mutation { createCommunity (
    *    input: {
    *        name: "community name",
-   *        influencerId: 1,
+   *        influencer_id: 1,
    *        description: "community description (optional)",
    *        thumbnail: "community thumbnail (optional)"
    *    }) {

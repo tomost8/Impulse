@@ -1,0 +1,270 @@
+### GraphQL User API Tests ###
+@baseUrl = http://localhost:3000
+@authToken = dev-token-123
+
+### Mutation - Firebase Authentication login/create
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation { firebaseAuth { success user { id email firebase_uid first_name last_name role status } errors { field message } } }"
+}
+
+### Mutation - update User Profile
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
+  "variables": {
+    "input": {
+      "first_name": "001",
+      "last_name": "tester",
+      "username": "test001",
+      "gender": "male",
+      "dob": "2024-01-02",
+      "status": "active"
+    }
+  }
+}
+
+### GraphQL Community API Tests ###
+
+### Query - Get All Communities
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { communities { success communities { id name description thumbnail influencer { id first_name last_name email } influencer_id } errors { field message } } }"
+}
+
+### Query - Get Community by ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!) { community(id: $id) { success community { id name description thumbnail influencer { id first_name last_name email } influencer_id } errors { field message } } }",
+  "variables": {
+    "id": 7
+  }
+}
+
+### Mutation - Create Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description thumbnail influencer { first_name last_name email } influencer_id } errors { field message } } }",
+  "variables": {
+    "input": {
+      "name": "community name",
+      "influencer_id": 1
+    }
+  }
+}
+
+### Mutation - Update Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!, $input: UpdateCommunityInput!) { updateCommunity(id: $id, input: $input) { success community { id name description influencer { id first_name last_name email } influencer_id } errors { field message } } }",
+  "variables": {
+    "id": 3,
+    "input": {
+      "name": "community but with updated description",
+      "description": "new description"
+    }
+  }
+}
+
+### Mutation - Delete Community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!) { deleteCommunity(id: $id) { success errors { field message } } }",
+  "variables": {
+    "id": 6
+  }
+}
+
+
+### GraphQL Community Member API Tests ###
+
+### Mutation - Create Community Member
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateCommunityMemberInput!) { createCommunityMember(input: $input) { success community_member { community { name influencer {first_name last_name } influencer_id } community_id user { first_name last_name } user_id } errors { field message } } }",
+  "variables": {
+    "input": {
+      "community_id": 2,
+      "user_id": 3
+    }
+  }
+}
+
+### Query - Get Community Members by Community ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($communityId: Int!) { communityMembers(id: $communityId) {success community_members { user { first_name last_name } user_id role status } errors { field message } } }",
+  "variables": {
+    "communityId": 1
+  }
+}
+
+### Query - Update community member role/status
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($communityId: Int!, $userId: Int!, $input: UpdateCommunityMemberInput!) { updateCommunityMember(community_id: $communityId, user_id: $userId, input: $input) { success community_member { community { name influencer { first_name last_name } influencer_id } community_id user { first_name last_name } user_id role status } errors { field message } } }",
+  "variables": {
+    "communityId": 1,
+    "userId": 2,
+    "input": {
+      "role": "member",
+      "status": "approved"
+    }
+  }
+}
+
+### Query - Delete member from community
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($userId: Int!, $communityId: Int!) { deleteCommunityMember(user_id: $userId, community_id: $communityId) { success errors { field message } } }",  
+  "variables": {
+    "communityId": 2,
+    "userId": 3
+  }
+}
+
+
+### GraphQL Chat API Tests ###
+
+### Mutation - Create Chat
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateChatInput!) { createChat(input: $input) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
+  "variables": {
+    "input": {
+      "type": "group",
+      "title": "secret group name",
+      "creator_id": 1
+    }
+  }
+}
+
+### Query - Get All Chats
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { chats { success chats { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }"
+}
+
+### Query - Get Chat by ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!) { chat(id: $id) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+
+### Mutation - Update Chat
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!, $input: UpdateChatInput!) { updateChat(id: $id, input: $input) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
+  "variables": {
+    "id": 1,
+    "input": {
+      "title": "new chat group name",
+      "password": "secret password",
+      "profile_pic": "some image"
+    }
+  }
+}
+
+### Mutation - Delete Chat
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($id: Int!) { deleteChat(id: $id) { success errors { field message } } }",
+  "variables": {
+    "id": 6
+  }
+}
+
+
+
+### GraphQL Chat Member API Tests ###
+
+### Mutation - Create Chat Member
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateChatMemberInput!) { createChatMember(input: $input) { success chat_member { chat { title creator { first_name last_name email } creator_id } chat_id user { first_name last_name email } user_id } errors { field message } } }",
+  "variables": {
+    "input": {
+      "chat_id": 1,
+      "user_id": 3
+    }
+  }
+}
+
+### Query - Get Chat Members by Chat ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($chatId: Int!) { chatMembers(id: $chatId) { success chat_members { user { first_name last_name } user_id role status } errors { field message } } }",
+  "variables": {
+    "chatId": 1
+  }
+}
+
+### Query - Update chat member role/status
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($chatId: Int!, $userId: Int!, $input: UpdateChatMemberInput!) { updateChatMember(chat_id: $chatId, user_id: $userId, input: $input) { success chat_member { chat { title creator { first_name last_name } creator_id } chat_id user { first_name last_name } user_id role status } errors { field message } } }",
+  "variables": {
+    "chatId": 1,
+    "userId": 3,
+    "input": {
+      "role": "member",
+      "status": "active"
+    }
+  }
+}
+
+### Query - Delete member from chat
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($userId: Int!, $chatId: Int!) { deleteChatMember(user_id: $userId, chat_id: $chatId) { success errors { field message } } }",  
+  "variables": {
+    "chatId": 1,
+    "userId": 3
+  }
+}

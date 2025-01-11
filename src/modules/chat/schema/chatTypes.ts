@@ -3,9 +3,9 @@ import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
 import { User, FieldError } from '../../user/schema/userTypes';
 
 /**
- * Community entity representing a community in the system
+ * Chat entity representing a chat group in the system
  * 
- * This class defines the structure of a community and is used both as a
+ * This class defines the structure of a chat and is used both as a
  * GraphQL type and a database model.
  * 
  * @remarks
@@ -13,72 +13,76 @@ import { User, FieldError } from '../../user/schema/userTypes';
  * 
  * @example
  * ```typescript
- * const community: Community = {
+ * const chat: Chat = {
  *   id: 1,
- *   name: "community name",
- *   description: "community description",
- *   thumbnail: "community thumbnail"
- *   influencer: User,
- *   influencer_id: 1,
+ *   type: "group",
+ *   title: "chat group name",
+ *   password: "secret",
+ *   profile_pic: "profile picture",
+ *   creator: User,
+ *   creator_id: 1,
  *   created_at: new Date(),
  *   updated_at: new Date()
- * };
  * ```
  */
 @ObjectType()
-export class Community {
-  /** Unique identifier for the community */
+export class Chat {
+  /** Unique identifier for the chat */
   @Field(() => Int)
   id!: number;
 
-  /** Community name */
+  /** Chat type (e.g. direct, group, community) */
   @Field(() => String)
-  name!: string;
+  type!: string;
 
-  /** Community description */
+  /** Chat title */
   @Field(() => String, { nullable: true })
-  description!: string | null;
+  title!: string | null;
 
-  /** Community thumbnail */
+  /** Chat password */
   @Field(() => String, { nullable: true })
-  thumbnail!: string | null;
+  password!: string | null;
 
-  /** Influencer leading the community */
+  /** Chat profile pic */
+  @Field(() => String, { nullable: true })
+  profile_pic!: string | null;
+
+  /** User who created chat */
   @Field(() => User)
-  influencer!: User;
+  creator!: User;
 
-  /** User ID of influencer leading the community */
+  /** ID of user who created chat */
   @Field(() => Int)
-  influencer_id!: number;
+  creator_id!: number;
 
-  /** Timestamp of when the community was created */
+  /** Timestamp of when the chat was created */
   @Field(() => Date)
   created_at!: Date;
 
-  /** Timestamp of the last update to the community */
+  /** Timestamp of the last update to the chat */
   @Field(() => Date)
   updated_at!: Date;
 }
 
 @ObjectType()
-export class CommunityResponse {
+export class ChatResponse {
   @Field(() => Boolean)
   success!: boolean;
 
-  @Field(() => Community, { nullable: true })
-  community?: Community;
+  @Field(() => Chat, { nullable: true })
+  chat?: Chat;
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
 }
 
 @ObjectType()
-export class CommunitiesResponse {
+export class ChatsResponse {
   @Field(() => Boolean)
   success!: boolean;
 
-  @Field(() => [Community], { nullable: true })
-  communities?: Community[];
+  @Field(() => [Chat], { nullable: true })
+  chats?: Chat[];
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
@@ -86,9 +90,9 @@ export class CommunitiesResponse {
 
 
 /**
- * Community/User entity representing a Community/User member relation in the system
+ * Chat/User entity representing a Chat/User member relation in the system
  * 
- * This class defines the structure of a Community/User member relation 
+ * This class defines the structure of a Chat/User member relation 
  * and is used both as a GraphQL type and a database model.
  * 
  * @remarks
@@ -96,29 +100,31 @@ export class CommunitiesResponse {
  * 
  * @example
  * ```typescript
- * const community: CommunityMember = {
+ * const chat_member: ChatMember = {
  *   id: 54,
- *   community_id: 6,
+ *   chat: Chat,
+ *   chat_id: 6,
+ *   user: User
  *   user_id: 20,
  *   role: "member"
  *   status: "approved"
- *   updatedAt: new Date()
+ *   updated_at: new Date()
  * };
  * ```
  */
 @ObjectType()
-export class CommunityMember {
-  /** Unique identifier for the community/user relation */
+export class ChatMember {
+  /** Unique identifier for the chat/user relation */
   @Field(() => Int)
   id!: number;
 
-  /** Community */
-  @Field(() => Community)
-  community!: Community;
+  /** Chat */
+  @Field(() => Chat)
+  chat!: Chat;
 
-  /** Community ID */
+  /** Chat ID */
   @Field(() => Int)
-  community_id!: number;
+  chat_id!: number;
 
   /** User */
   @Field(() => User)
@@ -128,39 +134,39 @@ export class CommunityMember {
   @Field(() => Int)
   user_id!: number;
 
-  /** Role of user in community */
+  /** Role of user in chat */
   @Field(() => String)
   role!: string;
 
-  /** Status of user in community */
+  /** Status of user in chat */
   @Field(() => String)
   status!: string;
 
-  /** Timestamp of the when user joined community */
+  /** Timestamp of the when user joined chat */
   @Field(() => Date)
   joined_at!: Date;
 }
 
 
 @ObjectType()
-export class CommunityMemberResponse {
+export class ChatMemberResponse {
   @Field(() => Boolean)
   success!: boolean;
 
-  @Field(() => CommunityMember, { nullable: true })
-  community_member?: CommunityMember;
+  @Field(() => ChatMember, { nullable: true })
+  chat_member?: ChatMember;
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
 }
 
 @ObjectType()
-export class CommunityMembersResponse {
+export class ChatMembersResponse {
   @Field(() => Boolean)
   success!: boolean;
 
-  @Field(() => [CommunityMember], { nullable: true })
-  community_members?: CommunityMember[];
+  @Field(() => [ChatMember], { nullable: true })
+  chat_members?: ChatMember[];
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];

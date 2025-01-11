@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Community, CommunityMember } from '../modules/community/schema/communityQueries';
+import { Community, CommunityMember } from '../modules/community/schema/communityTypes';
 import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/communityInputs';
 import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/communityInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
@@ -57,7 +57,7 @@ export class CommunitiesService {
             data: input,
             include: { influencer: true },
         });
-        let owner_relation = await this.prisma.communityMembers.create({
+        let owner_relation = await this.prisma.communityMember.create({
           data: {
             community_id: community.id,
             user_id: input.influencer_id,
@@ -148,7 +148,7 @@ export class CommunityMembersService {
     if (!community) {
       return null;
     }
-    return await this.prisma.communityMembers.findMany({
+    return await this.prisma.communityMember.findMany({
         where: { 
             community_id: id
         },
@@ -172,7 +172,7 @@ export class CommunityMembersService {
    */
   async create(input: CreateCommunityMemberInput): Promise<CommunityMember> {
     try {
-        return await this.prisma.communityMembers.create({
+        return await this.prisma.communityMember.create({
             data: input,
             include: {
               community: {
@@ -206,7 +206,7 @@ export class CommunityMembersService {
    */
   async update(community_id: number, user_id: number, input: UpdateCommunityMemberInput): Promise<CommunityMember> {
     try {
-      return await this.prisma.communityMembers.update({
+      return await this.prisma.communityMember.update({
         where: { 
             community_id_user_id: {
                 community_id: community_id,
@@ -241,7 +241,7 @@ export class CommunityMembersService {
    */
   async delete(community_id: number, user_id: number): Promise<void> {
     try {
-        await this.prisma.communityMembers.delete({
+        await this.prisma.communityMember.delete({
             where: { community_id_user_id: {
                 community_id: community_id,
                 user_id: user_id,

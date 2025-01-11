@@ -10,10 +10,10 @@ import { IsInt, Length, IsOptional, IsString } from 'class-validator';
  * @example
  * ```typescript
  * const input: CreateCommunityInput = {
- *    "name": "community name",
- *    "description": "community description (optional)",
- *    "thumbnail": "community thumbnail (optional)"
- *    "influencer_id": 1
+ *    name: "community name",
+ *    description: "community description (optional)",
+ *    thumbnail: "community thumbnail (optional)",
+ *    influencer_id: 1
  * };
  * ```
  */
@@ -52,9 +52,9 @@ export class CreateCommunityInput {
  * @example
  * ```typescript
  * const update: UpdateCommunityInput = {
- *   "name": "updated community name",
- *   "description": "updated community description",
- *   "thumbnail": "updated community thumbnail"
+ *   name: "updated community name",
+ *   description: "updated community description",
+ *   thumbnail: "updated community thumbnail"
  * };
  * ```
  */
@@ -90,8 +90,8 @@ export class UpdateCommunityInput {
  * @example
  * ```typescript
  * const input: CreateCommunityMemberInput = {
- *    "community_id": 1,
- *    "user_id": 1
+ *    community_id: 1,
+ *    user_id: 1
  * };
  * ```
  */
@@ -116,8 +116,8 @@ export class CreateCommunityMemberInput {
  * 
  * @example
  * const update: UpdateCommunityInput = {
- *   "role": "member",
- *   "status": "approved"
+ *   role: "member",
+ *   status: "approved"
  * };
  */
 @InputType()
