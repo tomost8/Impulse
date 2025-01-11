@@ -4,7 +4,6 @@ import { createApp } from './app';
 import logger from './config/logger';
 import { Container } from 'typedi';
 import { ServerLifecycleManagerImpl } from './server/lifecycle';
-import { ErrorService } from './modules/common/errors/error.service';
 import { Server } from 'http';
 
 async function bootstrap() {

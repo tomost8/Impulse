@@ -1,5 +1,6 @@
 import { Field, ObjectType, Int } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
+import { FieldError } from '../../common/types/errorTypes';
 
 /**
  * User entity representing a user in the system
@@ -91,15 +92,6 @@ export class User {
   /** Timestamp of user's last login */
   @Field(() => Date, { nullable: true })
   last_login_at!: Date | null;
-}
-
-@ObjectType()
-export class FieldError {
-  @Field(() => String)
-  field!: string;
-
-  @Field(() => String)
-  message!: string;
 }
 
 @ObjectType()
