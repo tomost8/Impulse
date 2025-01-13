@@ -1,5 +1,6 @@
 import { Field, InputType, Int } from 'type-graphql';
-import { IsInt, Length, IsOptional, IsString } from 'class-validator';
+import { IsInt, Length, IsOptional, IsString, IsEnum } from 'class-validator';
+import { Role, RequestStatus } from '../../common/types/enumTypes';
 
 /**
  * Input type for creating a new chat
@@ -131,15 +132,15 @@ export class CreateChatMemberInput {
 export class UpdateChatMemberInput {
   /** User role in chat (optional) */
   @Field(() => String, { nullable: true })
-  //@IsOptional()
-  @IsString({ message: 'User role must be a string' })
-  role!: string;
+  @IsOptional()
+  @IsEnum(Role, { message: 'User role must be one of the valid Role values' })
+  role?: Role;
 
   /** User status in chat (optional) */
   @Field(() => String, { nullable: true })
-  //@IsOptional()
-  @IsString({ message: 'User status must be a string' })
-  status!: string;
+  @IsOptional()
+  @IsEnum(RequestStatus, { message: 'User status must be one of the valid RequestStatus values' })
+  status?: RequestStatus;
 } 
 
 

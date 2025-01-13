@@ -1,0 +1,116 @@
+### Query - Get All Communities
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { getAllCommunities { success communities { id name description thumbnail influencer { id first_name last_name email } } errors { field message } } }"
+}
+
+### Query - Get Community by ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!) { getCommunity(id: $id) { success community { id name description thumbnail influencer { id first_name last_name email } } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Query - Get Community Catgeory by Community ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($communityId: Int!) { getCommunityCategories(id: $communityId) {success community_categories { category } errors { field message } } }",
+  "variables": {
+    "communityId": 1
+  }
+}
+
+### Query - Get Communities by Category
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($category: Category!) { getCategoryCommunities(category: $category) {success community_categories { community { id name } } errors { field message } } }",
+  "variables": {
+    "category": "PASSION_HOBBY"
+  }
+}
+
+
+### Query - Get Community Members by Community ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($communityId: Int!) { getCommunityMembers(id: $communityId) {success community_members { user { id first_name last_name } role status } errors { field message } } }",
+  "variables": {
+    "communityId": 1
+  }
+}
+
+### Query - Get User Communities by User ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($userId: Int!) { getUserCommunities(id: $userId) {success community_members { community { id name } role status } errors { field message } } }",
+  "variables": {
+    "userId": 1
+  }
+}
+
+
+### Query - Get All Chats
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { getAllChats { success chats { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }"
+}
+
+### Query - Get Chat by ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!) { getChat(id: $id) { success chat { id type title password profile_pic creator { first_name last_name email } creator_id } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Query - Get Chat Members by Chat ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($chatId: Int!) { getChatMembers(id: $chatId) { success chat_members { user { id first_name last_name } role status } errors { field message } } }",
+  "variables": {
+    "chatId": 1
+  }
+}
+
+### Query - Get User Chats by User ID
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($userId: Int!) { getUserChats(id: $userId) { success chat_members { chat { id title } role status } errors { field message } } }",
+  "variables": {
+    "userId": 1
+  }
+}
+
+### Query - Get all Messages of a Chat (by chat id)
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!){ getMessages(id: $id) { success messages { id sender { id first_name last_name } content post { id caption } created_at } errors { field message } } }",
+  "variables": {
+    "id": 2
+  }
+}

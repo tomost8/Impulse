@@ -4,6 +4,7 @@ import { Chat, ChatMember, Message } from '../modules/chat/schema/chatTypes';
 import { CreateChatInput, CreateChatMemberInput, CreateMessageInput } from '../modules/chat/schema/chatInputs';
 import { UpdateChatInput, UpdateChatMemberInput } from '../modules/chat/schema/chatInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
+import { Role, RequestStatus } from '../modules/common/types/enumTypes';
 
 /**
  * Service handling chat-related business logic
@@ -61,8 +62,8 @@ export class ChatsService {
           data: {
             chat_id: chat.id,
             user_id: input.creator_id,
-            role: "creator",
-            status: "active",
+            role: Role.ADMIN,
+            status: RequestStatus.ACCEPTED,
           }
         });
         return chat;

@@ -1,6 +1,6 @@
 import { Field, ObjectType, Int } from 'type-graphql';
-import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
-import { User} from '../../user/schema/userTypes';
+import { User } from '../../user/schema/userTypes';
+import { Role, RequestStatus, Category } from '../../common/types/enumTypes';
 import { FieldError } from '../../common/types/errorTypes';
 
 /**
@@ -103,8 +103,8 @@ export class CommunitiesResponse {
  *   community_id: 6,
  *   user: User,
  *   user_id: 20,
- *   role: "member"
- *   status: "approved"
+ *   role: "USER"
+ *   status: "ACCEPTED"
  *   updatedAt: new Date()
  * };
  * ```
@@ -132,12 +132,12 @@ export class CommunityMember {
   user_id!: number;
 
   /** Role of user in community */
-  @Field(() => String)
-  role!: string;
+  @Field(() => Role)
+  role!: Role;
 
   /** Status of user in community */
-  @Field(() => String)
-  status!: string;
+  @Field(() => RequestStatus)
+  status!: RequestStatus;
 
   /** Timestamp of the when user joined community */
   @Field(() => Date)
@@ -164,6 +164,70 @@ export class CommunityMembersResponse {
 
   @Field(() => [CommunityMember], { nullable: true })
   community_members?: CommunityMember[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+} 
+
+
+/**
+ * Community/Category entity representing a Community/Category relation in the system
+ * 
+ * This class defines the structure of a Community/Category member relation 
+ * and is used both as a GraphQL type and a database model.
+ * 
+ * @remarks
+ * All fields marked with `@Field` are exposed in the GraphQL schema
+ * 
+ * @example
+ * ```typescript
+ * const community_category: CommunityCategory = {
+ *   id: 54,
+ *   community: Community,
+ *   community_id: 6,
+ *   category: "WORKING_OUT"
+ * };
+ * ```
+ */
+@ObjectType()
+export class CommunityCategory {
+  /** Unique identifier for the community/category relation */
+  @Field(() => Int)
+  id!: number;
+
+  /** Community */
+  @Field(() => Community)
+  community!: Community;
+
+  /** Community ID */
+  @Field(() => Int)
+  community_id!: number;
+
+  /** Category type of community */
+  @Field(() => Category)
+  category!: Category;
+}
+
+
+@ObjectType()
+export class CommunityCategoryResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => CommunityCategory, { nullable: true })
+  community_category?: CommunityCategory;
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+@ObjectType()
+export class CommunityCategoriesResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [CommunityCategory], { nullable: true })
+  community_categories?: CommunityCategory[];
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];

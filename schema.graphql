@@ -30,6 +30,15 @@ type ActivityResponse {
   success: Boolean!
 }
 
+enum Category {
+  FOOD
+  PASSION_HOBBY
+  RISE_AND_SHINE
+  STUDYING_WORKING
+  WELLNESS
+  WORKING_OUT
+}
+
 type Chat {
   created_at: Date!
   creator: User!
@@ -47,8 +56,8 @@ type ChatMember {
   chat_id: Int!
   id: Int!
   joined_at: Date!
-  role: String!
-  status: String!
+  role: Role!
+  status: RequestStatus!
   user: User!
   user_id: Int!
 }
@@ -94,13 +103,32 @@ type Community {
   updated_at: Date!
 }
 
+type CommunityCategoriesResponse {
+  community_categories: [CommunityCategory!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type CommunityCategory {
+  category: Category!
+  community: Community!
+  community_id: Int!
+  id: Int!
+}
+
+type CommunityCategoryResponse {
+  community_category: CommunityCategory
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type CommunityMember {
   community: Community!
   community_id: Int!
   id: Int!
   joined_at: Date!
-  role: String!
-  status: String!
+  role: Role!
+  status: RequestStatus!
   user: User!
   user_id: Int!
 }
@@ -146,6 +174,11 @@ input CreateChatMemberInput {
   user_id: Int!
 }
 
+input CreateCommunityCategoryInput {
+  category: Category!
+  community_id: Int!
+}
+
 input CreateCommunityInput {
   description: String
   influencer_id: Int!
@@ -156,6 +189,13 @@ input CreateCommunityInput {
 input CreateCommunityMemberInput {
   community_id: Int!
   user_id: Int!
+}
+
+input CreateMessageInput {
+  chat_id: Int!
+  content: String
+  post_id: Int
+  sender_id: Int!
 }
 
 """Date custom scalar type for YYYY-MM-DD format"""
@@ -171,16 +211,43 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://
 """
 scalar JSON
 
+type Message {
+  chat: Chat!
+  chat_id: Int!
+  content: String
+  created_at: Date!
+  id: Int!
+  post: Post
+  post_id: Int
+  sender: User!
+  sender_id: Int!
+}
+
+type MessageResponse {
+  errors: [FieldError!]
+  message: Message
+  success: Boolean!
+}
+
+type MessagesResponse {
+  errors: [FieldError!]
+  messages: [Message!]
+  success: Boolean!
+}
+
 type Mutation {
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
   createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
+  createCommunityCategory(input: CreateCommunityCategoryInput!): CommunityCategoryResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
+  createMessage(input: CreateMessageInput!): MessageResponse!
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
   deleteChatMember(chat_id: Int!, user_id: Int!): ChatMemberResponse!
   deleteCommunity(id: Int!): CommunityResponse!
+  deleteCommunityCategory(category: Category!, community_id: Int!): CommunityCategoryResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
@@ -228,17 +295,31 @@ type PostView {
 type Query {
   activities(category: String, skip: Int, status: String, take: Int): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
-  chat(id: Int!): ChatResponse!
-  chatMembers(id: Int!): ChatMembersResponse!
-  chats: ChatsResponse!
-  communities: CommunitiesResponse!
-  community(id: Int!): CommunityResponse!
-  communityMembers(id: Int!): CommunityMembersResponse!
+  getAllChats: ChatsResponse!
+  getAllCommunities: CommunitiesResponse!
+  getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
+  getChat(id: Int!): ChatResponse!
+  getChatMembers(id: Int!): ChatMembersResponse!
+  getCommunity(id: Int!): CommunityResponse!
+  getCommunityCategories(id: Int!): CommunityCategoriesResponse!
+  getCommunityMembers(id: Int!): CommunityMembersResponse!
+  getMessages(id: Int!): MessagesResponse!
+  getUserChats(id: Int!): ChatMembersResponse!
+  getUserCommunities(id: Int!): CommunityMembersResponse!
   me: UserResponse!
   user(firebase_uid: String, id: Int): UserResponse!
-  userChats(id: Int!): ChatMembersResponse!
-  userCommunities(id: Int!): CommunityMembersResponse!
   users: UsersResponse!
+}
+
+enum RequestStatus {
+  ACCEPTED
+  PENDING
+  REJECTED
+}
+
+enum Role {
+  ADMIN
+  USER
 }
 
 input UpdateActivityInput {
@@ -270,8 +351,8 @@ input UpdateCommunityInput {
 }
 
 input UpdateCommunityMemberInput {
-  role: String
-  status: String
+  role: Role
+  status: RequestStatus
 }
 
 input UpdateUserInput {

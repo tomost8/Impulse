@@ -29,32 +29,16 @@ export class ChatMutations {
    * @example
    * ```graphql
    * mutation { createChat (
-   *    input: {
-   *        type: "group",
-   *        creator_id: 1,
-   *        title: "chat title (optional depending on type)",
-   *        password: "chat password (optional)",
-   *        profile_pic: "chat picture (optional)",
-   *        creator_id: 1
-   *    }) {
-   *        success 
-   *        chat { 
-   *            id 
-   *            type
-   *            title 
-   *            creator { 
-   *                first_name 
-   *                last_name 
-   *                email 
-   *            } 
-   *            creator_id 
-   *        } 
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    }
+   * input: {
+   *    type: "group",
+   *    title: "chat title (optional depending on type)",
+   *    password: "chat password (optional)",
+   *    profile_pic: "chat picture (optional)",
+   *    creator_id: 1
    * }
+   * ) { success chat { 
+   * id type title password profile_pic creator { id first_name last_name email }
+   * errors { field message } } }
    * ```
    */
   @Mutation(() => ChatResponse)
@@ -88,33 +72,11 @@ export class ChatMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    updateChat (
-   *        id: 1,
-   *        input: {
-   *            title: "updated title",
-   *            password: "changed password",
-   *            profile_pic: "updated image"
-   *        }
-   *    ) {
-   *        success 
-   *        chat { 
-   *            id 
-   *            type
-   *            title
-   *            creator { 
-   *                first_name 
-   *                last_name 
-   *                email 
-   *            } 
-   *            creator_id 
-   *        } 
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    }
-   * }
+   * mutation { updateChat (
+   * id: 1, input: { title: "title", password: "password", profile_pic: "updated image"}
+   * ) { success chat { 
+   * id type title password profile_pic creator { id first_name last_name email }
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => ChatResponse)
@@ -150,13 +112,10 @@ export class ChatMutations {
    * 
    * @example
    * ```graphql
-   * mutation { deleteChat(id: 1) {
-   *    success
-   *    errors {
-   *        field
-   *        message
-   *    }
-   * }}
+   * mutation { deleteChat(
+   * id: 1
+   * ) { success
+   * errors { field message } } }
    * ```
    */
   @Mutation(() => ChatResponse)
@@ -183,7 +142,7 @@ export class ChatMutations {
 
 
 /**
- * GraphQL mutation resolvers for member-related operations
+ * GraphQL mutation resolvers for Chat/User-related operations
  */
 @Service()
 @Resolver(ChatMember)
@@ -199,39 +158,14 @@ export class ChatMemberMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    createChat(
-   *        input: {
-   *            chat_id: 3,
-   *            user_id: 31
-   *        }
-   *    ) { 
-   *        success 
-   *        chat_member { 
-   *            chat { 
-   *                type
-   *                title
-   *                creator { 
-   *                    first_name 
-   *                    last_name 
-   *                } 
-   *                creator_id 
-   *            } 
-   *            chat_id 
-   *            user { 
-   *                first_name 
-   *                last_name 
-   *            } 
-   *            user_id 
-   *            role 
-   *            status 
-   *        }
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    } 
-   * }
+   * mutation { createChatMember(
+   * input: { chat_id: 3, user_id: 31 }
+   * ) { success chat_member { 
+   *    chat { id type title creator { id first_name last_name email } } 
+   *    user { id first_name last_name email } 
+   *    role 
+   *    status
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => ChatMemberResponse)
@@ -269,41 +203,14 @@ export class ChatMemberMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    updateChatMember(
-   *        chat_id: 3,
-   *        user_id: 41, 
-   *        input: {
-   *            role: "member",
-   *            status: "active"
-   *        }
-   *    ) { 
-   *        success 
-   *        chat_member { 
-   *            chat { 
-   *                type
-   *                title
-   *                creator { 
-   *                    first_name 
-   *                    last_name 
-   *                } 
-   *                creator_id 
-   *            } 
-   *            chat_id 
-   *            user { 
-   *                first_name 
-   *                last_name 
-   *            } 
-   *            user_id 
-   *            role 
-   *            status 
-   *        }
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    } 
-   * }
+   * mutation { updateChatMember(
+   * chat_id: 3, user_id: 41, input: { role: "member", status: "active" }
+   * ) { success chat_member { 
+   *    chat { id type title creator { id first_name last_name email } } 
+   *    user { id first_name last_name email } 
+   *    role 
+   *    status
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => ChatMemberResponse)
@@ -345,15 +252,10 @@ export class ChatMemberMutations {
    * 
    * @example
    * ```graphql
-   * mutation {
-   *    deleteChatMember(chat_id: 1, user_id: 1) {
-   *        success
-   *        errors {
-   *            field
-   *            message
-   *        }
-   *    }
-   * }
+   * mutation { deleteChatMember(
+   * chat_id: 1, user_id: 1
+   * ) { success
+   * errors { field message } } }
    * ```
    */
   @Mutation(() => ChatMemberResponse)
@@ -403,48 +305,19 @@ export class MessageMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    createChat(
-   *        input: {
-   *            chat_id: 3,
-   *            sender_id: 31,
-   *            post_id: 45
-   *        }
-   *    ) { 
-   *        success 
-   *        chat_member { 
-   *            chat { 
-   *                type
-   *                title
-   *                creator { 
-   *                    first_name 
-   *                    last_name 
-   *                } 
-   *                creator_id 
-   *            } 
-   *            chat_id 
-   *            user { 
-   *                first_name 
-   *                last_name 
-   *            } 
-   *            user_id 
-   *            role 
-   *            status 
-   *        }
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    } 
-   * }
+   * mutation { createMessage(
+   * input: { chat_id: 3, sender_id: 31, post_id: 45 }
+   * ) { success message { 
+   * id chat { id title } sender { id first_name last_name } content post { id caption } created_at 
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => MessageResponse)
-  async createChatMember(@Arg('input') input: CreateMessageInput): Promise<MessageResponse> {
+  async createMessage(@Arg('input') input: CreateMessageInput): Promise<MessageResponse> {
     try {
       const message = await this.messagesService.create(input);
       
-      logger.info('Chat/User relation creation successful', { 
+      logger.info('Message creation successful', { 
         chatId: message.chat_id,
         senderId: message.sender_id,
       });

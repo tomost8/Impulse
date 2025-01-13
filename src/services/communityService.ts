@@ -1,9 +1,12 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Community, CommunityMember } from '../modules/community/schema/communityTypes';
+import { Community, CommunityMember, CommunityCategory } from '../modules/community/schema/communityTypes';
 import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/communityInputs';
 import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/communityInputs';
+import { CreateCommunityCategoryInput } from '../modules/community/schema/communityInputs';
+import { Category } from '../modules/common/types/enumTypes';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
+import { Role, RequestStatus } from '../modules/common/types/enumTypes';
 
 /**
  * Service handling community-related business logic
@@ -61,8 +64,8 @@ export class CommunitiesService {
           data: {
             community_id: community.id,
             user_id: input.influencer_id,
-            role: "owner",
-            status: "approved",
+            role: Role.ADMIN,
+            status: RequestStatus.ACCEPTED,
           }
         });
         return community;
@@ -267,6 +270,121 @@ export class CommunityMembersService {
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundError(`Relation between user with ID ${user_id} and community with ID ${community_id} not found`);
+      }
+      throw error;
+    }
+  }
+} 
+
+
+
+
+
+/**
+ * Service handling Community/Category-related business logic
+ * 
+ * This service provides methods for managing Community/Category relations in the system,
+ * including CRUD operations and Community/Category-specific business logic.
+ * 
+ * @remarks
+ * Uses Prisma as the ORM for database operations
+ */
+@Service()
+export class CommunityCategoriesService {
+  constructor(private prisma: PrismaClient) {}
+  /**
+   * Find all categories of a community given community ID
+   * 
+   * @param id - The unique identifier of the community
+   * @returns Promise resolving to the community categories if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findById(id: number): Promise<CommunityCategory[] | null> {
+    return await this.prisma.communityCategory.findMany({
+        where: { 
+            community_id: id
+        },
+        include: {
+          community: {
+            include: {
+              influencer: true
+            }
+          }
+        }
+    });
+  }
+
+  /**
+   * Find all communities of a category given category
+   * 
+   * @param category - the category type
+   * @returns Promise resolving to the community/categories if found, null otherwise
+   * @throws {PrismaError} If database query fails
+   */
+  async findByCategoryId(category: Category): Promise<CommunityCategory[] | null> {
+    return await this.prisma.communityCategory.findMany({
+        where: { 
+            category: category
+        },
+        include: {
+          community: {
+            include: {
+              influencer: true
+            }
+          }
+        }
+    });
+  }
+
+  /**
+   * Add a category to a community
+   * 
+   * @param input - Community/Category creation data
+   * @returns Promise resolving to the created Community/Category relation
+   * @throws {PrismaError} If database operation fails
+   */
+  async create(input: CreateCommunityCategoryInput): Promise<CommunityCategory> {
+    try {
+        return await this.prisma.communityCategory.create({
+            data: input,
+            include: {
+              community: {
+                include: {
+                  influencer: true
+                }
+              }
+            }
+        });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new Error(`There is already category ${input.category} and community with ID ${input.community_id}`);
+      }
+      if (error.code === 'P2003') {
+        throw new NotFoundError(`Foreign key constraint violated: either community with ID ${input.community_id}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a category from a community
+   * 
+   * @param community_id - ID of the community
+   * @param category - category to remove
+   * @throws {NotFoundError} If Community/Category relation doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
+  async delete(community_id: number, category: Category): Promise<void> {
+    try {
+        await this.prisma.communityCategory.delete({
+            where: { community_id_category: {
+                community_id: community_id,
+                category: category,
+            } },
+        });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundError(`Relation between category ${category} and community with ID ${community_id} not found`);
       }
       throw error;
     }

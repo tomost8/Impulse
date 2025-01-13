@@ -1,5 +1,6 @@
 import { Field, ObjectType, Int } from 'type-graphql';
 import { User } from '../../user/schema/userTypes';
+import { Role, RequestStatus } from '../../common/types/enumTypes';
 import { Post } from '../../post/schema/postTypes';
 import { FieldError } from '../../common/types/errorTypes';
 
@@ -136,12 +137,12 @@ export class ChatMember {
   user_id!: number;
 
   /** Role of user in chat */
-  @Field(() => String)
-  role!: string;
+  @Field(() => Role)
+  role!: Role;
 
   /** Status of user in chat */
-  @Field(() => String)
-  status!: string;
+  @Field(() => RequestStatus)
+  status!: RequestStatus;
 
   /** Timestamp of the when user joined chat */
   @Field(() => Date)
@@ -254,7 +255,7 @@ export class MessagesResponse {
   @Field(() => Boolean)
   success!: boolean;
 
-  @Field(() => [ChatMember], { nullable: true })
+  @Field(() => [Message], { nullable: true })
   messages?: Message[];
 
   @Field(() => [FieldError], { nullable: true })

@@ -23,32 +23,14 @@ export class ChatQueries {
    * 
    * @example
    * ```graphql
-   * query { chats { 
-   *    success 
-   *    chats { 
-   *        id 
-   *        type
-   *        title
-   *        password 
-   *        profile_pic
-   *        creator { 
-   *            first_name 
-   *            last_name 
-   *            email 
-   *        } 
-   *        creator_id 
-   *        created_at 
-   *        updated_at 
-   *    } 
-   *    errors { 
-   *        field 
-   *        message 
-   *    } 
-   * }}
+   * query { getAllChats 
+   * { success chats { 
+   * id type title password profile_pic creator { id first_name last_name email } created_at updated_at
+   * } errors { field message } } }
    * ```
    */
   @Query(() => ChatsResponse)
-  async chats(): Promise<ChatsResponse> {
+  async getAllChats(): Promise<ChatsResponse> {
     try {
       const chats = await this.chatsService.findAll();
       return {
@@ -74,32 +56,15 @@ export class ChatQueries {
    * 
    * @example
    * ```graphql
-   * query { chat(id: 1) {
-   *    success 
-   *    chats { 
-   *        id 
-   *        type
-   *        title 
-   *        password
-   *        profile_pic
-   *        creator {
-   *            first_name 
-   *            last_name 
-   *            email 
-   *        } 
-   *        creator_id 
-   *        created_at 
-   *        updated_at 
-   *    } 
-   *    errors { 
-   *        field 
-   *        message 
-   *    }
-   * }}
+   * query { getChat(
+   * id: 1
+   * ) { success chat { 
+   * id type title password profile_pic creator { id first_name last_name email } created_at updated_at
+   * errors { field message } } }
    * ```
    */
   @Query(() => ChatResponse)
-  async chat(@Arg('id', () => Int) id: number): Promise<ChatResponse> {
+  async getChat(@Arg('id', () => Int) id: number): Promise<ChatResponse> {
     try {
       const chat = await this.chatsService.findById(id);
       if (!chat) {
@@ -149,27 +114,15 @@ export class ChatMemberQueries {
    * 
    * @example
    * ```graphql
-   * query { chatMembers(id: 1) {
-   *    success 
-   *    chat_members { 
-   *        user { 
-   *            first_name 
-   *            last_name 
-   *        } 
-   *        user_id 
-   *        role 
-   *        status 
-   *    }
-   *    errors { 
-   *        field 
-   *        message 
-   *    } 
-   * }}
-   * 
+   * query { getChatMembers(
+   * id: 1
+   * ) { success chat_members { 
+   * user { id first_name last_name } role status
+   * } errors { field message } } }
    * ```
    */
   @Query(() => ChatMembersResponse)
-  async chatMembers(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
+  async getChatMembers(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
     try {
       const chat_members = await this.chatMembersService.findById(id);
       if (!chat_members) {
@@ -204,27 +157,15 @@ export class ChatMemberQueries {
    * 
    * @example
    * ```graphql
-   * query { chatMembers(id: 1) {
-   *    success 
-   *    chat_members { 
-   *        user { 
-   *            first_name 
-   *            last_name 
-   *        } 
-   *        user_id 
-   *        role 
-   *        status 
-   *    }
-   *    errors { 
-   *        field 
-   *        message 
-   *    } 
-   * }}
-   * 
+   * query { getUserChats(
+   * id: 1
+   * ) { success chat_members { 
+   * chat { id title } role status
+   * } errors { field message } } }
    * ```
    */
   @Query(() => ChatMembersResponse)
-  async userChats(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
+  async getUserChats(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
     try {
       const chat_members = await this.chatMembersService.findByUserId(id);
       if (!chat_members) {
@@ -274,27 +215,16 @@ export class MessageQueries {
    * 
    * @example
    * ```graphql
-   * query { chatMembers(id: 1) {
-   *    success 
-   *    chat_members { 
-   *        user { 
-   *            first_name 
-   *            last_name 
-   *        } 
-   *        user_id 
-   *        role 
-   *        status 
-   *    }
-   *    errors { 
-   *        field 
-   *        message 
-   *    } 
-   * }}
+   * query { getMessages(
+   * id: 1
+   * ) { success messages { 
+   * id sender { id first_name last_name } content post { id caption } created_at 
+   * } errors { field message } } }
    * 
    * ```
    */
   @Query(() => MessagesResponse)
-  async Messages(@Arg('id', () => Int) id: number): Promise<MessagesResponse> {
+  async getMessages(@Arg('id', () => Int) id: number): Promise<MessagesResponse> {
     try {
       const messages = await this.messagesService.findById(id);
       if (!messages) {
