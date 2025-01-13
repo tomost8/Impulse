@@ -19,8 +19,8 @@ export class Post {
   @Field(() => String, { nullable: true })
   caption: string | null;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  media_urls: any | null;
+  @Field(() => String, { nullable: true })
+  mediaUrl: string | null;
 
   @Field(() => Boolean)
   is_deleted: boolean;

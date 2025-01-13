@@ -85,7 +85,7 @@ model Activity {
   scheduledDatetime DateTime? @map("scheduled_datetime")
   status            String    @default("pending")
   post              Post?     @relation(fields: [postId], references: [id])
-  postId            Int?      @map("post_id")
+  postId            Int?      @unique @map("post_id")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
   user              User      @relation(fields: [userId], references: [id])
@@ -101,9 +101,9 @@ model Post {
   author      User         @relation(fields: [author_id], references: [id])
   author_id   Int
   caption     String?
-  media_urls  Json?
+  mediaUrl   String?      @map("media_url")
   is_deleted  Boolean      @default(false)
-  activities  Activity[]   
+  activity    Activity?
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
   expires_at  DateTime?    // story类型设置24小时，chat类型为null

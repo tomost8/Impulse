@@ -17,6 +17,10 @@ import { createHealthRoutes } from './server/health/routes';
 import { requestLogger } from './config/logger';
 import { env } from './config/env';
 import { ActivityExpirationService } from './services/activityExpirationService';
+import { createBullBoard } from '@bull-board/api';
+import { BullAdapter } from '@bull-board/api/bullAdapter';
+import { ExpressAdapter } from '@bull-board/express';
+import { PostService } from './services/postService';
 
 export async function createApp() {
   const app = express();
@@ -74,6 +78,19 @@ export async function createApp() {
   );
   // health check routes
   app.use('/api/v1/health', createHealthRoutes());
+
+  // 设置 Bull Board
+  const serverAdapter = new ExpressAdapter();
+  const postService = Container.get(PostService);
+  const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
+    queues: [
+      new BullAdapter(postService.postTargetsQueue),
+    ],
+    serverAdapter: serverAdapter,
+  });
+
+  serverAdapter.setBasePath('/admin/queues');
+  app.use('/admin/queues', serverAdapter.getRouter());
 
   // error handling
   app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

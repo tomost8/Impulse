@@ -182,9 +182,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
   "variables": {
     "input": {
-      "first_name": "001",
+      "first_name": "002",
       "last_name": "tester",
-      "username": "test001",
+      "username": "test002",
       "gender": "male",
       "dob": "2024-01-02",
       "timezone": "America/New_York",
@@ -452,7 +452,7 @@ Authorization: Bearer {{authToken}}
     "input": {
       "userId": 1,
       "category": "social",
-      "scheduledDatetime": "2025-01-11T13:00:00Z",
+      "scheduledDatetime": "2025-01-12T13:00:00Z",
       "duration": 60
     }
   }
@@ -498,7 +498,8 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "caption": "New Post",
-      "category": "news",
+      "category": "social",
+      "mediaUrls": "https://www.google.com",
       "authorId": 1,
       "post_targets": [
         {
@@ -713,10 +714,7 @@ Content-Type: application/json
             {"target_type": "user", "target_id": 30}
         // ... 为了测试方便，这里只列出10个目标用户
       ],
-      "media_urls": {
-        "images": [],
-        "videos": []
-      }
+      "mediaUrl":"https://www.google.com"
     }
   }
 }
@@ -807,7 +805,6 @@ Authorization: Bearer {{authToken}}
 POST {{baseUrl}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
-
 {
   "query": "query($userId: Int!) { activitiesByUserId(userId: $userId) { success activities { id name scheduledDatetime status } } }",
   "variables": {
@@ -852,7 +849,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deleteActivity(id: $id) { success activity { id name status } } }",
   "variables": {
-    "id": 31
+    "id": 33
 
   }
 }
@@ -860,8 +857,6 @@ Authorization: Bearer {{authToken}}
 ### 测试步骤说明：
 
 # 1. 首先运行 Redis（如果还没有运行）：
-# docker run -d --name redis -p 6379:6379 redis
-
 # 2. 按顺序执行测试：
 # a. 运行测试 1：设置用户时区
 # b. 运行测试 2：创建一个活动（记下返回的 ID）

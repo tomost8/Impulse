@@ -25,8 +25,8 @@ export class CreatePostInput {
   @Field(() => [PostTargetInput])
   post_targets: PostTargetInput[];
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  media_urls?: any;
+  @Field(() => String, { nullable: true })
+  mediaUrl?: string;
 
   @Field(() => Date, { nullable: true })
   expires_at?: Date;
@@ -40,8 +40,8 @@ export class UpdatePostInput {
   @Field(() => String, { nullable: true })
   category?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  media_urls?: any;
+  @Field(() => String, { nullable: true })
+  mediaUrl?: string;
 
   @Field(() => Date, { nullable: true })
   expires_at?: Date;

@@ -7,7 +7,7 @@ import Queue from 'bull';
 
 @Service()
 export class PostService {
-  private postTargetsQueue: Queue.Queue;
+  public postTargetsQueue: Queue.Queue;
 
   constructor(private prisma: PrismaClient) {
     // 初始化队列
@@ -66,9 +66,7 @@ export class PostService {
         where: {
           userId: data.authorId,
           category: data.category,
-          scheduledDatetime: {
-            gt: new Date()
-          }
+          status: "pending"
         }
       });
 
@@ -89,7 +87,7 @@ export class PostService {
           data: {
             caption: data.caption,
             category: data.category,
-            media_urls: data.media_urls,
+            mediaUrl: data.mediaUrl,
             expires_at: data.expires_at,
             author: { connect: { id: data.authorId } },
             post_targets: {
