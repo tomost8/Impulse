@@ -1,3 +1,25 @@
+### Query - get friends
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!) { getFriendships(id: $id) { success friendships { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Query - get friend requests
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!) { getFriendRequests(id: $id) { success friendships { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
+  "variables": {
+    "id": 2
+  }
+}
+
 ### Query - Get All Communities
 POST http://localhost:3000/graphql
 Content-Type: application/json

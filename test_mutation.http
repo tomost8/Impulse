@@ -49,6 +49,50 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+### GraphQL Friend Request API Tests ###
+
+### Mutation - Create Friend Request
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateFriendshipInput!) { createFriendship(input: $input) { success friendship { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
+  "variables": {
+    "input": {
+      "sender_id": 2,
+      "receiver_id": 1
+    }
+  }
+}
+
+### Mutation - Update Friend Request
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($senderId: Int!, $receiverId: Int!, $input: UpdateFriendshipInput!) { updateFriendship(sender_id: $senderId, receiver_id: $receiverId, input: $input) { success friendship { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
+  "variables": {
+    "senderId": 1,
+    "receiverId": 2,
+    "input": {
+      "status": "ACCEPTED"
+    }
+  }
+}
+
+### Mutation - Delete Friend
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($userId: Int!, $friendId: Int!) { deleteFriendship(user_id: $userId, friend_id: $friendId) { success errors { field message } } }",
+  "variables": {
+    "userId": 2,
+    "friendId": 1
+  }
+}
+
+
 ### GraphQL Community API Tests ###
 
 ### Mutation - Create Community

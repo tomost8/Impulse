@@ -191,6 +191,11 @@ input CreateCommunityMemberInput {
   user_id: Int!
 }
 
+input CreateFriendshipInput {
+  receiver_id: Int!
+  sender_id: Int!
+}
+
 input CreateMessageInput {
   chat_id: Int!
   content: String
@@ -204,6 +209,29 @@ scalar Date
 type FieldError {
   field: String!
   message: String!
+}
+
+type Friendship {
+  created_at: Date!
+  id: Int!
+  receiver: User!
+  receiver_id: Int!
+  sender: User!
+  sender_id: Int!
+  status: RequestStatus!
+  updated_at: Date!
+}
+
+type FriendshipResponse {
+  errors: [FieldError!]
+  friendship: Friendship
+  success: Boolean!
+}
+
+type FriendshipsResponse {
+  errors: [FieldError!]
+  friendships: [Friendship!]
+  success: Boolean!
 }
 
 """
@@ -242,6 +270,7 @@ type Mutation {
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createCommunityCategory(input: CreateCommunityCategoryInput!): CommunityCategoryResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
+  createFriendship(input: CreateFriendshipInput!): FriendshipResponse!
   createMessage(input: CreateMessageInput!): MessageResponse!
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
@@ -249,6 +278,7 @@ type Mutation {
   deleteCommunity(id: Int!): CommunityResponse!
   deleteCommunityCategory(category: Category!, community_id: Int!): CommunityCategoryResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
+  deleteFriendship(friend_id: Int!, user_id: Int!): FriendshipResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
@@ -256,6 +286,7 @@ type Mutation {
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
   updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
   updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
+  updateFriendship(input: UpdateFriendshipInput!, receiver_id: Int!, sender_id: Int!): FriendshipResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
 }
 
@@ -303,6 +334,8 @@ type Query {
   getCommunity(id: Int!): CommunityResponse!
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
   getCommunityMembers(id: Int!): CommunityMembersResponse!
+  getFriendRequests(id: Int!): FriendshipsResponse!
+  getFriendships(id: Int!): FriendshipsResponse!
   getMessages(id: Int!): MessagesResponse!
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
@@ -353,6 +386,10 @@ input UpdateCommunityInput {
 input UpdateCommunityMemberInput {
   role: Role
   status: RequestStatus
+}
+
+input UpdateFriendshipInput {
+  status: RequestStatus!
 }
 
 input UpdateUserInput {
