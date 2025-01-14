@@ -43,8 +43,8 @@ export class Post {
   @Field(() => [PostView], { nullable: true })
   post_views?: PostView[] | null;
 
-  @Field(() => String)
-  category: string;
+  @Field(() => String, { nullable: true })
+  category?: string | null;  
 }
 
 @ObjectType()

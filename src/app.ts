@@ -82,9 +82,11 @@ export async function createApp() {
   // 设置 Bull Board
   const serverAdapter = new ExpressAdapter();
   const postService = Container.get(PostService);
+  
   const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
     queues: [
       new BullAdapter(postService.postTargetsQueue),
+      new BullAdapter(activityExpirationService.expirationQueue),
     ],
     serverAdapter: serverAdapter,
   });

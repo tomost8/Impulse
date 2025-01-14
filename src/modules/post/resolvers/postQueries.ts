@@ -83,6 +83,31 @@ export class PostQueries {
     }
   }
 
+  @Query(() => PostsResponse)
+  async postsByTarget(
+    @Arg('targetType') targetType: string,
+    @Arg('targetId', () => Int) targetId: number,
+    @Arg('skip', () => Int, { nullable: true }) skip?: number,
+    @Arg('take', () => Int, { nullable: true }) take?: number
+  ): Promise<PostsResponse> {
+    try {
+      const posts = await this.postService.findByTarget(targetType, targetId, { skip, take });
+      return {
+        success: true,
+        posts
+      };
+    } catch (error) {
+      logger.error(`Failed to fetch posts for target type ${targetType} and id ${targetId}:`, error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch posts by target'
+        }]
+      };
+    }
+  }
+
   @Query(() => PostTargetsProgress)
   async getPostTargetsProgress(
     @Arg('postId', () => Int) postId: number
@@ -96,3 +121,4 @@ export class PostQueries {
     }
   }
 } 
+

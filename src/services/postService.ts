@@ -4,12 +4,16 @@ import { Post } from '../modules/post/schema/postTypes';
 import { CreatePostInput, UpdatePostInput } from '../modules/post/schema/postInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import Queue from 'bull';
+import { ActivityExpirationService } from './activityExpirationService';
 
 @Service()
 export class PostService {
   public postTargetsQueue: Queue.Queue;
 
-  constructor(private prisma: PrismaClient) {
+  constructor(
+    private prisma: PrismaClient,
+    private activityExpirationService: ActivityExpirationService
+  ) {
     // 初始化队列
     this.postTargetsQueue = new Queue('post-targets', {
       redis: {
@@ -43,29 +47,14 @@ export class PostService {
     });
   }
 
-  async findById(id: number): Promise<Post> {
-    const post = await this.prisma.post.findUnique({
-      where: { id },
-      include: {
-        author: true,
-        post_targets: true
-      }
-    });
-
-    if (!post) {
-      throw new NotFoundError(`Post with id ${id} not found`);
-    }
-
-    return post;
-  }
 
   async create(data: CreatePostInput): Promise<Post> {
     try {
       // Check if the user has an unexpired activity of the same category
       const hasValidActivity = await this.prisma.activity.findFirst({
         where: {
+          id: data.activityId,
           userId: data.authorId,
-          category: data.category,
           status: "pending"
         }
       });
@@ -86,7 +75,6 @@ export class PostService {
         const post = await tx.post.create({
           data: {
             caption: data.caption,
-            category: data.category,
             mediaUrl: data.mediaUrl,
             expires_at: data.expires_at,
             author: { connect: { id: data.authorId } },
@@ -104,6 +92,15 @@ export class PostService {
             post_targets: true
           }
         });
+
+        // 更新对应的 activity 的 postId 并取消过期任务
+        await tx.activity.update({
+          where: { id: data.activityId },
+          data: { postId: post.id, status: "completed" }
+        });
+
+        // 取消 activity 的过期任务
+        await this.activityExpirationService.cancelActivityExpiration(data.activityId);
 
         // 如果还有更多目标，添加到队列中异步处理
         if (data.post_targets.length > HIGH_CONCURRENCY_THRESHOLD) {
@@ -236,6 +233,47 @@ export class PostService {
       include: {
         author: true,
         post_targets: true
+      }
+    });
+  }
+
+  async findById(id: number): Promise<Post> {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: true,
+        post_targets: true
+      }
+    });
+
+    if (!post) {
+      throw new NotFoundError(`Post with id ${id} not found`);
+    }
+
+    return post;
+  }
+
+  async findByTarget(targetType: string, targetId: number, options?: {
+    skip?: number;
+    take?: number;
+  }): Promise<Post[]> {
+    return await this.prisma.post.findMany({
+      where: {
+        post_targets: {
+          some: {
+            target_type: targetType,
+            target_id: targetId
+          }
+        }
+      },
+      skip: options?.skip,
+      take: options?.take,
+      include: {
+        author: true,
+        post_targets: true
+      },
+      orderBy: {
+        created_at: 'desc'  // 默认按创建时间倒序排列
       }
     });
   }

@@ -109,7 +109,7 @@ model Post {
   expires_at  DateTime?    // story类型设置24小时，chat类型为null
   post_targets PostTarget[]
   post_views   PostView[]
-  category    String
+  category    String?
 
   @@map("posts")
   @@index([author_id, created_at])

@@ -14,7 +14,7 @@ interface ActivityExpirationJob {
 
 @Service()
 export class ActivityExpirationService {
-  private expirationQueue: Queue.Queue<ActivityExpirationJob>;
+  public expirationQueue: Queue.Queue;
 
   constructor(private prisma: PrismaClient) {
     // 创建 Bull 队列

@@ -201,6 +201,11 @@ export class ActivitiesService {
         }
       }
 
+      // 如果状态变更为completed，取消对应的bull任务
+      if (data.status === 'completed') {
+        await this.activityExpirationService.cancelActivityExpiration(id);
+      }
+
       // 2. 更新活动
       return await this.prisma.activity.update({
         where: { id },
@@ -260,12 +265,20 @@ export class ActivitiesService {
     }
   }
 
-  async findByUserId(userId: number, options?: { skip?: number; take?: number; }): Promise<Activity[]> {
+  async findByUserId(
+    userId: number, 
+    options?: { 
+      skip?: number; 
+      take?: number;
+      status?: string;
+    }
+  ): Promise<Activity[]> {
     return await this.prisma.activity.findMany({
       skip: options?.skip,
       take: options?.take,
       where: {
-        userId
+        userId,
+        ...(options?.status ? { status: options.status } : {})
       },
       include: {
         post: {

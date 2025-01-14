@@ -16,8 +16,11 @@ export class CreatePostInput {
   @Field(() => String)
   caption: string;
 
-  @Field(() => String)
-  category: string;
+  @Field(() => Int)
+  activityId: number;
+
+  @Field(() => String, { nullable: true })
+  category?: string | null;
 
   @Field(() => Int)
   authorId: number;
@@ -38,7 +41,7 @@ export class UpdatePostInput {
   caption?: string;
 
   @Field(() => String, { nullable: true })
-  category?: string;
+  category?: string | null;
 
   @Field(() => String, { nullable: true })
   mediaUrl?: string;

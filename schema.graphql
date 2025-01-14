@@ -99,9 +99,10 @@ input CreateCommunityMemberInput {
 }
 
 input CreatePostInput {
+  activityId: Int!
   authorId: Int!
   caption: String!
-  category: String!
+  category: String
   expires_at: DateTimeISO
   mediaUrl: String
   post_targets: [PostTargetInput!]!
@@ -143,7 +144,7 @@ type Post {
   author: User!
   author_id: Int!
   caption: String
-  category: String!
+  category: String
   created_at: DateTimeISO!
   expires_at: DateTimeISO
   id: Int!
@@ -197,7 +198,7 @@ type PostsResponse {
 
 type Query {
   activities(category: String, skip: Int, status: String, take: Int): ActivitiesResponse!
-  activitiesByUserId(skip: Int, take: Int, userId: Int!): ActivitiesResponse!
+  activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
   communities: CommunitiesResponse!
   community(id: Int!): CommunityResponse!
@@ -206,6 +207,7 @@ type Query {
   me: UserResponse!
   post(id: Int!): PostResponse!
   posts(category: String, skip: Int, take: Int): PostsResponse!
+  postsByTarget(skip: Int, take: Int, targetId: Int!, targetType: String!): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!
