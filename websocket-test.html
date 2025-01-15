@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h2>WebSocket Connection Test</h2>
+    <div id="status">Status: Disconnected</div>
+    <div id="log" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0;"></div>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <script>
+        let ws;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += message + '<br>';
+            console.log(message);
+        }
+        
+        function connect() {
+            try {
+                log('Attempting to connect...');
+                ws = new WebSocket('ws://localhost:3000/graphql', 'graphql-transport-ws');
+                
+                ws.onopen = () => {
+                    log('Connection opened');
+                    document.getElementById('status').textContent = 'Status: Connected';
+                    
+                    // 发送连接初始化消息
+                    const initMessage = {
+                        type: 'connection_init',
+                        payload: {}
+                    };
+                    log('Sending init message: ' + JSON.stringify(initMessage));
+                    ws.send(JSON.stringify(initMessage));
+                };
+                
+                ws.onclose = (event) => {
+                    log(`Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+                    document.getElementById('status').textContent = 'Status: Disconnected';
+                };
+                
+                ws.onerror = (error) => {
+                    log('WebSocket error: ' + JSON.stringify(error));
+                    document.getElementById('status').textContent = 'Status: Error';
+                };
+                
+                ws.onmessage = (event) => {
+                    log('Received message: ' + event.data);
+                };
+            } catch (error) {
+                log('Error creating WebSocket: ' + error.message);
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                log('Disconnecting...');
+                ws.close();
+            }
+        }
+    </script>
+</body>
+</html> 
