@@ -30,6 +30,11 @@ type ActivityResponse {
   success: Boolean!
 }
 
+type BaseResponse {
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type CommunitiesResponse {
   communities: [Community!]
   errors: [FieldError!]
@@ -137,6 +142,7 @@ type Mutation {
   updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
   updatePost(id: Int!, input: UpdatePostInput!): PostResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
+  viewPost(postId: Int!, userId: Int!): BaseResponse!
 }
 
 type Post {
@@ -206,8 +212,7 @@ type Query {
   getPostTargetsProgress(postId: Int!): PostTargetsProgress!
   me: UserResponse!
   post(id: Int!): PostResponse!
-  posts(category: String, skip: Int, take: Int): PostsResponse!
-  postsByTarget(skip: Int, take: Int, targetId: Int!, targetType: String!): PostsResponse!
+  posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!

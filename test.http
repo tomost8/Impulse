@@ -353,8 +353,8 @@ Content-Type: application/json
   "query": "mutation ($input: CreateCommunityMemberInput!) { createCommunityMember(input: $input) { success community_member { community { name influencer {first_name last_name } influencer_id } community_id user { first_name last_name } user_id } errors { field message } } }",
   "variables": {
     "input": {
-      "community_id": 2,
-      "user_id": 3
+      "community_id": 1,
+      "user_id": 1
     }
   }
 }
@@ -582,6 +582,25 @@ Authorization: Bearer {{authToken}}
 
 
 
+### 创建带有100个目标用户的帖子
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "input": {
+      "caption": "Both user and community",
+      "authorId": 1,
+      "activityId": 48,
+      "post_targets": [
+            {"target_type": "user", "target_id": 2},
+            {"target_type": "community", "target_id": 1}
+      ],
+      "mediaUrl":"https://www.google.com"
+    }
+  }
+}
 
 
 ### 创建带有100个目标用户的帖子
@@ -794,31 +813,48 @@ Authorization: Bearer {{authToken}}
 # 4. 确保 Redis 服务正在运行
 # 5. 检查日志以验证过期任务的调度
 
-### Query - Get Posts by Target Type and ID
+### Query - Get Posts with Target Filter
 POST {{baseUrl}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($targetType: String!, $targetId: Int!, $skip: Int, $take: Int) { postsByTarget(targetType: $targetType, targetId: $targetId, skip: $skip, take: $take) { success posts { id caption category author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
   "variables": {
     "targetType": "community",
     "targetId": 1,
+    "currentUserId": 2,
+    "unreadOnly": false,
+    "skip": 0,
+    "take": 10,
+    "category": "workout"
+  }
+}
+
+### Query - Get Only Unread Posts
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($currentUserId: Int!, $unreadOnly: Boolean!, $skip: Int, $take: Int) { posts(currentUserId: $currentUserId, unreadOnly: $unreadOnly, skip: $skip, take: $take) { success posts { id caption category author { id first_name last_name } post_targets { id target_type target_id } post_views { id user_id viewed_at } } errors { field message } } }",
+  "variables": {
+    "currentUserId": 2,
+    "unreadOnly": true,
     "skip": 0,
     "take": 10
   }
 }
 
-### Query - Get Posts by User Target
+### Query - Get Posts by Category
 POST {{baseUrl}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($targetType: String!, $targetId: Int!, $skip: Int, $take: Int) { postsByTarget(targetType: $targetType, targetId: $targetId, skip: $skip, take: $take) { success posts { id mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
+  "query": "query($category: String!, $skip: Int, $take: Int) { posts(category: $category, skip: $skip, take: $take) { success posts { id caption category author { id first_name last_name } post_targets { id target_type target_id } post_views { id user_id viewed_at } } errors { field message } } }",
   "variables": {
-    "targetType": "user",
-    "targetId": 2,
+    "category": "workout",
     "skip": 0,
     "take": 10
   }

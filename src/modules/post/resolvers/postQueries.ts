@@ -13,12 +13,20 @@ export class PostQueries {
 
   @Query(() => PostsResponse)
   async posts(
+    @Arg('targetType', { nullable: true }) targetType?: string,
+    @Arg('targetId', () => Int, { nullable: true }) targetId?: number,
+    @Arg('currentUserId', () => Int, { nullable: true }) currentUserId?: number,
+    @Arg('unreadOnly', () => Boolean, { nullable: true }) unreadOnly?: boolean,
     @Arg('skip', () => Int, { nullable: true }) skip?: number,
     @Arg('take', () => Int, { nullable: true }) take?: number,
     @Arg('category', { nullable: true }) category?: string
   ): Promise<PostsResponse> {
     try {
-      const posts = await this.postService.findAll({
+      const posts = await this.postService.findPosts({ 
+        targetType,
+        targetId,
+        currentUserId,
+        unreadOnly,
         skip,
         take,
         category
@@ -78,31 +86,6 @@ export class PostQueries {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to fetch posts'
-        }]
-      };
-    }
-  }
-
-  @Query(() => PostsResponse)
-  async postsByTarget(
-    @Arg('targetType') targetType: string,
-    @Arg('targetId', () => Int) targetId: number,
-    @Arg('skip', () => Int, { nullable: true }) skip?: number,
-    @Arg('take', () => Int, { nullable: true }) take?: number
-  ): Promise<PostsResponse> {
-    try {
-      const posts = await this.postService.findByTarget(targetType, targetId, { skip, take });
-      return {
-        success: true,
-        posts
-      };
-    } catch (error) {
-      logger.error(`Failed to fetch posts for target type ${targetType} and id ${targetId}:`, error);
-      return {
-        success: false,
-        errors: [{
-          field: 'general',
-          message: error instanceof Error ? error.message : 'Failed to fetch posts by target'
         }]
       };
     }

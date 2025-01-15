@@ -4,7 +4,6 @@ import { User } from '../../user/schema/userTypes';
 import { Activity } from '../../activity/schema/activityTypes';
 import { FieldError } from '../../common/types/errorTypes';
 
-
 @ObjectType()
 export class Post {
   @Field(() => Int)
@@ -123,4 +122,13 @@ export class PostTargetsProgress {
 
   @Field()
   status: string;
+}
+
+@ObjectType()
+export class BaseResponse {
+  @Field()
+  success: boolean;
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
 }

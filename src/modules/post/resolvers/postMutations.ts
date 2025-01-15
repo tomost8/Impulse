@@ -1,6 +1,6 @@
 import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
-import { Post, PostResponse } from '../schema/postTypes';
+import { Post, PostResponse, BaseResponse } from '../schema/postTypes';
 import { CreatePostInput, UpdatePostInput } from '../schema/postInputs';
 import { PostService } from '../../../services/postService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
@@ -11,6 +11,28 @@ import logger from '../../../config/logger';
 @UseMiddleware(LogOperationMiddleware)
 export class PostMutations {
   constructor(private postService: PostService) {}
+
+  @Mutation(() => BaseResponse)
+  async viewPost(
+    @Arg('postId', () => Int) postId: number,
+    @Arg('userId', () => Int) userId: number
+  ): Promise<BaseResponse> {
+    try {
+      await this.postService.recordView(postId, userId);
+      return {
+        success: true
+      };
+    } catch (error) {
+      logger.error(`Failed to record view for post ${postId} by user ${userId}:`, error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to record post view'
+        }]
+      };
+    }
+  }
 
   @Mutation(() => PostResponse)
   async createPost(

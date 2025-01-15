@@ -253,24 +253,51 @@ export class PostService {
     return post;
   }
 
-  async findByTarget(targetType: string, targetId: number, options?: {
-    skip?: number;
-    take?: number;
-  }): Promise<Post[]> {
-    return await this.prisma.post.findMany({
-      where: {
-        post_targets: {
-          some: {
-            target_type: targetType,
-            target_id: targetId
-          }
+  async findPosts(
+    options?: {
+      targetType?: string;
+      targetId?: number;
+      skip?: number;
+      take?: number;
+      currentUserId?: number;
+      unreadOnly?: boolean;
+      category?: string;
+    }
+  ): Promise<Post[]> {
+    const where: Prisma.PostWhereInput = {};
+
+    // 如果提供了目标类型和ID，添加目标过滤条件
+    if (options?.targetType && options?.targetId) {
+      where.post_targets = {
+        some: {
+          target_type: options.targetType,
+          target_id: options.targetId
         }
-      },
+      };
+    }
+
+    // 如果需要过滤未读帖子
+    if (options?.unreadOnly && options?.currentUserId) {
+      where.post_views = {
+        none: {
+          user_id: options.currentUserId
+        }
+      };
+    }
+
+    // 如果提供了分类，添加分类过滤条件
+    if (options?.category) {
+      where.category = options.category;
+    }
+
+    return await this.prisma.post.findMany({
+      where,
       skip: options?.skip,
       take: options?.take,
       include: {
         author: true,
-        post_targets: true
+        post_targets: true,
+        post_views: true
       },
       orderBy: {
         created_at: 'desc'  // 默认按创建时间倒序排列
@@ -284,5 +311,34 @@ export class PostService {
       chunks.push(array.slice(i, i + size));
     }
     return chunks;
+  }
+
+  async recordView(postId: number, userId: number): Promise<void> {
+    try {
+      await this.prisma.postView.upsert({
+        where: {
+          post_id_user_id: {
+            post_id: postId,
+            user_id: userId
+          }
+        },
+        update: {}, // 空更新，viewed_at 会自动更新
+        create: {
+          post_id: postId,
+          user_id: userId
+        }
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          // 唯一约束冲突，说明记录已存在，这是正常的
+          return;
+        }
+        if (error.code === 'P2003') {
+          throw new NotFoundError('Post or user not found');
+        }
+      }
+      throw error;
+    }
   }
 }
