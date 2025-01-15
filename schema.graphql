@@ -113,6 +113,11 @@ input CreatePostInput {
   post_targets: [PostTargetInput!]!
 }
 
+type CurrentTime {
+  formatted: String!
+  timestamp: String!
+}
+
 """Date custom scalar type for YYYY-MM-DD format"""
 scalar Date
 
@@ -216,6 +221,10 @@ type Query {
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!
+}
+
+type Subscription {
+  currentTime: CurrentTime!
 }
 
 input UpdateActivityInput {

@@ -2,24 +2,63 @@
 <html>
 <head>
     <title>WebSocket Test</title>
+    <style>
+        .subscribed {
+            background-color: #ffcccc;
+        }
+    </style>
 </head>
 <body>
     <h2>WebSocket Connection Test</h2>
     <div id="status">Status: Disconnected</div>
+    <div id="currentTime">Current Time: --:--:--</div>
     <div id="log" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0;"></div>
     <button onclick="connect()">Connect</button>
     <button onclick="disconnect()">Disconnect</button>
+    <button id="subscribeBtn" onclick="toggleSubscription()">Subscribe to Time</button>
 
     <script>
         let ws;
+        let subscriptionId;
+        
+        function generateSubscriptionId() {
+            return Math.random().toString(36).substring(2, 15);
+        }
         
         function log(message) {
             const logDiv = document.getElementById('log');
-            logDiv.innerHTML += message + '<br>';
+            logDiv.innerHTML = new Date().toISOString() + ': ' + message + '<br>' + logDiv.innerHTML;
             console.log(message);
+        }
+
+        function updateSubscribeButton(isSubscribed) {
+            const btn = document.getElementById('subscribeBtn');
+            btn.textContent = isSubscribed ? 'Unsubscribe' : 'Subscribe to Time';
+            if (isSubscribed) {
+                btn.classList.add('subscribed');
+            } else {
+                btn.classList.remove('subscribed');
+            }
         }
         
         function connect() {
+
+            if (ws) {
+    switch (ws.readyState) {
+        case WebSocket.CONNECTING:
+            log('Connection already in progress');
+            return;
+        case WebSocket.OPEN:
+            log('Already connected');
+            return;
+        default:
+            // CLOSING 或 CLOSED 状态，关闭旧连接
+            ws.close();
+    }
+}
+
+
+
             try {
                 log('Attempting to connect...');
                 ws = new WebSocket('ws://localhost:3000/graphql', 'graphql-transport-ws');
@@ -40,6 +79,9 @@
                 ws.onclose = (event) => {
                     log(`Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
                     document.getElementById('status').textContent = 'Status: Disconnected';
+                    document.getElementById('currentTime').textContent = 'Current Time: --:--:--';
+                    subscriptionId = null;
+                    updateSubscribeButton(false);
                 };
                 
                 ws.onerror = (error) => {
@@ -48,7 +90,14 @@
                 };
                 
                 ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
                     log('Received message: ' + event.data);
+                    
+                    if (data.type === 'next' && data.payload?.data?.currentTime) {
+                        const time = data.payload.data.currentTime;
+                        document.getElementById('currentTime').textContent = 
+                            `Current Time: ${time.formatted} (${time.timestamp})`;
+                    }
                 };
             } catch (error) {
                 log('Error creating WebSocket: ' + error.message);
@@ -58,7 +107,57 @@
         function disconnect() {
             if (ws) {
                 log('Disconnecting...');
+                unsubscribe();
                 ws.close();
+            }
+        }
+
+        function unsubscribe() {
+            if (subscriptionId) {
+                const completeMessage = {
+                    id: subscriptionId,
+                    type: 'complete'
+                };
+                log('Sending complete message: ' + JSON.stringify(completeMessage));
+                ws.send(JSON.stringify(completeMessage));
+                subscriptionId = null;
+                updateSubscribeButton(false);
+            }
+        }
+
+        function subscribe() {
+            subscriptionId = generateSubscriptionId();
+            const subscribeMessage = {
+                id: subscriptionId,
+                type: 'subscribe',
+                payload: {
+                    query: `
+                        subscription {
+                            currentTime {
+                                timestamp
+                                formatted
+                            }
+                        }
+                    `
+                }
+            };
+
+            log('Subscribing to time updates...');
+            log('Sending subscribe message: ' + JSON.stringify(subscribeMessage));
+            ws.send(JSON.stringify(subscribeMessage));
+            updateSubscribeButton(true);
+        }
+
+        function toggleSubscription() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('WebSocket is not connected');
+                return;
+            }
+
+            if (subscriptionId) {
+                unsubscribe();
+            } else {
+                subscribe();
             }
         }
     </script>
