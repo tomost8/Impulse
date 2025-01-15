@@ -21,6 +21,7 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { PostService } from './services/postService';
+import { configureWebSocket } from './config/websocket';
 
 export async function createApp() {
   const app = express();
@@ -79,6 +80,9 @@ export async function createApp() {
   // health check routes
   app.use('/api/v1/health', createHealthRoutes());
 
+  // 设置 WebSocket
+  configureWebSocket(httpServer, schema);
+
   // 设置 Bull Board
   const serverAdapter = new ExpressAdapter();
   const postService = Container.get(PostService);
@@ -102,5 +106,5 @@ export async function createApp() {
     });
   });
 
-  return app;
+  return { httpServer, app };
 } 

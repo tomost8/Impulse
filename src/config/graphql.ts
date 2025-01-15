@@ -5,7 +5,6 @@ import { UserQueries, UserMutations } from '../modules/user';
 import { CommunityQueries, CommunityMutations, CommunityMemberQueries, CommunityMemberMutations } from '../modules/community';
 import { ActivityQueries, ActivityMutations } from '../modules/activity';
 import { PostQueries, PostMutations } from '../modules/post';
-
 import './prisma'; // 确保 Prisma 客户端被初始化
 
 export const createSchema = async () => {
