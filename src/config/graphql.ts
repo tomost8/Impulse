@@ -6,7 +6,8 @@ import { ChatQueries, ChatMutations, ChatMemberQueries, ChatMemberMutations, Mes
 import { ActivityQueries, ActivityMutations } from '../modules/activity';
 import { PostQueries, PostMutations } from '../modules/post';
 import { TimeSubscriptions } from '../modules/common/resolvers/timeSubscriptions';
-import { pubsub } from '../services/timeService';
+import { UserSubscriptions } from '../modules/user/resolvers/userSubscriptions';
+import { pubsub } from './pubsub';
 import './prisma'; // 确保 Prisma 客户端被初始化
 
 export const createSchema = async () => {
@@ -30,7 +31,8 @@ export const createSchema = async () => {
       ActivityMutations,
       PostQueries,
       PostMutations,
-      TimeSubscriptions
+      TimeSubscriptions,
+      UserSubscriptions
     ],
     container: Container,
     validate: { forbidUnknownValues: false },

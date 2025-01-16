@@ -378,6 +378,9 @@ enum Role {
 
 type Subscription {
   currentTime: CurrentTime!
+
+  """Subscribe to user creation events"""
+  userCreated: User!
 }
 
 input UpdateActivityInput {

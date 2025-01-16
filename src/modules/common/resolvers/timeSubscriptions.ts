@@ -1,8 +1,8 @@
 import { Resolver, Subscription, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { CurrentTime, TimeSubscriptionPayload } from '../schema/timeTypes';
-import { timeService, TIME_UPDATED, pubsub } from '../../../services/timeService';
-
+import { timeService, TIME_UPDATED } from '../../../services/timeService';
+import { pubsub } from '../../../config/pubsub';
 @Service()
 @Resolver()
 export class TimeSubscriptions {

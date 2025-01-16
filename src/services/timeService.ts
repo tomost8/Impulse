@@ -1,9 +1,8 @@
-import { createPubSub } from '@graphql-yoga/subscription';
 import { Service } from 'typedi';
 import { CurrentTime } from '../modules/common/schema/timeTypes';
+import { pubsub } from '../config/pubsub';
 
 export const TIME_UPDATED = 'TIME_UPDATED';
-export const pubsub = createPubSub();
 
 @Service()
 class TimeService {

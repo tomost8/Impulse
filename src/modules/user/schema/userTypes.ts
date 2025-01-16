@@ -117,4 +117,10 @@ export class UsersResponse {
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
+}
+
+@ObjectType()
+export class UserCreatedPayload {
+  @Field(() => User)
+  user!: User;
 } 
