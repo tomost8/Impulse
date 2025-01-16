@@ -66,6 +66,8 @@ model User {
   messages              Message[]
   posts                 Post[]
   post_views            PostView[]
+  points                Point[]
+  redeems               Redeem[]
 
   @@index([username])
   @@map("users")
@@ -78,6 +80,8 @@ model Friendship {
   receiver    User          @relation("FriendsReceived", fields: [receiver_id], references: [id], onDelete: Cascade)
   receiver_id Int
   status      RequestStatus @default(PENDING)
+  chat        Chat?         @relation(fields: [chat_id], references: [id])
+  chat_id     Int?
   created_at  DateTime      @default(now())
   updated_at  DateTime      @default(now()) @updatedAt
 
@@ -118,7 +122,7 @@ model CommunityMember {
   user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id      Int
   role         Role          @default(USER)
-  status       RequestStatus @default(PENDING)
+  status       RequestStatus @default(ACCEPTED)
   joined_at    DateTime      @default(now())
   groupId      Int?
 
@@ -139,6 +143,7 @@ model Chat {
 
   chat_members ChatMember[]
   messages     Message[]
+  direct_chats Friendship[]
 
   @@map("chats")
 }
@@ -236,4 +241,51 @@ model PostView {
   @@unique([post_id, user_id])
   @@index([user_id, viewed_at])
   @@map("post_views")
+}
+
+model Point {
+  //id                Int       @id @default(autoincrement())
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id           Int       @id @unique
+  points            Int       @default(0)
+  points_spent      Int       @default(0)
+  weekly_points     Int       @default(0)
+  monthly_points    Int       @default(0)
+  status            String    @default("active")
+  preferences       Json?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  weekly_update_at  DateTime?
+  monthly_update_at DateTime?
+
+  @@map("points")
+}
+
+model Reward {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String?
+  required_points Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  redeems         Redeem[]
+
+  @@map("rewards")
+}
+
+model Redeem {
+  id              Int           @id @default(autoincrement())
+  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id         Int
+  reward          Reward        @relation(fields: [reward_id], references: [id], onDelete: Cascade)
+  reward_id       Int
+  points_spent    Int
+  status          RequestStatus @default(PENDING)
+  payment_details Json?
+  processing_time DateTime?
+  notes           String?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  @@map("redeems")
 }

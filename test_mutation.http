@@ -59,8 +59,8 @@ Content-Type: application/json
   "query": "mutation ($input: CreateFriendshipInput!) { createFriendship(input: $input) { success friendship { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
   "variables": {
     "input": {
-      "sender_id": 2,
-      "receiver_id": 1
+      "sender_id": 1,
+      "receiver_id": 2
     }
   }
 }
@@ -87,8 +87,8 @@ Content-Type: application/json
 {
   "query": "mutation($userId: Int!, $friendId: Int!) { deleteFriendship(user_id: $userId, friend_id: $friendId) { success errors { field message } } }",
   "variables": {
-    "userId": 2,
-    "friendId": 1
+    "userId": 1,
+    "friendId": 2
   }
 }
 
@@ -251,7 +251,7 @@ Content-Type: application/json
 {
   "query": "mutation($id: Int!) { deleteChat(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 6
+    "id": 5
   }
 }
 
@@ -314,5 +314,78 @@ Content-Type: application/json
       "sender_id": 1,
       "content": "Hello World"
     }
+  }
+}
+
+### GraphQL Point + Redeem API Tests ###
+
+### Mutation - Update Point
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!, $input: UpdatePointInput!){ updatePoint(id: $id, input: $input) { success point { user { id first_name last_name } points points_spent weekly_points monthly_points } errors { field message } } }",  
+  "variables": {
+    "id": 1,
+    "input": {
+      "points_added": 0
+    }
+  }
+}
+
+### Mutation - Create a Redeem
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateRedeemInput!){ createRedeem(input: $input) { success redeem { user { id first_name last_name } reward { id title required_points } points_spent status  } errors { field message } } }",  
+  "variables": {
+    "input": {
+      "user_id": 1,
+      "reward_id": 2
+    }
+  }
+}
+
+### GraphQL Reward API Tests ###
+
+### Mutation - Create a Reward
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($input: CreateRewardInput!){ createReward(input: $input) { success reward { id title description required_points } errors { field message } } }",  
+  "variables": {
+    "input": {
+      "title": "gift card",
+      "description": "$10",
+      "required_points": 7500
+    }
+  }
+}
+
+### Mutation - Update a Reward
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!, $input: UpdateRewardInput!){ updateReward(id: $id, input: $input) { success reward { id title description required_points } errors { field message } } }",  
+  "variables": {
+    "id": 3,
+    "input": {
+      "description": "$15",
+      "required_points": 10000
+    }
+  }
+}
+
+### Mutation - Delete a Reward
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!){ deleteReward(id: $id) { success errors { field message } } }",  
+  "variables": {
+    "id": 1
   }
 }

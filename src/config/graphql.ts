@@ -5,6 +5,7 @@ import { FriendshipQueries, FriendshipMutations } from '../modules/friendship';
 import { CommunityQueries, CommunityMutations, CommunityMemberQueries, CommunityMemberMutations, CommunityCategoryQueries, CommunityCategoryMutations} from '../modules/community';
 import { ChatQueries, ChatMutations, ChatMemberQueries, ChatMemberMutations, MessageQueries, MessageMutations } from '../modules/chat';
 import { ActivityQueries, ActivityMutations } from '../modules/activity';
+import { PointQueries, PointMutations, RewardQueries, RewardMutations, RedeemQueries, RedeemMutations } from '../modules/point';
 import { DateScalar } from '../modules/common/scalars/dateScalar';
 
 import './prisma'; // 确保 Prisma 客户端被初始化
@@ -29,7 +30,13 @@ export const createSchema = async () => {
       MessageQueries,
       MessageMutations,
       ActivityQueries,
-      ActivityMutations
+      ActivityMutations,
+      PointQueries, 
+      PointMutations, 
+      RewardQueries, 
+      RewardMutations, 
+      RedeemQueries, 
+      RedeemMutations
     ],
     container: Container,
     validate: { forbidUnknownValues: false },

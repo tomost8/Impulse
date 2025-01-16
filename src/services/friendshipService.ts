@@ -37,7 +37,10 @@ export class FriendshipsService {
         },
         include: {
           sender: true,
-          receiver: true
+          receiver: true,
+          chat: {
+            include: {creator: true}
+          }
         }
     });
   }
@@ -57,7 +60,10 @@ export class FriendshipsService {
         },
         include: {
           sender: true,
-          receiver: true
+          receiver: true,
+          chat: {
+            include: {creator: true}
+          }
         }
     });
   }
@@ -84,7 +90,10 @@ export class FriendshipsService {
         data: input,
         include: {
           sender: true,
-          receiver: true
+          receiver: true,
+          chat: {
+            include: {creator: true}
+          }
         }
       });
     } catch (error: any) {
@@ -120,7 +129,10 @@ export class FriendshipsService {
         data: input,
         include: {
           sender: true,
-          receiver: true
+          receiver: true,
+          chat: {
+            include: {creator: true}
+          }
         }
       });
       if (input.status == "ACCEPTED") {
@@ -128,6 +140,25 @@ export class FriendshipsService {
           data: {
             type: "direct",
             creator_id: sender_id
+          }
+        });
+        new_friendship = await this.prisma.friendship.update({
+          where: { 
+              sender_id_receiver_id: {
+                  sender_id: sender_id,
+                  receiver_id: receiver_id
+              }
+          },
+          data: {
+            status: input.status, 
+            chat_id: new_chat.id
+          },
+          include: {
+            sender: true,
+            receiver: true,
+            chat: {
+              include: {creator: true}
+            }
           }
         });
         let chat_sender = await this.prisma.chatMember.create({
@@ -146,7 +177,7 @@ export class FriendshipsService {
             status: "ACCEPTED",
           }
         });
-      }
+      };
       return new_friendship
     } catch (error: any) {
       if (error.code === 'P2025') {
@@ -172,16 +203,15 @@ export class FriendshipsService {
           receiver_id: friend_id
         } },
       });
+      // case 1: user is sender
       if (user_is_sender) {
-        console.log("user is sender");
-        /*have to delete chat if it exists
-        await this.prisma.chat.delete({
-          data: {
-            type: "direct",
-            creator_id: user_id
-          }
-        });
-        */
+        if (user_is_sender.chat_id) {
+          await this.prisma.chat.delete({
+            where: {
+              id: user_is_sender.chat_id
+            }
+          });
+        }
         await this.prisma.friendship.delete({
           where: { sender_id_receiver_id: {
             sender_id: user_id,
@@ -189,8 +219,20 @@ export class FriendshipsService {
           } },
         });
       } else {
-        console.log("user is receiver");
-        /* delete chat */
+        // case 2: user is receiver
+        let user_is_receiver = await this.prisma.friendship.findUnique({
+          where: { sender_id_receiver_id: {
+            sender_id: friend_id,
+            receiver_id: user_id
+          } },
+        });
+        if (user_is_receiver && user_is_receiver.chat_id) {
+          await this.prisma.chat.delete({
+            where: {
+              id: user_is_receiver.chat_id
+            }
+          });
+        }
         await this.prisma.friendship.delete({
           where: { sender_id_receiver_id: {
             sender_id: friend_id,

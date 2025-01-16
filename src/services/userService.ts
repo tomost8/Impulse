@@ -63,9 +63,15 @@ export class UsersService {
    */
   async create(input: CreateUserInput): Promise<User> {
     try {
-      return await this.prisma.user.create({
+      let new_user = await this.prisma.user.create({
         data: input,
       });
+      let user_points = await this.prisma.point.create({
+        data: {
+          user_id: new_user.id
+        }
+      });
+      return new_user
     } catch (error: any) {
       // Transform known error cases
       if (error.code === 'P2002' && error.meta?.target?.includes('email')) {

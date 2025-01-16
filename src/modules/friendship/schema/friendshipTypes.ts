@@ -1,5 +1,6 @@
 import { Field, ObjectType, Int } from 'type-graphql';
 import { User } from '../../user/schema/userTypes';
+import { Chat } from '../../chat/schema/chatTypes';
 import { RequestStatus } from '../../common/types/enumTypes';
 import { FieldError } from '../../common/types/errorTypes';
 
@@ -51,6 +52,14 @@ export class Friendship {
   /** Status of user in community */
   @Field(() => RequestStatus)
   status!: RequestStatus;
+
+  /** Direct chat between users */
+  @Field(() => Chat, { nullable: true })
+  chat!: Chat | null;
+
+  /** Direct chat id */
+  @Field(() => Int, { nullable: true })
+  chat_id!: number | null;
 
   /** Timestamp of the when created */
   @Field(() => Date)
