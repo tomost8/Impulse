@@ -1,7 +1,8 @@
 import { buildSchema } from 'type-graphql';
 import { Container } from 'typedi';
 import { UserQueries, UserMutations } from '../modules/user';
-import { CommunityQueries, CommunityMutations, CommunityMemberQueries, CommunityMemberMutations } from '../modules/community';
+import { CommunityQueries, CommunityMutations, CommunityMemberQueries, CommunityMemberMutations, CommunityCategoryQueries, CommunityCategoryMutations} from '../modules/community';
+import { ChatQueries, ChatMutations, ChatMemberQueries, ChatMemberMutations, MessageQueries, MessageMutations } from '../modules/chat';
 import { ActivityQueries, ActivityMutations } from '../modules/activity';
 import { PostQueries, PostMutations } from '../modules/post';
 import { TimeSubscriptions } from '../modules/common/resolvers/timeSubscriptions';
@@ -17,6 +18,14 @@ export const createSchema = async () => {
       CommunityMutations, 
       CommunityMemberQueries, 
       CommunityMemberMutations,
+      CommunityCategoryQueries,
+      CommunityCategoryMutations,
+      ChatQueries, 
+      ChatMutations, 
+      ChatMemberQueries, 
+      ChatMemberMutations,
+      MessageQueries,
+      MessageMutations,
       ActivityQueries,
       ActivityMutations,
       PostQueries,

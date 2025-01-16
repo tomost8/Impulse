@@ -1,10 +1,16 @@
 import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
-import { Community, CommunityResponse,CommunityMember, CommunityMemberResponse } from '../schema/communityTypes';
+import { Community, CommunityResponse } from '../schema/communityTypes';
 import { CreateCommunityInput, UpdateCommunityInput } from '../schema/communityInputs';
 import { CommunitiesService } from '../../../services/communityService';
+import { CommunityMember, CommunityMemberResponse } from '../schema/communityTypes';
 import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../schema/communityInputs';
 import { CommunityMembersService } from '../../../services/communityService';
+// Categories
+import { Category } from '../../common/types/enumTypes';
+import { CommunityCategory, CommunityCategoryResponse } from '../schema/communityTypes';
+import { CreateCommunityCategoryInput } from '../schema/communityInputs';
+import { CommunityCategoriesService } from '../../../services/communityService';
 import { ValidationError } from '../../common/errors/graphql.error';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
@@ -27,31 +33,15 @@ export class CommunityMutations {
    * @example
    * ```graphql
    * mutation { createCommunity (
-   *    input: {
-   *        name: "community name",
-   *        influencerId: 1,
-   *        description: "community description (optional)",
-   *        thumbnail: "community thumbnail (optional)"
-   *    }) {
-   *        success 
-   *        community { 
-   *            id 
-   *            name 
-   *            description 
-   *            thumbnail 
-   *            influencer { 
-   *                first_name 
-   *                last_name 
-   *                email 
-   *            } 
-   *            influencer_id 
-   *        } 
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    }
+   * input: {
+   *    name: "community name",
+   *    influencer_id: 1,
+   *    description: "community description (optional)",
+   *    thumbnail: "community thumbnail (optional)"
    * }
+   * ) { success community { 
+   * id name description thumbnail influencer { id first_name last_name email }
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => CommunityResponse)
@@ -85,34 +75,11 @@ export class CommunityMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    updateCommunity (
-   *        id: 1,
-   *        input: {
-   *            name: "updated name",
-   *            description: "updated description",
-   *            thumbnail: "updated thumbnail"
-   *        }
-   *    ) {
-   *        success 
-   *        community { 
-   *            id 
-   *            name 
-   *            description 
-   *            thumbnail 
-   *            influencer { 
-   *                first_name 
-   *                last_name 
-   *                email 
-   *            } 
-   *            influencer_id 
-   *        } 
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    }
-   * }
+   * mutation { updateCommunity(
+   * id: 1, input: { name: "name", description: "description", thumbnail: "humbnail" }
+   * ) { success community { 
+   * id name description influencer { id first_name last_name email }
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => CommunityResponse)
@@ -148,13 +115,10 @@ export class CommunityMutations {
    * 
    * @example
    * ```graphql
-   * mutation { deleteCommunity(id: 1) {
-   *    success
-   *    errors {
-   *        field
-   *        message
-   *    }
-   * }}
+   * mutation { deleteCommunity(
+   * id: 1
+   * ) { success
+   * errors { field message } } }
    * ```
    */
   @Mutation(() => CommunityResponse)
@@ -181,7 +145,7 @@ export class CommunityMutations {
 
 
 /**
- * GraphQL mutation resolvers for member-related operations
+ * GraphQL mutation resolvers for Community/User-related operations
  */
 @Service()
 @Resolver(CommunityMember)
@@ -197,38 +161,14 @@ export class CommunityMemberMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    createCommunity(
-   *        input: {
-   *            community_id: 3,
-   *            user_id: 31
-   *        }
-   *    ) { 
-   *        success 
-   *        community_member { 
-   *            community { 
-   *                name 
-   *                influencer { 
-   *                    first_name 
-   *                    last_name 
-   *                } 
-   *                influencer_id 
-   *            } 
-   *            community_id 
-   *            user { 
-   *                first_name 
-   *                last_name 
-   *            } 
-   *            user_id 
-   *            role 
-   *            status 
-   *        }
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    } 
-   * }
+   * mutation { createCommunityMember(
+   * input: { community_id: 3, user_id: 31 }
+   * ) { success community_member { 
+   *    community { id name influencer { id first_name last_name } } 
+   *    user { id first_name last_name } 
+   *    role 
+   *    status
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => CommunityMemberResponse)
@@ -266,40 +206,14 @@ export class CommunityMemberMutations {
    * 
    * @example
    * ```graphql
-   * mutation { 
-   *    updateCommunityMember(
-   *        community_id: 3,
-   *        user_id: 41, 
-   *        input: {
-   *            role: "member",
-   *            status: "approved"
-   *        }
-   *    ) { 
-   *        success 
-   *        community_member { 
-   *            community { 
-   *                name 
-   *                influencer { 
-   *                    first_name 
-   *                    last_name 
-   *                } 
-   *                influencer_id 
-   *            } 
-   *            community_id 
-   *            user { 
-   *                first_name 
-   *                last_name 
-   *            } 
-   *            user_id 
-   *            role 
-   *            status 
-   *        }
-   *        errors { 
-   *            field 
-   *            message 
-   *        }
-   *    } 
-   * }
+   * mutation { updateCommunityMember(
+   * community_id: 3, user_id: 41, input: { role: "member", status: "approved" }
+   * ) { success community_member { 
+   *    community { id name influencer { id first_name last_name } } 
+   *    user { id first_name last_name } 
+   *    role 
+   *    status
+   * } errors { field message } } }
    * ```
    */
   @Mutation(() => CommunityMemberResponse)
@@ -341,15 +255,10 @@ export class CommunityMemberMutations {
    * 
    * @example
    * ```graphql
-   * mutation {
-   *    deleteCommunityMember(community_id: 1, user_id: 1) {
-   *        success
-   *        errors {
-   *            field
-   *            message
-   *        }
-   *    }
-   * }
+   * mutation { deleteCommunityMember(
+   * community_id: 1, user_id: 1
+   * ) { success
+   * errors { field message } } }
    * ```
    */
   @Mutation(() => CommunityMemberResponse)
@@ -374,6 +283,101 @@ export class CommunityMemberMutations {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to delete community/user relation'
+        }]
+      };
+    }
+  }
+} 
+
+
+
+/**
+ * GraphQL mutation resolvers for Community/User-related operations
+ */
+@Service()
+@Resolver(CommunityCategory)
+@UseMiddleware(LogOperationMiddleware)
+export class CommunityCategoryMutations {
+  constructor(private communityCategoriesService: CommunityCategoriesService) {}
+
+  /**
+   * Mutation to add a Community/Category relation
+   * e.g. add a Category to a Community
+   * @param input - Community/User creation data
+   * @returns Response containing the newly created Community/Category relation or error details
+   * 
+   * @example
+   * ```graphql
+   * mutation { createCommunityCategory(
+   * input: { community_id: 3, category: "FOOD" }
+   * ) { success community_category { 
+   *    community { id name influencer { id first_name last_name } } 
+   *    category
+   * } errors { field message } } }
+   * ```
+   */
+  @Mutation(() => CommunityCategoryResponse)
+  async createCommunityCategory(@Arg('input') input: CreateCommunityCategoryInput): Promise<CommunityCategoryResponse> {
+    try {
+      const community_category= await this.communityCategoriesService.create(input);
+      
+      logger.info('Community/Catgeory relation creation successful', { 
+        communityId: community_category.community_id,
+        category: community_category.category
+      });
+
+      return {
+        success: true,
+        community_category
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to create community/category relation'
+        }]
+      };
+    }
+  }
+
+  /**
+   * Mutation to remove a Community/Category Relation
+   * i.e. remove a Category from a Community
+   * @param community_id - ID of the community to delete from
+   * @param category - category to remove
+   * @returns Response indicating success or failure
+   * 
+   * @example
+   * ```graphql
+   * mutation { deleteCommunityCategory(
+   * community_id: 1, category: "FOOD"
+   * ) { success
+   * errors { field message } } }
+   * ```
+   */
+  @Mutation(() => CommunityCategoryResponse)
+  async deleteCommunityCategory(
+    @Arg('community_id', () => Int) community_id: number,
+    @Arg('category', () => Category) category: Category,
+  ): Promise<CommunityCategoryResponse> {
+    try {
+      await this.communityCategoriesService.delete(community_id, category);
+
+      logger.info('Community/Category relation deletion successful', { 
+        communityId: community_id,
+        category: category
+      });
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to delete community/category relation'
         }]
       };
     }

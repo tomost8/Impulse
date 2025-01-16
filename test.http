@@ -193,6 +193,7 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+
 ### Query - Get All Users
 POST {{baseUrl}}/graphql
 Content-Type: application/json

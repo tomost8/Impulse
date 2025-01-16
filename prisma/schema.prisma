@@ -18,28 +18,31 @@ datasource db {
 
 // 示例模型
 model User {
-  id                    Int                @id @default(autoincrement())
-  email                 String             @unique
-  firebase_uid          String             @unique
+  id                    Int               @id @default(autoincrement()) @map("user_id")
+  email                 String            @unique
+  firebase_uid          String            @unique
   first_name            String?
   last_name             String?
   username              String?
-  dob                   DateTime?          @db.Date
+  dob                   DateTime?         @db.Date
   gender                String?
   profile_picture       String?
-  role                  String             @default("user")
-  status                String             @default("pending")
+  role                  String            @default("user")
+  status                String            @default("pending")
   timezone              String?
-  searchable            Boolean            @default(true)
+  searchable            Boolean           @default(true)
   fcm_token             String?
-  created_at            DateTime           @default(now())
-  updated_at            DateTime           @default(now()) @updatedAt
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @default(now()) @updatedAt
   last_login_at         DateTime?
   communities_owned     Community[]
-  community_memberships CommunityMembers[]
+  community_memberships CommunityMember[]
+  chats_created         Chat[]
+  chat_memberships      ChatMember[]
 
-  posts      Post[]      
-  post_views PostView[] 
+  posts      Post[]
+  post_views PostView[]
+  Message    Message[]
 
   activities          Activity[]
 
@@ -48,31 +51,108 @@ model User {
 }
 
 model Community {
-  id                Int                @id @default(autoincrement())
-  name              String
-  description       String?
-  thumbnail         String?
-  influencer        User               @relation(fields: [influencer_id], references: [id])
-  influencer_id     Int
-  created_at        DateTime           @default(now())
-  updated_at        DateTime           @updatedAt
-  community_members CommunityMembers[]
+  id                   Int                 @id @default(autoincrement()) @map("community_id")
+  name                 String
+  description          String?
+  thumbnail            String?
+  influencer           User                @relation(fields: [influencer_id], references: [id])
+  influencer_id        Int
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  community_categories CommunityCategory[]
+  community_members    CommunityMember[]
 
-  @@map("community")
+  @@map("communities")
 }
 
-model CommunityMembers {
+enum Category {
+  FOOD
+  WELLNESS
+  WORKING_OUT
+  STUDYING_WORKING
+  RISE_AND_SHINE
+  PASSION_HOBBY
+}
+
+model CommunityCategory {
   id           Int       @id @default(autoincrement())
   community    Community @relation(fields: [community_id], references: [id], onDelete: Cascade)
   community_id Int
-  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category     Category
+
+  @@unique([community_id, category])
+  @@map("community_categories")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model CommunityMember {
+  id           Int           @id @default(autoincrement())
+  community    Community     @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  community_id Int
+  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id      Int
-  role         String    @default("member")
-  status       String    @default("pending")
-  joined_at    DateTime  @default(now())
+  role         Role          @default(USER)
+  status       RequestStatus @default(PENDING)
+  joined_at    DateTime      @default(now())
+  groupId      Int?
 
   @@unique([community_id, user_id])
   @@map("community_members")
+}
+
+model Chat {
+  id           Int          @id @default(autoincrement()) @map("chat_id")
+  type         String
+  title        String?
+  password     String?
+  profile_pic  String?
+  creator      User         @relation(fields: [creator_id], references: [id])
+  creator_id   Int
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  chat_members ChatMember[]
+  Message      Message[]
+
+  @@map("chats")
+}
+
+model ChatMember {
+  id        Int           @id @default(autoincrement())
+  chat      Chat          @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_id   Int
+  user      User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id   Int
+  role      Role          @default(USER)
+  status    RequestStatus @default(PENDING)
+  joined_at DateTime      @default(now())
+
+  @@unique([chat_id, user_id])
+  @@map("chat_members")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement()) @map("message_id")
+  chat       Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_id    Int
+  sender     User     @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  sender_id  Int
+  content    String?
+  post       Post?    @relation(fields: [post_id], references: [id])
+  post_id    Int?
+  created_at DateTime @default(now())
+
+  @@index([chat_id, created_at])
+  @@map("messages")
 }
 
 //activity
@@ -109,19 +189,20 @@ model Post {
   expires_at  DateTime?    // story类型设置24小时，chat类型为null
   post_targets PostTarget[]
   post_views   PostView[]
+  Message      Message[]
   category    String?
 
-  @@map("posts")
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
+  @@map("posts")
 }
 
 model PostTarget {
   id          Int      @id @default(autoincrement())
   post        Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
   post_id     Int
-  target_type String   // 'community', 'chat', 'group'
-  target_id   Int      
+  target_type String // 'community', 'chat', 'group'
+  target_id   Int
   created_at  DateTime @default(now())
 
   @@unique([post_id, target_type, target_id])
@@ -130,15 +211,16 @@ model PostTarget {
 }
 
 model PostView {
-  id         Int      @id @default(autoincrement())
-  post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  post_id    Int
-  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id    Int
-  viewed_at  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id   Int
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id   Int
+  viewed_at DateTime @default(now())
 
   @@unique([post_id, user_id])
   @@index([user_id, viewed_at])
   @@map("post_views")
 }
+
 

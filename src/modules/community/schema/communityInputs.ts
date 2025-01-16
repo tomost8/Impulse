@@ -1,5 +1,6 @@
 import { Field, InputType, Int } from 'type-graphql';
-import { IsInt, Length, IsOptional, IsString } from 'class-validator';
+import { IsInt, Length, IsOptional, IsString, IsEnum } from 'class-validator';
+import { Role, RequestStatus, Category } from '../../common/types/enumTypes';
 
 /**
  * Input type for creating a new community
@@ -10,10 +11,10 @@ import { IsInt, Length, IsOptional, IsString } from 'class-validator';
  * @example
  * ```typescript
  * const input: CreateCommunityInput = {
- *    "name": "community name",
- *    "description": "community description (optional)",
- *    "thumbnail": "community thumbnail (optional)"
- *    "influencer_id": 1
+ *    name: "community name",
+ *    description: "community description (optional)",
+ *    thumbnail: "community thumbnail (optional)",
+ *    influencer_id: 1
  * };
  * ```
  */
@@ -52,9 +53,9 @@ export class CreateCommunityInput {
  * @example
  * ```typescript
  * const update: UpdateCommunityInput = {
- *   "name": "updated community name",
- *   "description": "updated community description",
- *   "thumbnail": "updated community thumbnail"
+ *   name: "updated community name",
+ *   description: "updated community description",
+ *   thumbnail: "updated community thumbnail"
  * };
  * ```
  */
@@ -90,8 +91,8 @@ export class UpdateCommunityInput {
  * @example
  * ```typescript
  * const input: CreateCommunityMemberInput = {
- *    "community_id": 1,
- *    "user_id": 1
+ *    community_id: 1,
+ *    user_id: 1
  * };
  * ```
  */
@@ -115,22 +116,49 @@ export class CreateCommunityMemberInput {
  * All fields are optional as this is used for partial updates
  * 
  * @example
- * const update: UpdateCommunityInput = {
- *   "role": "member",
- *   "status": "approved"
+ * const update: UpdateCommunityMemberInput = {
+ *   role: "member",
+ *   status: "approved"
  * };
  */
 @InputType()
 export class UpdateCommunityMemberInput {
   /** User role in community (optional) */
-  @Field(() => String, { nullable: true })
-  //@IsOptional()
-  @IsString({ message: 'User role must be a string' })
-  role!: string;
+  @Field(() => Role, { nullable: true })
+  @IsOptional()
+  @IsEnum(Role, { message: 'User role must be one of the valid Role values' })
+  role?: Role;
 
   /** User status in community (optional) */
-  @Field(() => String, { nullable: true })
-  //@IsOptional()
-  @IsString({ message: 'User status must be a string' })
-  status!: string;
+  @Field(() => RequestStatus, { nullable: true })
+  @IsOptional()
+  @IsEnum(RequestStatus, { message: 'User status must be one of the valid RequestStatus values' })
+  status?: RequestStatus;
 } 
+
+/**
+ * Input type for creating a new community/category relation
+ * 
+ * @remarks
+ * This type is used in the createCommunityCategory mutation
+ * 
+ * @example
+ * ```typescript
+ * const input: CreateCommunityCategoryInput = {
+ *    community_id: 1,
+ *    category: "WORKING_OUT"
+ * };
+ * ```
+ */
+@InputType()
+export class CreateCommunityCategoryInput {
+  /** Community ID */
+  @Field(() => Int)
+  @IsInt({ message: 'Community id must be an int' })
+  community_id!: number;
+
+  /** Community Category */
+  @Field(() => Category)
+  @IsEnum(Category, { message: 'Community category must be one of the valid Category values' })
+  category!: Category;
+}

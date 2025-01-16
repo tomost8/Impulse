@@ -42,23 +42,6 @@
         }
         
         function connect() {
-
-            if (ws) {
-    switch (ws.readyState) {
-        case WebSocket.CONNECTING:
-            log('Connection already in progress');
-            return;
-        case WebSocket.OPEN:
-            log('Already connected');
-            return;
-        default:
-            // CLOSING 或 CLOSED 状态，关闭旧连接
-            ws.close();
-    }
-}
-
-
-
             try {
                 log('Attempting to connect...');
                 ws = new WebSocket('ws://localhost:3000/graphql', 'graphql-transport-ws');
