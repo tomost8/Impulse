@@ -182,9 +182,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
   "variables": {
     "input": {
-      "first_name": "002",
+      "first_name": "001",
       "last_name": "tester",
-      "username": "test002",
+      "username": "test001",
       "gender": "male",
       "dob": "2024-01-02",
       "timezone": "America/New_York",
@@ -355,7 +355,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 1
+      "user_id": 2
     }
   }
 }
@@ -454,7 +454,7 @@ Authorization: Bearer {{authToken}}
     "input": {
       "userId": 1,
       "category": "workout",
-      "scheduledDatetime": "2025-01-14T13:00:00Z",
+      "scheduledDatetime": "2025-01-15T13:00:00Z",
       "duration": 60
     }
   }
@@ -593,7 +593,7 @@ Content-Type: application/json
     "input": {
       "caption": "Both user and community",
       "authorId": 1,
-      "activityId": 48,
+      "activityId": 2,
       "post_targets": [
             {"target_type": "user", "target_id": 2},
             {"target_type": "community", "target_id": 1}

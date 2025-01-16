@@ -3,6 +3,7 @@ import { GraphQLJSON } from 'graphql-type-json';
 import { User } from '../../user/schema/userTypes';
 import { Activity } from '../../activity/schema/activityTypes';
 import { FieldError } from '../../common/types/errorTypes';
+import { Message } from '../../chat/schema/chatTypes';
 
 @ObjectType()
 export class Post {
@@ -44,6 +45,9 @@ export class Post {
 
   @Field(() => String, { nullable: true })
   category?: string | null;  
+
+  @Field(() => [Message], { nullable: true })
+  messages?: Message[] | null;
 }
 
 @ObjectType()

@@ -1,10 +1,6 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-<<<<<<< HEAD
-import { Community, CommunityMember } from '../modules/community/schema/communityTypes';
-=======
 import { Community, CommunityMember, CommunityCategory } from '../modules/community/schema/communityTypes';
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
 import { CreateCommunityInput, UpdateCommunityInput } from '../modules/community/schema/communityInputs';
 import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modules/community/schema/communityInputs';
 import { CreateCommunityCategoryInput } from '../modules/community/schema/communityInputs';

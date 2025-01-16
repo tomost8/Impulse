@@ -30,9 +30,11 @@ type ActivityResponse {
   success: Boolean!
 }
 
-<<<<<<< HEAD
 type BaseResponse {
-=======
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 enum Category {
   FOOD
   PASSION_HOBBY
@@ -43,7 +45,7 @@ enum Category {
 }
 
 type Chat {
-  created_at: Date!
+  created_at: DateTimeISO!
   creator: User!
   creator_id: Int!
   id: Int!
@@ -51,14 +53,14 @@ type Chat {
   profile_pic: String
   title: String
   type: String!
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type ChatMember {
   chat: Chat!
   chat_id: Int!
   id: Int!
-  joined_at: Date!
+  joined_at: DateTimeISO!
   role: Role!
   status: RequestStatus!
   user: User!
@@ -85,7 +87,6 @@ type ChatResponse {
 
 type ChatsResponse {
   chats: [Chat!]
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
   errors: [FieldError!]
   success: Boolean!
 }
@@ -130,15 +131,9 @@ type CommunityMember {
   community: Community!
   community_id: Int!
   id: Int!
-<<<<<<< HEAD
   joined_at: DateTimeISO!
-  role: String!
-  status: String!
-=======
-  joined_at: Date!
   role: Role!
   status: RequestStatus!
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
   user: User!
   user_id: Int!
 }
@@ -201,7 +196,13 @@ input CreateCommunityMemberInput {
   user_id: Int!
 }
 
-<<<<<<< HEAD
+input CreateMessageInput {
+  chat_id: Int!
+  content: String
+  post_id: Int
+  sender_id: Int!
+}
+
 input CreatePostInput {
   activityId: Int!
   authorId: Int!
@@ -215,13 +216,6 @@ input CreatePostInput {
 type CurrentTime {
   formatted: String!
   timestamp: String!
-=======
-input CreateMessageInput {
-  chat_id: Int!
-  content: String
-  post_id: Int
-  sender_id: Int!
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
 }
 
 """Date custom scalar type for YYYY-MM-DD format"""
@@ -237,18 +231,11 @@ type FieldError {
   message: String!
 }
 
-<<<<<<< HEAD
-=======
-"""
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSON
-
 type Message {
   chat: Chat!
   chat_id: Int!
   content: String
-  created_at: Date!
+  created_at: DateTimeISO!
   id: Int!
   post: Post
   post_id: Int
@@ -268,7 +255,6 @@ type MessagesResponse {
   success: Boolean!
 }
 
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
 type Mutation {
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
@@ -276,11 +262,8 @@ type Mutation {
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createCommunityCategory(input: CreateCommunityCategoryInput!): CommunityCategoryResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
-<<<<<<< HEAD
-  createPost(input: CreatePostInput!): PostResponse!
-=======
   createMessage(input: CreateMessageInput!): MessageResponse!
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
+  createPost(input: CreatePostInput!): PostResponse!
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
   deleteChatMember(chat_id: Int!, user_id: Int!): ChatMemberResponse!
@@ -311,6 +294,7 @@ type Post {
   id: Int!
   is_deleted: Boolean!
   mediaUrl: String
+  messages: [Message!]
   post_targets: [PostTarget!]!
   post_views: [PostView!]
   updated_at: DateTimeISO!
@@ -361,12 +345,6 @@ type Query {
   activities(category: String, skip: Int, status: String, take: Int): ActivitiesResponse!
   activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
-<<<<<<< HEAD
-  communities: CommunitiesResponse!
-  community(id: Int!): CommunityResponse!
-  communityMembers(id: Int!): CommunityMembersResponse!
-  getPostTargetsProgress(postId: Int!): PostTargetsProgress!
-=======
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
@@ -376,9 +354,9 @@ type Query {
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
   getCommunityMembers(id: Int!): CommunityMembersResponse!
   getMessages(id: Int!): MessagesResponse!
+  getPostTargetsProgress(postId: Int!): PostTargetsProgress!
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
   me: UserResponse!
   post(id: Int!): PostResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
@@ -387,10 +365,6 @@ type Query {
   users: UsersResponse!
 }
 
-<<<<<<< HEAD
-type Subscription {
-  currentTime: CurrentTime!
-=======
 enum RequestStatus {
   ACCEPTED
   PENDING
@@ -400,7 +374,10 @@ enum RequestStatus {
 enum Role {
   ADMIN
   USER
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
+}
+
+type Subscription {
+  currentTime: CurrentTime!
 }
 
 input UpdateActivityInput {

@@ -264,45 +264,92 @@ export class PostService {
       category?: string;
     }
   ): Promise<Post[]> {
-    const where: Prisma.PostWhereInput = {};
+    // 如果需要检查权限，先验证用户是否有权限访问
+    if (options?.targetType && options?.targetId && options?.currentUserId) {
+      let hasAccess = true;
 
-    // 如果提供了目标类型和ID，添加目标过滤条件
+      if (options.targetType === 'community') {
+        const membership = await this.prisma.communityMember.findFirst({
+          where: {
+            community_id: options.targetId,
+            user_id: options.currentUserId,
+            status: 'ACCEPTED'
+          }
+        });
+        hasAccess = !!membership;
+      } else if (options.targetType === 'chat') {
+        const membership = await this.prisma.chatMember.findFirst({
+          where: {
+            chat_id: options.targetId,
+            user_id: options.currentUserId,
+            status: 'ACCEPTED'
+          }
+        });
+        hasAccess = !!membership;
+      }
+
+      // 如果用户没有访问权限，直接返回空数组
+      if (!hasAccess) {
+        return [];
+      }
+    }
+
+    // 构建查询条件
+    const whereConditions: Prisma.PostWhereInput[] = [];
+
+    // 添加目标过滤条件
     if (options?.targetType && options?.targetId) {
-      where.post_targets = {
-        some: {
-          target_type: options.targetType,
-          target_id: options.targetId
+      whereConditions.push({
+        post_targets: {
+          some: {
+            target_type: options.targetType,
+            target_id: options.targetId
+          }
         }
-      };
+      });
     }
 
-    // 如果需要过滤未读帖子
+    // 添加未读过滤条件
     if (options?.unreadOnly && options?.currentUserId) {
-      where.post_views = {
-        none: {
-          user_id: options.currentUserId
+      whereConditions.push({
+        post_views: {
+          none: {
+            user_id: options.currentUserId
+          }
         }
-      };
+      });
     }
 
-    // 如果提供了分类，添加分类过滤条件
+    // 添加分类过滤条件
     if (options?.category) {
-      where.category = options.category;
+      whereConditions.push({ category: options.category });
     }
 
-    return await this.prisma.post.findMany({
+    const where: Prisma.PostWhereInput = whereConditions.length > 0 
+      ? { AND: whereConditions }
+      : {};
+
+    // 执行查询
+    const posts = await this.prisma.post.findMany({
       where,
       skip: options?.skip,
       take: options?.take,
       include: {
         author: true,
         post_targets: true,
-        post_views: true
+        post_views: true,
+        _count: {
+          select: {
+            post_views: true
+          }
+        }
       },
       orderBy: {
-        created_at: 'desc'  // 默认按创建时间倒序排列
+        created_at: 'desc'
       }
     });
+
+    return posts;
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {

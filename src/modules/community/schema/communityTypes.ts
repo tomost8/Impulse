@@ -1,11 +1,7 @@
 import { Field, ObjectType, Int } from 'type-graphql';
-<<<<<<< HEAD
-import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
-import { User } from '../../user/schema/userTypes';
-=======
+
 import { User } from '../../user/schema/userTypes';
 import { Role, RequestStatus, Category } from '../../common/types/enumTypes';
->>>>>>> 1edf1811275d497d44e668823dd5826c8ff0e820
 import { FieldError } from '../../common/types/errorTypes';
 
 /**
