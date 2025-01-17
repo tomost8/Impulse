@@ -196,6 +196,11 @@ input CreateCommunityMemberInput {
   user_id: Int!
 }
 
+input CreateFriendshipInput {
+  receiver_id: Int!
+  sender_id: Int!
+}
+
 input CreateMessageInput {
   chat_id: Int!
   content: String
@@ -211,6 +216,17 @@ input CreatePostInput {
   expires_at: DateTimeISO
   mediaUrl: String
   post_targets: [PostTargetInput!]!
+}
+
+input CreateRedeemInput {
+  reward_id: Int!
+  user_id: Int!
+}
+
+input CreateRewardInput {
+  description: String
+  required_points: Int!
+  title: String!
 }
 
 type CurrentTime {
@@ -230,6 +246,36 @@ type FieldError {
   field: String!
   message: String!
 }
+
+type Friendship {
+  chat: Chat
+  chat_id: Int
+  created_at: DateTimeISO!
+  id: Int!
+  receiver: User!
+  receiver_id: Int!
+  sender: User!
+  sender_id: Int!
+  status: RequestStatus!
+  updated_at: DateTimeISO!
+}
+
+type FriendshipResponse {
+  errors: [FieldError!]
+  friendship: Friendship
+  success: Boolean!
+}
+
+type FriendshipsResponse {
+  errors: [FieldError!]
+  friendships: [Friendship!]
+  success: Boolean!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
 
 type Message {
   chat: Chat!
@@ -262,15 +308,21 @@ type Mutation {
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createCommunityCategory(input: CreateCommunityCategoryInput!): CommunityCategoryResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
+  createFriendship(input: CreateFriendshipInput!): FriendshipResponse!
   createMessage(input: CreateMessageInput!): MessageResponse!
   createPost(input: CreatePostInput!): PostResponse!
+  createRedeem(input: CreateRedeemInput!): RedeemResponse!
+  createReward(input: CreateRewardInput!): RewardResponse!
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
   deleteChatMember(chat_id: Int!, user_id: Int!): ChatMemberResponse!
   deleteCommunity(id: Int!): CommunityResponse!
   deleteCommunityCategory(category: Category!, community_id: Int!): CommunityCategoryResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
+  deleteFriendship(friend_id: Int!, user_id: Int!): FriendshipResponse!
   deletePost(id: Int!): PostResponse!
+  deleteRedeem(id: Int!): RedeemResponse!
+  deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
@@ -278,9 +330,34 @@ type Mutation {
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
   updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
   updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
+  updateFriendship(input: UpdateFriendshipInput!, receiver_id: Int!, sender_id: Int!): FriendshipResponse!
+  updatePoint(id: Int!, input: UpdatePointInput!): PointResponse!
   updatePost(id: Int!, input: UpdatePostInput!): PostResponse!
+  updateRedeem(id: Int!, input: UpdateRedeemInput!): RedeemResponse!
+  updateReward(id: Int!, input: UpdateRewardInput!): RewardResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
   viewPost(postId: Int!, userId: Int!): BaseResponse!
+}
+
+type Point {
+  created_at: DateTimeISO!
+  monthly_points: Int!
+  monthly_update_at: DateTimeISO
+  points: Int!
+  preferences: JSON
+  spending_points: Int!
+  status: String!
+  updated_at: DateTimeISO!
+  user: User!
+  user_id: Int!
+  weekly_points: Int!
+  weekly_update_at: DateTimeISO
+}
+
+type PointResponse {
+  errors: [FieldError!]
+  point: Point
+  success: Boolean!
 }
 
 type Post {
@@ -353,8 +430,13 @@ type Query {
   getCommunity(id: Int!): CommunityResponse!
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
   getCommunityMembers(id: Int!): CommunityMembersResponse!
+  getFriendRequests(id: Int!): FriendshipsResponse!
+  getFriendships(id: Int!): FriendshipsResponse!
   getMessages(id: Int!): MessagesResponse!
+  getPoint(id: Int!): PointResponse!
   getPostTargetsProgress(postId: Int!): PostTargetsProgress!
+  getRedeems(id: Int!): RedeemsResponse!
+  getRewards: RewardsResponse!
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
   me: UserResponse!
@@ -365,10 +447,58 @@ type Query {
   users: UsersResponse!
 }
 
+type Redeem {
+  created_at: DateTimeISO!
+  id: Int!
+  notes: String
+  payment_details: JSON
+  points_spent: Int!
+  processing_time: DateTimeISO
+  reward: Reward!
+  reward_id: Int!
+  status: RequestStatus!
+  updated_at: DateTimeISO!
+  user: User!
+  user_id: Int!
+}
+
+type RedeemResponse {
+  errors: [FieldError!]
+  redeem: Redeem
+  success: Boolean!
+}
+
+type RedeemsResponse {
+  errors: [FieldError!]
+  redeems: [Redeem!]
+  success: Boolean!
+}
+
 enum RequestStatus {
   ACCEPTED
   PENDING
   REJECTED
+}
+
+type Reward {
+  created_at: DateTimeISO!
+  description: String
+  id: Int!
+  required_points: Int!
+  title: String!
+  updated_at: DateTimeISO!
+}
+
+type RewardResponse {
+  errors: [FieldError!]
+  reward: Reward
+  success: Boolean!
+}
+
+type RewardsResponse {
+  errors: [FieldError!]
+  rewards: [Reward!]
+  success: Boolean!
 }
 
 enum Role {
@@ -415,11 +545,32 @@ input UpdateCommunityMemberInput {
   status: RequestStatus
 }
 
+input UpdateFriendshipInput {
+  status: RequestStatus!
+}
+
+input UpdatePointInput {
+  points_added: Int
+  reset_monthly_points: Boolean
+  reset_weekly_points: Boolean
+}
+
 input UpdatePostInput {
   caption: String
   category: String
   expires_at: DateTimeISO
   mediaUrl: String
+}
+
+input UpdateRedeemInput {
+  processing_time: DateTimeISO
+  status: RequestStatus
+}
+
+input UpdateRewardInput {
+  description: String
+  required_points: Int
+  title: String
 }
 
 input UpdateUserInput {

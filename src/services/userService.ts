@@ -66,15 +66,20 @@ export class UsersService {
    */
   async create(input: CreateUserInput): Promise<User> {
     try {
-      const user = await this.prisma.user.create({
+
+      let new_user = await this.prisma.user.create({
         data: input,
       });
+      let user_points = await this.prisma.point.create({
+        data: {
+          user_id: new_user.id
+        }
+      });
+
+      await pubsub.publish(USER_CREATED, { userCreated: new_user });
+      console.log('Published user created event:', { userCreated: new_user });
       
-      // Publish the user created event with proper payload structure
-      await pubsub.publish(USER_CREATED, { userCreated: user });
-      console.log('Published user created event:', { userCreated: user });
-      
-      return user;
+      return new_user
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
         throw new ValidationError(`User with email ${input.email} already exists`);
