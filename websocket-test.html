@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <style>
+        .subscribed {
+            background-color: #ffcccc;
+        }
+        .subscription-container {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        #userInfo {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e6f3ff;
+        }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Connection Test</h2>
+    <div id="status">Status: Disconnected</div>
+    
+    <div class="subscription-container">
+        <h3>Time Subscription</h3>
+        <div id="currentTime">Current Time: --:--:--</div>
+        <button id="subscribeTimeBtn" onclick="toggleTimeSubscription()">Subscribe to Time</button>
+    </div>
+
+    <div class="subscription-container">
+        <h3>User Subscription</h3>
+        <div id="userInfo">No new users yet</div>
+        <button id="subscribeUserBtn" onclick="toggleUserSubscription()">Subscribe to Users</button>
+    </div>
+
+    <div id="log" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0;"></div>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <script>
+        let ws;
+        let timeSubscriptionId;
+        let userSubscriptionId;
+        
+        function generateSubscriptionId() {
+            return Math.random().toString(36).substring(2, 15);
+        }
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML = new Date().toISOString() + ': ' + message + '<br>' + logDiv.innerHTML;
+            console.log(message);
+        }
+
+        function updateSubscribeButton(buttonId, isSubscribed) {
+            const btn = document.getElementById(buttonId);
+            const type = buttonId === 'subscribeTimeBtn' ? 'Time' : 'Users';
+            btn.textContent = isSubscribed ? `Unsubscribe from ${type}` : `Subscribe to ${type}`;
+            if (isSubscribed) {
+                btn.classList.add('subscribed');
+            } else {
+                btn.classList.remove('subscribed');
+            }
+        }
+        
+        function connect() {
+            try {
+                log('Attempting to connect...');
+                ws = new WebSocket('ws://localhost:3000/graphql', 'graphql-transport-ws');
+                
+                ws.onopen = () => {
+                    log('Connection opened');
+                    document.getElementById('status').textContent = 'Status: Connected';
+                    
+                    const initMessage = {
+                        type: 'connection_init',
+                        payload: {}
+                    };
+                    log('Sending init message: ' + JSON.stringify(initMessage));
+                    ws.send(JSON.stringify(initMessage));
+                };
+                
+                ws.onclose = (event) => {
+                    log(`Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+                    document.getElementById('status').textContent = 'Status: Disconnected';
+                    document.getElementById('currentTime').textContent = 'Current Time: --:--:--';
+                    document.getElementById('userInfo').textContent = 'No new users yet';
+                    timeSubscriptionId = null;
+                    userSubscriptionId = null;
+                    updateSubscribeButton('subscribeTimeBtn', false);
+                    updateSubscribeButton('subscribeUserBtn', false);
+                };
+                
+                ws.onerror = (error) => {
+                    log('WebSocket error: ' + JSON.stringify(error));
+                    document.getElementById('status').textContent = 'Status: Error';
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    log('Received message: ' + event.data);
+                    
+                    if (data.type === 'next') {
+                        if (data.payload?.data?.currentTime) {
+                            const time = data.payload.data.currentTime;
+                            document.getElementById('currentTime').textContent = 
+                                `Current Time: ${time.formatted} (${time.timestamp})`;
+                        }
+                        if (data.payload?.data?.userCreated) {
+                            const user = data.payload.data.userCreated;
+                            document.getElementById('userInfo').innerHTML = 
+                                `New User Created:<br>
+                                ID: ${user.id}<br>
+                                Email: ${user.email}<br>
+                                Name: ${user.first_name || ''} ${user.last_name || ''}<br>
+                                Created At: ${new Date(user.created_at).toLocaleString()}`;
+                        }
+                    }
+                };
+            } catch (error) {
+                log('Error creating WebSocket: ' + error.message);
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                log('Disconnecting...');
+                unsubscribeTime();
+                unsubscribeUser();
+                ws.close();
+            }
+        }
+
+        function unsubscribeTime() {
+            if (timeSubscriptionId) {
+                const completeMessage = {
+                    id: timeSubscriptionId,
+                    type: 'complete'
+                };
+                log('Sending time complete message: ' + JSON.stringify(completeMessage));
+                ws.send(JSON.stringify(completeMessage));
+                timeSubscriptionId = null;
+                updateSubscribeButton('subscribeTimeBtn', false);
+            }
+        }
+
+        function unsubscribeUser() {
+            if (userSubscriptionId) {
+                const completeMessage = {
+                    id: userSubscriptionId,
+                    type: 'complete'
+                };
+                log('Sending user complete message: ' + JSON.stringify(completeMessage));
+                ws.send(JSON.stringify(completeMessage));
+                userSubscriptionId = null;
+                updateSubscribeButton('subscribeUserBtn', false);
+            }
+        }
+
+        function subscribeToTime() {
+            timeSubscriptionId = generateSubscriptionId();
+            const subscribeMessage = {
+                id: timeSubscriptionId,
+                type: 'subscribe',
+                payload: {
+                    query: `
+                        subscription {
+                            currentTime {
+                                timestamp
+                                formatted
+                            }
+                        }
+                    `
+                }
+            };
+
+            log('Subscribing to time updates...');
+            log('Sending subscribe message: ' + JSON.stringify(subscribeMessage));
+            ws.send(JSON.stringify(subscribeMessage));
+            updateSubscribeButton('subscribeTimeBtn', true);
+        }
+
+        function subscribeToUser() {
+            userSubscriptionId = generateSubscriptionId();
+            const subscribeMessage = {
+                id: userSubscriptionId,
+                type: 'subscribe',
+                payload: {
+                    query: `
+                        subscription {
+                            userCreated {
+                                id
+                                email
+                                first_name
+                                last_name
+                                username
+                                created_at
+                                role
+                                status
+                            }
+                        }
+                    `
+                }
+            };
+
+            log('Subscribing to user updates...');
+            log('Sending subscribe message: ' + JSON.stringify(subscribeMessage));
+            ws.send(JSON.stringify(subscribeMessage));
+            updateSubscribeButton('subscribeUserBtn', true);
+        }
+
+        function toggleTimeSubscription() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('WebSocket is not connected');
+                return;
+            }
+
+            if (timeSubscriptionId) {
+                unsubscribeTime();
+            } else {
+                subscribeToTime();
+            }
+        }
+
+        function toggleUserSubscription() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('WebSocket is not connected');
+                return;
+            }
+
+            if (userSubscriptionId) {
+                unsubscribeUser();
+            } else {
+                subscribeToUser();
+            }
+        }
+    </script>
+</body>
+</html> 

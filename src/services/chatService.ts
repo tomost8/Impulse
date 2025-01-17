@@ -310,7 +310,9 @@ export class MessagesService {
           sender: true,
           post: {
             include: {
-              author: true
+              author: true,
+              post_targets: true,
+              post_views: true,
             }
           }
         }
@@ -337,7 +339,9 @@ export class MessagesService {
               sender: true,
               post: {
                 include: {
-                  author: true
+                  author: true,
+                  post_targets: true,
+                  post_views: true,
                 }
               }
             }

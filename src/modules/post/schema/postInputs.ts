@@ -3,46 +3,50 @@ import { GraphQLJSON } from 'graphql-type-json';
 import { IsString, IsOptional, IsInt, IsBoolean, IsArray, IsDate } from 'class-validator';
 
 @InputType()
-export class CreatePostInput {
-  @Field(() => String, { nullable: true })
-  @IsString()
-  @IsOptional()
-  caption?: string;
+class PostTargetInput {
+  @Field(() => String)
+  target_type: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  @IsOptional()
-  media_urls?: any;
+  @Field(() => Int)
+  target_id: number;
+}
+
+@InputType()
+export class CreatePostInput {
+  @Field(() => String)
+  caption: string;
+
+  @Field(() => Int)
+  activityId: number;
+
+  @Field(() => String, { nullable: true })
+  category?: string | null;
+
+  @Field(() => Int)
+  authorId: number;
+
+  @Field(() => [PostTargetInput])
+  post_targets: PostTargetInput[];
+
+  @Field(() => String, { nullable: true })
+  mediaUrl?: string;
 
   @Field(() => Date, { nullable: true })
-  @IsDate()
-  @IsOptional()
   expires_at?: Date;
-
-  @Field(() => [CreatePostTargetInput], { nullable: true })
-  @IsArray()
-  @IsOptional()
-  post_targets?: CreatePostTargetInput[];
 }
 
 @InputType()
 export class UpdatePostInput {
   @Field(() => String, { nullable: true })
-  @IsString()
-  @IsOptional()
   caption?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  @IsOptional()
-  media_urls?: any;
+  @Field(() => String, { nullable: true })
+  category?: string | null;
 
-  @Field(() => Boolean, { nullable: true })
-  @IsBoolean()
-  @IsOptional()
-  is_deleted?: boolean;
+  @Field(() => String, { nullable: true })
+  mediaUrl?: string;
 
   @Field(() => Date, { nullable: true })
-  @IsDate()
-  @IsOptional()
   expires_at?: Date;
 }
 
@@ -82,15 +86,15 @@ export class PostFilterInput {
   @IsOptional()
   is_deleted?: boolean;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   @IsString()
   @IsOptional()
-  target_type?: string;
+  target_type: string;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Int)
   @IsInt()
   @IsOptional()
-  target_id?: number;
+  target_id: number;
 
   @Field(() => Int, { nullable: true })
   @IsInt()

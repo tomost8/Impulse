@@ -63,6 +63,7 @@ model User {
   community_memberships CommunityMember[]
   chats_created         Chat[]
   chat_memberships      ChatMember[]
+  activities          Activity[]
   messages              Message[]
   posts                 Post[]
   post_views            PostView[]
@@ -179,38 +180,40 @@ model Message {
 
 //activity
 model Activity {
-  id            Int       @id @default(autoincrement())
-  name          String?
-  description   String?
-  category      String
-  duration      Int?
-  scheduledDate DateTime? @map("scheduled_date")
-  startTime     DateTime? @map("start_time")
-  status        String    @default("pending")
-  post          Post?     @relation(fields: [postId], references: [id])
-  postId        Int?      @map("post_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id                Int       @id @default(autoincrement())
+  name              String?
+  description       String?
+  category          String
+  duration          Int?
+  scheduledDatetime DateTime? @map("scheduled_datetime")
+  status            String    @default("pending")
+  post              Post?     @relation(fields: [postId], references: [id])
+  postId            Int?      @unique @map("post_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  user              User      @relation(fields: [userId], references: [id])
+  userId            Int       @map("user_id")
 
-  @@index([scheduledDate])
+  @@index([scheduledDatetime])
+  @@index([userId, scheduledDatetime])
   @@map("activities")
 }
 
 model Post {
-  id         Int        @id @default(autoincrement())
-  author     User       @relation(fields: [author_id], references: [id])
-  author_id  Int
-  caption    String?
-  media_urls Json?
-  is_deleted Boolean    @default(false)
-  activities Activity[]
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
-  expires_at DateTime? // story类型设置24小时，chat类型为null
-
+  id          Int          @id @default(autoincrement())
+  author      User         @relation(fields: [author_id], references: [id])
+  author_id   Int
+  caption     String?
+  mediaUrl   String?      @map("media_url")
+  is_deleted  Boolean      @default(false)
+  activity    Activity?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  expires_at  DateTime?    // story类型设置24小时，chat类型为null
   post_targets PostTarget[]
   post_views   PostView[]
   Message      Message[]
+  category    String?
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])

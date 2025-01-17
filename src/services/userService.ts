@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { User } from '../modules/user/schema/userTypes';
 import { CreateUserInput, UpdateUserInput } from '../modules/user/schema/userInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
+import { pubsub } from '../config/pubsub';
+
+export const USER_CREATED = 'USER_CREATED';
 
 /**
  * Service handling user-related business logic
@@ -63,6 +66,7 @@ export class UsersService {
    */
   async create(input: CreateUserInput): Promise<User> {
     try {
+
       let new_user = await this.prisma.user.create({
         data: input,
       });
@@ -71,9 +75,12 @@ export class UsersService {
           user_id: new_user.id
         }
       });
+
+      await pubsub.publish(USER_CREATED, { userCreated: new_user });
+      console.log('Published user created event:', { userCreated: new_user });
+      
       return new_user
     } catch (error: any) {
-      // Transform known error cases
       if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
         throw new ValidationError(`User with email ${input.email} already exists`);
       }

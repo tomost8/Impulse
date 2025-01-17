@@ -11,21 +11,26 @@ type ActivitiesResponse {
 
 type Activity {
   category: String!
-  createdAt: Date!
+  createdAt: DateTimeISO!
   description: String
   duration: Int
   id: Int!
   name: String
   post: Post
   postId: Int
-  scheduledDate: Date
-  startTime: Date
+  scheduledDatetime: DateTimeISO
   status: String!
-  updatedAt: Date!
+  updatedAt: DateTimeISO!
+  userId: Int!
 }
 
 type ActivityResponse {
   activity: Activity
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type BaseResponse {
   errors: [FieldError!]
   success: Boolean!
 }
@@ -40,7 +45,7 @@ enum Category {
 }
 
 type Chat {
-  created_at: Date!
+  created_at: DateTimeISO!
   creator: User!
   creator_id: Int!
   id: Int!
@@ -48,14 +53,14 @@ type Chat {
   profile_pic: String
   title: String
   type: String!
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type ChatMember {
   chat: Chat!
   chat_id: Int!
   id: Int!
-  joined_at: Date!
+  joined_at: DateTimeISO!
   role: Role!
   status: RequestStatus!
   user: User!
@@ -93,14 +98,14 @@ type CommunitiesResponse {
 }
 
 type Community {
-  created_at: Date!
+  created_at: DateTimeISO!
   description: String
   id: Int!
   influencer: User!
   influencer_id: Int!
   name: String!
   thumbnail: String
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type CommunityCategoriesResponse {
@@ -126,7 +131,7 @@ type CommunityMember {
   community: Community!
   community_id: Int!
   id: Int!
-  joined_at: Date!
+  joined_at: DateTimeISO!
   role: Role!
   status: RequestStatus!
   user: User!
@@ -157,8 +162,8 @@ input CreateActivityInput {
   duration: Int
   name: String
   postId: Int
-  scheduledDate: Date
-  startTime: Date
+  scheduledDatetime: DateTimeISO
+  userId: Int!
 }
 
 input CreateChatInput {
@@ -203,6 +208,16 @@ input CreateMessageInput {
   sender_id: Int!
 }
 
+input CreatePostInput {
+  activityId: Int!
+  authorId: Int!
+  caption: String!
+  category: String
+  expires_at: DateTimeISO
+  mediaUrl: String
+  post_targets: [PostTargetInput!]!
+}
+
 input CreateRedeemInput {
   reward_id: Int!
   user_id: Int!
@@ -214,8 +229,18 @@ input CreateRewardInput {
   title: String!
 }
 
+type CurrentTime {
+  formatted: String!
+  timestamp: String!
+}
+
 """Date custom scalar type for YYYY-MM-DD format"""
 scalar Date
+
+"""
+A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format.
+"""
+scalar DateTimeISO
 
 type FieldError {
   field: String!
@@ -225,14 +250,14 @@ type FieldError {
 type Friendship {
   chat: Chat
   chat_id: Int
-  created_at: Date!
+  created_at: DateTimeISO!
   id: Int!
   receiver: User!
   receiver_id: Int!
   sender: User!
   sender_id: Int!
   status: RequestStatus!
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type FriendshipResponse {
@@ -256,7 +281,7 @@ type Message {
   chat: Chat!
   chat_id: Int!
   content: String
-  created_at: Date!
+  created_at: DateTimeISO!
   id: Int!
   post: Post
   post_id: Int
@@ -285,6 +310,7 @@ type Mutation {
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
   createFriendship(input: CreateFriendshipInput!): FriendshipResponse!
   createMessage(input: CreateMessageInput!): MessageResponse!
+  createPost(input: CreatePostInput!): PostResponse!
   createRedeem(input: CreateRedeemInput!): RedeemResponse!
   createReward(input: CreateRewardInput!): RewardResponse!
   deleteActivity(id: Int!): ActivityResponse!
@@ -294,6 +320,7 @@ type Mutation {
   deleteCommunityCategory(category: Category!, community_id: Int!): CommunityCategoryResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
   deleteFriendship(friend_id: Int!, user_id: Int!): FriendshipResponse!
+  deletePost(id: Int!): PostResponse!
   deleteRedeem(id: Int!): RedeemResponse!
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
@@ -305,24 +332,26 @@ type Mutation {
   updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
   updateFriendship(input: UpdateFriendshipInput!, receiver_id: Int!, sender_id: Int!): FriendshipResponse!
   updatePoint(id: Int!, input: UpdatePointInput!): PointResponse!
+  updatePost(id: Int!, input: UpdatePostInput!): PostResponse!
   updateRedeem(id: Int!, input: UpdateRedeemInput!): RedeemResponse!
   updateReward(id: Int!, input: UpdateRewardInput!): RewardResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
+  viewPost(postId: Int!, userId: Int!): BaseResponse!
 }
 
 type Point {
-  created_at: Date!
+  created_at: DateTimeISO!
   monthly_points: Int!
-  monthly_update_at: Date
+  monthly_update_at: DateTimeISO
   points: Int!
   preferences: JSON
   spending_points: Int!
   status: String!
-  updated_at: Date!
+  updated_at: DateTimeISO!
   user: User!
   user_id: Int!
   weekly_points: Int!
-  weekly_update_at: Date
+  weekly_update_at: DateTimeISO
 }
 
 type PointResponse {
@@ -336,36 +365,62 @@ type Post {
   author: User!
   author_id: Int!
   caption: String
-  created_at: Date!
-  expires_at: Date
+  category: String
+  created_at: DateTimeISO!
+  expires_at: DateTimeISO
   id: Int!
   is_deleted: Boolean!
-  media_urls: JSON
-  post_targets: [PostTarget!]
+  mediaUrl: String
+  messages: [Message!]
+  post_targets: [PostTarget!]!
   post_views: [PostView!]
-  updated_at: Date!
+  updated_at: DateTimeISO!
+}
+
+type PostResponse {
+  errors: [FieldError!]
+  post: Post
+  success: Boolean!
 }
 
 type PostTarget {
-  created_at: Date!
+  created_at: DateTimeISO!
   id: Int!
-  post: Post!
+  post: Post
   post_id: Int!
   target_id: Int!
   target_type: String!
 }
 
+input PostTargetInput {
+  target_id: Int!
+  target_type: String!
+}
+
+type PostTargetsProgress {
+  processed: Float!
+  status: String!
+  total: Float!
+}
+
 type PostView {
   id: Int!
-  post: Post!
+  post: Post
   post_id: Int!
-  user: User!
+  user: User
   user_id: Int!
-  viewed_at: Date!
+  viewed_at: DateTimeISO!
+}
+
+type PostsResponse {
+  errors: [FieldError!]
+  posts: [Post!]
+  success: Boolean!
 }
 
 type Query {
   activities(category: String, skip: Int, status: String, take: Int): ActivitiesResponse!
+  activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
@@ -379,26 +434,30 @@ type Query {
   getFriendships(id: Int!): FriendshipsResponse!
   getMessages(id: Int!): MessagesResponse!
   getPoint(id: Int!): PointResponse!
+  getPostTargetsProgress(postId: Int!): PostTargetsProgress!
   getRedeems(id: Int!): RedeemsResponse!
   getRewards: RewardsResponse!
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
   me: UserResponse!
+  post(id: Int!): PostResponse!
+  posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
+  postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!
   users: UsersResponse!
 }
 
 type Redeem {
-  created_at: Date!
+  created_at: DateTimeISO!
   id: Int!
   notes: String
   payment_details: JSON
   points_spent: Int!
-  processing_time: Date
+  processing_time: DateTimeISO
   reward: Reward!
   reward_id: Int!
   status: RequestStatus!
-  updated_at: Date!
+  updated_at: DateTimeISO!
   user: User!
   user_id: Int!
 }
@@ -422,12 +481,12 @@ enum RequestStatus {
 }
 
 type Reward {
-  created_at: Date!
+  created_at: DateTimeISO!
   description: String
   id: Int!
   required_points: Int!
   title: String!
-  updated_at: Date!
+  updated_at: DateTimeISO!
 }
 
 type RewardResponse {
@@ -447,14 +506,20 @@ enum Role {
   USER
 }
 
+type Subscription {
+  currentTime: CurrentTime!
+
+  """Subscribe to user creation events"""
+  userCreated: User!
+}
+
 input UpdateActivityInput {
   category: String
   description: String
   duration: Int
   name: String
   postId: Int
-  scheduledDate: Date
-  startTime: Date
+  scheduledDatetime: DateTimeISO
   status: String
 }
 
@@ -490,8 +555,15 @@ input UpdatePointInput {
   reset_weekly_points: Boolean
 }
 
+input UpdatePostInput {
+  caption: String
+  category: String
+  expires_at: DateTimeISO
+  mediaUrl: String
+}
+
 input UpdateRedeemInput {
-  processing_time: Date
+  processing_time: DateTimeISO
   status: RequestStatus
 }
 
@@ -516,7 +588,7 @@ input UpdateUserInput {
 }
 
 type User {
-  created_at: Date!
+  created_at: DateTimeISO!
   dob: Date
   email: String!
   fcm_token: String
@@ -524,14 +596,14 @@ type User {
   first_name: String
   gender: String
   id: Int!
-  last_login_at: Date
+  last_login_at: DateTimeISO
   last_name: String
   profile_picture: String
   role: String!
   searchable: Boolean!
   status: String!
   timezone: String
-  updated_at: Date!
+  updated_at: DateTimeISO!
   username: String
 }
 

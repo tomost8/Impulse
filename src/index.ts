@@ -8,16 +8,18 @@ import { Server } from 'http';
 
 async function bootstrap() {
   try {
-    const app = await createApp();
+    const { httpServer } = await createApp();
     const lifecycleManager = Container.get(ServerLifecycleManagerImpl);
-
-    const server = await new Promise<Server>((resolve, reject) => {
-      const server = app.listen(env.PORT, () => {
+    await new Promise<void>((resolve, reject) => {
+      httpServer
+        .listen(env.PORT, () => {
         try {
           logger.info(`🚀 Server ready at http://localhost:${env.PORT}`);
           logger.info(`🚀 GraphQL ready at http://localhost:${env.PORT}/graphql`);
           logger.info(`🌍 Environment: ${env.NODE_ENV}`);
-          resolve(server);
+          logger.info(`🛰️ WebSocket server ready at ws://localhost:${env.PORT}/graphql`);
+
+          resolve();
         } catch (error) {
           reject(error);
         }
@@ -27,7 +29,7 @@ async function bootstrap() {
     });
 
     // Setup lifecycle management
-    lifecycleManager.setupSignalHandlers(server);
+    lifecycleManager.setupSignalHandlers(httpServer);
   } catch (error) {
     logger.error('Failed to start server:', {
       error: error instanceof Error ? error.message : String(error),

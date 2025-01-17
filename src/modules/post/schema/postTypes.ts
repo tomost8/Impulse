@@ -3,7 +3,7 @@ import { GraphQLJSON } from 'graphql-type-json';
 import { User } from '../../user/schema/userTypes';
 import { Activity } from '../../activity/schema/activityTypes';
 import { FieldError } from '../../common/types/errorTypes';
-
+import { Message } from '../../chat/schema/chatTypes';
 
 @ObjectType()
 export class Post {
@@ -19,8 +19,8 @@ export class Post {
   @Field(() => String, { nullable: true })
   caption: string | null;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  media_urls: any | null;
+  @Field(() => String, { nullable: true })
+  mediaUrl: string | null;
 
   @Field(() => Boolean)
   is_deleted: boolean;
@@ -37,20 +37,23 @@ export class Post {
   @Field(() => Date, { nullable: true })
   expires_at: Date | null;
 
-  @Field(() => [PostTarget], { nullable: true })
-  post_targets?: PostTarget[] | null;
+  @Field(() => [PostTarget])
+  post_targets: PostTarget[];
 
   @Field(() => [PostView], { nullable: true })
   post_views?: PostView[] | null;
+
+  @Field(() => String, { nullable: true })
+  category?: string | null;  
+
+  @Field(() => [Message], { nullable: true })
+  messages?: Message[] | null;
 }
 
 @ObjectType()
 export class PostTarget {
   @Field(() => Int)
   id: number;
-
-  @Field(() => Post)
-  post: Post;
 
   @Field(() => Int)
   post_id: number;
@@ -63,6 +66,9 @@ export class PostTarget {
 
   @Field(() => Date)
   created_at: Date;
+
+  @Field(() => Post, { nullable: true })
+  post?: Post;
 }
 
 @ObjectType()
@@ -70,14 +76,14 @@ export class PostView {
   @Field(() => Int)
   id: number;
 
-  @Field(() => Post)
-  post: Post;
+  @Field(() => Post, { nullable: true })
+  post?: Post;
 
   @Field(() => Int)
   post_id: number;
 
-  @Field(() => User)
-  user: User;
+  @Field(() => User, { nullable: true })
+  user?: User;
 
   @Field(() => Int)
   user_id: number;
@@ -105,6 +111,27 @@ export class PostsResponse {
 
   @Field(() => [Post], { nullable: true })
   posts?: Post[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+@ObjectType()
+export class PostTargetsProgress {
+  @Field()
+  processed: number;
+
+  @Field()
+  total: number;
+
+  @Field()
+  status: string;
+}
+
+@ObjectType()
+export class BaseResponse {
+  @Field()
+  success: boolean;
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];

@@ -23,19 +23,17 @@ export class CreateActivityInput {
   duration?: number;
 
   @Field(() => Date, { nullable: true })
-  @IsDate()
   @IsOptional()
-  scheduledDate?: Date;
-
-  @Field(() => Date, { nullable: true })
-  @IsDate()
-  @IsOptional()
-  startTime?: Date;
+  scheduledDatetime?: Date;
 
   @Field(() => Int, { nullable: true })
   @IsInt()
   @IsOptional()
   postId?: number;
+
+  @Field(() => Int)
+  @IsInt()
+  userId: number;
 }
 
 @InputType()
@@ -61,14 +59,8 @@ export class UpdateActivityInput {
   duration?: number;
 
   @Field(() => Date, { nullable: true })
-  @IsDate()
   @IsOptional()
-  scheduledDate?: Date;
-
-  @Field(() => Date, { nullable: true })
-  @IsDate()
-  @IsOptional()
-  startTime?: Date;
+  scheduledDatetime?: Date;
 
   @Field(() => String, { nullable: true })
   @IsString()
