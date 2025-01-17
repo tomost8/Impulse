@@ -16,53 +16,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 示例模型
-model User {
-  id                    Int               @id @default(autoincrement()) @map("user_id")
-  email                 String            @unique
-  firebase_uid          String            @unique
-  first_name            String?
-  last_name             String?
-  username              String?
-  dob                   DateTime?         @db.Date
-  gender                String?
-  profile_picture       String?
-  role                  String            @default("user")
-  status                String            @default("pending")
-  timezone              String?
-  searchable            Boolean           @default(true)
-  fcm_token             String?
-  created_at            DateTime          @default(now())
-  updated_at            DateTime          @default(now()) @updatedAt
-  last_login_at         DateTime?
-  communities_owned     Community[]
-  community_memberships CommunityMember[]
-  chats_created         Chat[]
-  chat_memberships      ChatMember[]
-
-  posts      Post[]
-  post_views PostView[]
-  Message    Message[]
-
-  @@index([username])
-  @@map("users")
-}
-
-model Community {
-  id                   Int                 @id @default(autoincrement()) @map("community_id")
-  name                 String
-  description          String?
-  thumbnail            String?
-  influencer           User                @relation(fields: [influencer_id], references: [id])
-  influencer_id        Int
-  created_at           DateTime            @default(now())
-  updated_at           DateTime            @updatedAt
-  community_categories CommunityCategory[]
-  community_members    CommunityMember[]
-
-  @@map("communities")
-}
-
+// Enums
 enum Category {
   FOOD
   WELLNESS
@@ -70,16 +24,6 @@ enum Category {
   STUDYING_WORKING
   RISE_AND_SHINE
   PASSION_HOBBY
-}
-
-model CommunityCategory {
-  id           Int       @id @default(autoincrement())
-  community    Community @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  community_id Int
-  category     Category
-
-  @@unique([community_id, category])
-  @@map("community_categories")
 }
 
 enum Role {
@@ -93,6 +37,84 @@ enum RequestStatus {
   REJECTED
 }
 
+// 示例模型
+model User {
+  id              Int       @id @default(autoincrement()) @map("user_id")
+  email           String    @unique
+  firebase_uid    String    @unique
+  first_name      String?
+  last_name       String?
+  username        String?
+  dob             DateTime? @db.Date
+  gender          String?
+  profile_picture String?
+  role            String    @default("user")
+  status          String    @default("pending")
+  timezone        String?
+  searchable      Boolean   @default(true)
+  fcm_token       String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+  last_login_at   DateTime?
+
+  friendships_sent      Friendship[]      @relation("FriendsSent")
+  friendships_received  Friendship[]      @relation("FriendsReceived")
+  communities_owned     Community[]
+  community_memberships CommunityMember[]
+  chats_created         Chat[]
+  chat_memberships      ChatMember[]
+  messages              Message[]
+  posts                 Post[]
+  post_views            PostView[]
+  points                Point[]
+  redeems               Redeem[]
+
+  @@index([username])
+  @@map("users")
+}
+
+model Friendship {
+  id          Int           @id @default(autoincrement())
+  sender      User          @relation("FriendsSent", fields: [sender_id], references: [id], onDelete: Cascade)
+  sender_id   Int
+  receiver    User          @relation("FriendsReceived", fields: [receiver_id], references: [id], onDelete: Cascade)
+  receiver_id Int
+  status      RequestStatus @default(PENDING)
+  chat        Chat?         @relation(fields: [chat_id], references: [id])
+  chat_id     Int?
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @default(now()) @updatedAt
+
+  @@unique([sender_id, receiver_id])
+  @@map("friendships")
+}
+
+model Community {
+  id            Int      @id @default(autoincrement()) @map("community_id")
+  name          String
+  description   String?
+  thumbnail     String?
+  influencer    User     @relation(fields: [influencer_id], references: [id])
+  influencer_id Int
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  community_categories CommunityCategory[]
+  community_members    CommunityMember[]
+
+  @@map("communities")
+}
+
+model CommunityCategory {
+  id           Int       @id @default(autoincrement())
+  community    Community @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  community_id Int
+  category     Category
+
+  @@unique([community_id, category])
+  @@map("community_categories")
+}
+
 model CommunityMember {
   id           Int           @id @default(autoincrement())
   community    Community     @relation(fields: [community_id], references: [id], onDelete: Cascade)
@@ -100,7 +122,7 @@ model CommunityMember {
   user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id      Int
   role         Role          @default(USER)
-  status       RequestStatus @default(PENDING)
+  status       RequestStatus @default(ACCEPTED)
   joined_at    DateTime      @default(now())
   groupId      Int?
 
@@ -109,17 +131,19 @@ model CommunityMember {
 }
 
 model Chat {
-  id           Int          @id @default(autoincrement()) @map("chat_id")
-  type         String
-  title        String?
-  password     String?
-  profile_pic  String?
-  creator      User         @relation(fields: [creator_id], references: [id])
-  creator_id   Int
-  created_at   DateTime     @default(now())
-  updated_at   DateTime     @updatedAt
+  id          Int      @id @default(autoincrement()) @map("chat_id")
+  type        String
+  title       String?
+  password    String?
+  profile_pic String?
+  creator     User     @relation(fields: [creator_id], references: [id])
+  creator_id  Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
   chat_members ChatMember[]
-  Message      Message[]
+  messages     Message[]
+  direct_chats Friendship[]
 
   @@map("chats")
 }
@@ -217,4 +241,51 @@ model PostView {
   @@unique([post_id, user_id])
   @@index([user_id, viewed_at])
   @@map("post_views")
+}
+
+model Point {
+  //id                Int       @id @default(autoincrement())
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id           Int       @id @unique
+  points            Int       @default(0)
+  spending_points   Int       @default(0)
+  weekly_points     Int       @default(0)
+  monthly_points    Int       @default(0)
+  status            String    @default("active")
+  preferences       Json?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  weekly_update_at  DateTime?
+  monthly_update_at DateTime?
+
+  @@map("points")
+}
+
+model Reward {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String?
+  required_points Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  redeems         Redeem[]
+
+  @@map("rewards")
+}
+
+model Redeem {
+  id              Int           @id @default(autoincrement())
+  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id         Int
+  reward          Reward        @relation(fields: [reward_id], references: [id], onDelete: Cascade)
+  reward_id       Int
+  points_spent    Int
+  status          RequestStatus @default(PENDING)
+  payment_details Json?
+  processing_time DateTime?
+  notes           String?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  @@map("redeems")
 }
