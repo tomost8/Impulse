@@ -8,13 +8,16 @@ import { pubsub } from '../config/pubsub';
 export const USER_CREATED = 'USER_CREATED';
 
 /**
- * Service handling user-related business logic
+ * Service handling user-related business logic and database operations
  * 
- * This service provides methods for managing users in the system,
- * including CRUD operations and user-specific business logic.
+ * This service provides methods for managing users in the system, including:
+ * - CRUD operations for user management
+ * - User authentication via Firebase
+ * - Points system integration
+ * - Real-time user updates via GraphQL subscriptions
  * 
  * @remarks
- * Uses Prisma as the ORM for database operations
+ * Uses Prisma as the ORM for database operations and implements PubSub for real-time events
  */
 @Service()
 export class UsersService {
@@ -23,7 +26,7 @@ export class UsersService {
   /**
    * Retrieve all users from the database
    * 
-   * @returns Promise resolving to an array of users
+   * @returns Promise<User[]> Array of all users in the system
    * @throws {PrismaError} If database query fails
    */
   async findAll(): Promise<User[]> {
@@ -31,10 +34,10 @@ export class UsersService {
   }
 
   /**
-   * Find a user by their ID
+   * Find a specific user by their ID
    * 
-   * @param id - The unique identifier of the user
-   * @returns Promise resolving to the user if found, null otherwise
+   * @param id - The unique identifier of the user in the database
+   * @returns Promise<User | null> The found user or null if not found
    * @throws {PrismaError} If database query fails
    */
   async findById(id: number): Promise<User | null> {
@@ -46,8 +49,8 @@ export class UsersService {
   /**
    * Find a user by their Firebase UID
    * 
-   * @param firebaseUid - The unique identifier of the user
-   * @returns Promise resolving to the user if found, null otherwise
+   * @param firebaseUid - The Firebase authentication unique identifier
+   * @returns Promise<User | null> The found user or null if not found
    * @throws {PrismaError} If database query fails
    */
   async findByFirebaseUid(firebaseUid: string): Promise<User | null> {
@@ -57,16 +60,16 @@ export class UsersService {
   }
 
   /**
-   * Create a new user
+   * Create a new user and initialize their points
    * 
-   * @param input - User creation data
-   * @returns Promise resolving to the created user
-   * @throws {ValidationError} If user with email already exists
-   * @throws {PrismaError} If database operation fails
+   * @param input - User creation data containing required user information
+   * @returns Promise<User> The newly created user
+   * @throws {ValidationError} If a user with the same email already exists
+   * @throws {PrismaError} If database operations fail
+   * @remarks This method also creates an initial points record for the user and triggers a USER_CREATED event
    */
   async create(input: CreateUserInput): Promise<User> {
     try {
-
       let new_user = await this.prisma.user.create({
         data: input,
       });
@@ -89,12 +92,12 @@ export class UsersService {
   }
 
   /**
-   * Update an existing user
+   * Update an existing user's information
    * 
    * @param id - ID of the user to update
-   * @param input - Updated user data
-   * @returns Promise resolving to the updated user
-   * @throws {NotFoundError} If user doesn't exist
+   * @param input - Updated user data containing fields to modify
+   * @returns Promise<User> The updated user
+   * @throws {NotFoundError} If the user doesn't exist
    * @throws {PrismaError} If database operation fails
    */
   async update(id: number, input: UpdateUserInput): Promise<User> {
@@ -111,14 +114,13 @@ export class UsersService {
     }
   }
 
-
   /**
-   * Update a user by their Firebase UID
+   * Update a user's information using their Firebase UID
    * 
-   * @param firebaseUid - Firebase UID of the user
-   * @param input - Updated user data
-   * @returns Promise resolving to the updated user
-   * @throws {NotFoundError} If user doesn't exist
+   * @param firebaseUid - Firebase authentication UID of the user
+   * @param input - Updated user data containing fields to modify
+   * @returns Promise<User> The updated user
+   * @throws {NotFoundError} If the user doesn't exist
    * @throws {PrismaError} If database operation fails
    */
   async updateByFirebaseUid(firebaseUid: string, input: UpdateUserInput): Promise<User> {
@@ -132,11 +134,12 @@ export class UsersService {
   }
 
   /**
-   * Delete a user from the system
+   * Permanently delete a user from the system
    * 
    * @param id - ID of the user to delete
-   * @throws {NotFoundError} If user doesn't exist
+   * @throws {NotFoundError} If the user doesn't exist
    * @throws {PrismaError} If database operation fails
+   * @remarks This operation will cascade delete related records based on the Prisma schema configuration
    */
   async delete(id: number): Promise<void> {
     try {

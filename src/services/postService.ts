@@ -6,6 +6,18 @@ import { NotFoundError, ValidationError } from '../modules/common/errors/graphql
 import Queue from 'bull';
 import { ActivityExpirationService } from './activityExpirationService';
 
+/**
+ * Service handling post-related business logic and database operations
+ * 
+ * This service provides methods for managing posts in the system, including:
+ * - CRUD operations for post management
+ * - Asynchronous processing of post targets using Bull queue
+ * - Activity status tracking and expiration management
+ * - Post view tracking and analytics
+ * 
+ * @remarks
+ * Uses Prisma as the ORM and Bull for job queue management
+ */
 @Service()
 export class PostService {
   public postTargetsQueue: Queue.Queue;
@@ -14,7 +26,7 @@ export class PostService {
     private prisma: PrismaClient,
     private activityExpirationService: ActivityExpirationService
   ) {
-    // 初始化队列
+    // Initialize the Bull queue for post targets processing
     this.postTargetsQueue = new Queue('post-targets', {
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -22,13 +34,23 @@ export class PostService {
       }
     });
 
-    // 处理队列中的任务
+    // Process jobs in the queue
     this.postTargetsQueue.process(async (job) => {
       const { postId, targets } = job.data;
       await this.processTargetsQueue(postId, targets);
     });
   }
 
+  /**
+   * Retrieve all posts with optional filtering and pagination
+   * 
+   * @param options - Query options for filtering and pagination
+   * @param options.skip - Number of records to skip
+   * @param options.take - Number of records to take
+   * @param options.category - Filter posts by category
+   * @returns Promise<Post[]> Array of posts with their authors and targets
+   * @throws {PrismaError} If database query fails
+   */
   async findAll(options?: {
     skip?: number;
     take?: number;
@@ -47,7 +69,15 @@ export class PostService {
     });
   }
 
-
+  /**
+   * Create a new post with associated targets and activity tracking
+   * 
+   * @param data - Post creation data containing required information
+   * @returns Promise<Post> The newly created post
+   * @throws {ValidationError} If validation fails or prerequisites are not met
+   * @throws {PrismaError} If database operations fail
+   * @remarks This method handles high concurrency by processing targets in batches
+   */
   async create(data: CreatePostInput): Promise<Post> {
     try {
       // Check if the user has an unexpired activity of the same category
@@ -70,7 +100,7 @@ export class PostService {
       const HIGH_CONCURRENCY_THRESHOLD = 10;
 
       return await this.prisma.$transaction(async (tx) => {
-        // 创建帖子和前N个目标
+        // Create post with initial batch of targets
         const initialTargets = data.post_targets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
         const post = await tx.post.create({
           data: {
@@ -93,16 +123,16 @@ export class PostService {
           }
         });
 
-        // 更新对应的 activity 的 postId 并取消过期任务
+        // Update corresponding activity status and cancel expiration
         await tx.activity.update({
           where: { id: data.activityId },
           data: { postId: post.id, status: "completed" }
         });
 
-        // 取消 activity 的过期任务
+        // Cancel the activity expiration task
         await this.activityExpirationService.cancelActivityExpiration(data.activityId);
 
-        // 如果还有更多目标，添加到队列中异步处理
+        // Queue remaining targets for async processing if any
         if (data.post_targets.length > HIGH_CONCURRENCY_THRESHOLD) {
           const remainingTargets = data.post_targets.slice(HIGH_CONCURRENCY_THRESHOLD);
           const BATCH_SIZE = 100;
@@ -129,7 +159,14 @@ export class PostService {
     }
   }
 
-  // 处理队列中的目标创建任务
+  /**
+   * Process queued post targets in batches
+   * 
+   * @param postId - ID of the post to create targets for
+   * @param targets - Array of target objects to process
+   * @throws {Error} If target creation fails
+   * @private
+   */
   private async processTargetsQueue(postId: number, targets: Array<{ target_type: string; target_id: number }>) {
     try {
       await this.prisma.postTarget.createMany({
@@ -140,41 +177,48 @@ export class PostService {
         }))
       });
     } catch (error) {
-      // 记录错误，可能需要重试
       console.error(`Failed to process targets for post ${postId}:`, error);
       throw error;
     }
   }
 
+  /**
+   * Add a job to the Bull queue with retry configuration
+   * 
+   * @param jobType - Type of job to add to queue
+   * @param data - Job data to be processed
+   * @private
+   */
   private async addToQueue(jobType: string, data: any) {
     if (jobType === 'create_post_targets') {
-      // 添加到队列，设置重试策略
       await this.postTargetsQueue.add(data, {
-        attempts: 3, // 最多重试3次
+        attempts: 3,
         backoff: {
           type: 'exponential',
-          delay: 2000 // 初始延迟2秒，然后指数增长
+          delay: 2000
         }
       });
     }
   }
 
-  // 获取处理进度
+  /**
+   * Get the progress of target processing for a post
+   * 
+   * @param postId - ID of the post to check progress for
+   * @returns Promise with progress information including processed count and status
+   */
   async getTargetsProgress(postId: number): Promise<{
     processed: number;
     total: number;
     status: 'processing' | 'completed';
   }> {
     const [processedCount, queueJobs] = await Promise.all([
-      // 获取已处理的目标数量
       this.prisma.postTarget.count({
         where: { post_id: postId }
       }),
-      // 获取队列中待处理的任务
       this.postTargetsQueue.getJobs(['waiting', 'active'])
     ]);
 
-    // 计算队列中待处理的目标总数
     const pendingTargets = queueJobs
       .filter(job => job.data.postId === postId)
       .reduce((acc, job) => acc + job.data.targets.length, 0);
@@ -188,6 +232,15 @@ export class PostService {
     };
   }
 
+  /**
+   * Update an existing post
+   * 
+   * @param id - ID of the post to update
+   * @param data - Updated post data
+   * @returns Promise<Post> The updated post
+   * @throws {NotFoundError} If the post doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
   async update(id: number, data: UpdatePostInput): Promise<Post> {
     try {
       return await this.prisma.post.update({
@@ -206,6 +259,14 @@ export class PostService {
     }
   }
 
+  /**
+   * Delete a post and its associated data
+   * 
+   * @param id - ID of the post to delete
+   * @returns Promise<Post> The deleted post
+   * @throws {NotFoundError} If the post doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
   async delete(id: number): Promise<Post> {
     try {
       return await this.prisma.post.delete({
@@ -223,6 +284,13 @@ export class PostService {
     }
   }
 
+  /**
+   * Find all posts by a specific user
+   * 
+   * @param userId - ID of the user to find posts for
+   * @param options - Pagination options
+   * @returns Promise<Post[]> Array of posts by the user
+   */
   async findByUserId(userId: number, options?: { skip?: number; take?: number; }): Promise<Post[]> {
     return await this.prisma.post.findMany({
       skip: options?.skip,
@@ -237,6 +305,13 @@ export class PostService {
     });
   }
 
+  /**
+   * Find a specific post by its ID
+   * 
+   * @param id - ID of the post to find
+   * @returns Promise<Post> The found post
+   * @throws {NotFoundError} If the post doesn't exist
+   */
   async findById(id: number): Promise<Post> {
     const post = await this.prisma.post.findUnique({
       where: { id },
@@ -253,6 +328,13 @@ export class PostService {
     return post;
   }
 
+  /**
+   * Find posts with complex filtering options
+   * 
+   * @param options - Query options for filtering posts
+   * @returns Promise<Post[]> Array of filtered posts
+   * @remarks This method includes permission checks for community and group posts
+   */
   async findPosts(
     options?: {
       targetType?: string;
@@ -264,7 +346,7 @@ export class PostService {
       category?: string;
     }
   ): Promise<Post[]> {
-    // 如果需要检查权限，先验证用户是否有权限访问
+    // Check access permissions for target type
     if (options?.targetType && options?.targetId && options?.currentUserId) {
       let hasAccess = true;
 
@@ -288,16 +370,14 @@ export class PostService {
         hasAccess = !!membership;
       }
 
-      // 如果用户没有访问权限，直接返回空数组
       if (!hasAccess) {
         return [];
       }
     }
 
-    // 构建查询条件
+    // Build query conditions
     const whereConditions: Prisma.PostWhereInput[] = [];
 
-    // 添加目标过滤条件
     if (options?.targetType && options?.targetId) {
       whereConditions.push({
         post_targets: {
@@ -309,7 +389,6 @@ export class PostService {
       });
     }
 
-    // 添加未读过滤条件
     if (options?.unreadOnly && options?.currentUserId) {
       whereConditions.push({
         post_views: {
@@ -320,7 +399,6 @@ export class PostService {
       });
     }
 
-    // 添加分类过滤条件
     if (options?.category) {
       whereConditions.push({ category: options.category });
     }
@@ -329,7 +407,7 @@ export class PostService {
       ? { AND: whereConditions }
       : {};
 
-    // 执行查询
+    // Execute query with all includes
     const posts = await this.prisma.post.findMany({
       where,
       skip: options?.skip,
@@ -352,6 +430,14 @@ export class PostService {
     return posts;
   }
 
+  /**
+   * Split an array into chunks of specified size
+   * 
+   * @param array - Array to split
+   * @param size - Size of each chunk
+   * @returns Array of chunks
+   * @private
+   */
   private chunkArray<T>(array: T[], size: number): T[][] {
     const chunks: T[][] = [];
     for (let i = 0; i < array.length; i += size) {
@@ -360,6 +446,14 @@ export class PostService {
     return chunks;
   }
 
+  /**
+   * Record a view of a post by a user
+   * 
+   * @param postId - ID of the post viewed
+   * @param userId - ID of the user viewing the post
+   * @throws {NotFoundError} If the post or user doesn't exist
+   * @throws {PrismaError} If database operation fails
+   */
   async recordView(postId: number, userId: number): Promise<void> {
     try {
       await this.prisma.postView.upsert({
@@ -369,7 +463,7 @@ export class PostService {
             user_id: userId
           }
         },
-        update: {}, // 空更新，viewed_at 会自动更新
+        update: {}, // Empty update as viewed_at will auto-update
         create: {
           post_id: postId,
           user_id: userId
@@ -378,7 +472,7 @@ export class PostService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          // 唯一约束冲突，说明记录已存在，这是正常的
+          // Unique constraint violation, record already exists
           return;
         }
         if (error.code === 'P2003') {

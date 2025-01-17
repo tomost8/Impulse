@@ -6,12 +6,71 @@ import { PostService } from '../../../services/postService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
 
+/**
+ * GraphQL mutation resolvers for Post-related operations
+ * 
+ * This resolver class handles all post mutations including:
+ * - Post creation and updates
+ * - Post deletion
+ * - View tracking
+ * 
+ * @remarks
+ * All mutations return either PostResponse or BaseResponse types that include:
+ * - success: boolean indicating operation success
+ * - post: the affected post (if applicable)
+ * - errors: array of validation or operation errors
+ * 
+ * @example
+ * ```graphql
+ * mutation {
+ *   createPost(input: {
+ *     caption: "Hello World"
+ *     mediaUrl: "https://example.com/image.jpg"
+ *   }) {
+ *     success
+ *     post {
+ *       id
+ *       caption
+ *       mediaUrl
+ *     }
+ *     errors {
+ *       field
+ *       message
+ *     }
+ *   }
+ * }
+ * ```
+ */
 @Service()
 @Resolver(Post)
 @UseMiddleware(LogOperationMiddleware)
 export class PostMutations {
   constructor(private postService: PostService) {}
 
+  /**
+   * Mutation to record a view of a post by a user
+   * 
+   * This mutation tracks when a user views a post, which can be used for
+   * analytics and to mark posts as read/unread.
+   * 
+   * @param postId - ID of the post that was viewed
+   * @param userId - ID of the user who viewed the post
+   * @returns BaseResponse indicating success or failure
+   * @throws {NotFoundError} If the post or user doesn't exist
+   * 
+   * @example
+   * ```graphql
+   * mutation {
+   *   viewPost(postId: 1, userId: 2) {
+   *     success
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
   @Mutation(() => BaseResponse)
   async viewPost(
     @Arg('postId', () => Int) postId: number,
@@ -34,6 +93,39 @@ export class PostMutations {
     }
   }
 
+  /**
+   * Mutation to create a new post
+   * 
+   * This mutation creates a new post with the provided data and handles:
+   * - Post metadata creation
+   * - Target audience assignment
+   * - Activity status updates
+   * 
+   * @param input - Post creation data containing required information
+   * @returns PostResponse with the newly created post or error details
+   * @throws {ValidationError} If validation fails or prerequisites are not met
+   * 
+   * @example
+   * ```graphql
+   * mutation {
+   *   createPost(input: {
+   *     caption: "New Post"
+   *     mediaUrl: "https://example.com/image.jpg"
+   *     authorId: 1
+   *     post_targets: [
+   *       { target_type: "community", target_id: 1 }
+   *     ]
+   *   }) {
+   *     success
+   *     post {
+   *       id
+   *       caption
+   *       mediaUrl
+   *     }
+   *   }
+   * }
+   * ```
+   */
   @Mutation(() => PostResponse)
   async createPost(
     @Arg('input') input: CreatePostInput
@@ -56,6 +148,38 @@ export class PostMutations {
     }
   }
 
+  /**
+   * Mutation to update an existing post
+   * 
+   * This mutation updates a post's information while maintaining:
+   * - Data integrity
+   * - Target audience associations
+   * - Activity relationships
+   * 
+   * @param id - ID of the post to update
+   * @param input - Updated post data containing fields to modify
+   * @returns PostResponse with the updated post or error details
+   * @throws {NotFoundError} If the post doesn't exist
+   * @throws {ValidationError} If validation fails
+   * 
+   * @example
+   * ```graphql
+   * mutation {
+   *   updatePost(
+   *     id: 1,
+   *     input: {
+   *       caption: "Updated Caption"
+   *     }
+   *   ) {
+   *     success
+   *     post {
+   *       id
+   *       caption
+   *     }
+   *   }
+   * }
+   * ```
+   */
   @Mutation(() => PostResponse)
   async updatePost(
     @Arg('id', () => Int) id: number,
@@ -79,6 +203,31 @@ export class PostMutations {
     }
   }
 
+  /**
+   * Mutation to delete a post from the system
+   * 
+   * This mutation permanently removes a post and:
+   * - Deletes associated targets
+   * - Removes view records
+   * - Updates related activity statuses
+   * 
+   * @param id - ID of the post to delete
+   * @returns PostResponse with the deleted post or error details
+   * @throws {NotFoundError} If the post doesn't exist
+   * @remarks This operation cannot be undone
+   * 
+   * @example
+   * ```graphql
+   * mutation {
+   *   deletePost(id: 1) {
+   *     success
+   *     post {
+   *       id
+   *     }
+   *   }
+   * }
+   * ```
+   */
   @Mutation(() => PostResponse)
   async deletePost(@Arg('id', () => Int) id: number): Promise<PostResponse> {
     try {

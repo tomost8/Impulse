@@ -9,6 +9,17 @@ import logger from '../../../config/logger';
 /**
  * GraphQL query resolvers for User-related operations
  * 
+ * This resolver class provides queries for retrieving user information:
+ * - Current authenticated user details
+ * - List of all users in the system
+ * - Single user lookup by ID or Firebase UID
+ * 
+ * @remarks
+ * All queries return either UserResponse or UsersResponse types that include:
+ * - success: boolean indicating operation success
+ * - user/users: the requested user data
+ * - errors: array of validation or operation errors
+ * 
  * @example
  * ```graphql
  * query {
@@ -18,6 +29,10 @@ import logger from '../../../config/logger';
  *       id
  *       email
  *       name
+ *     }
+ *     errors {
+ *       field
+ *       message
  *     }
  *   }
  * }
@@ -30,9 +45,15 @@ export class UserQueries {
   constructor(private usersService: UsersService) {}
 
   /**
-   * Query to get the current authenticated user
+   * Query to get the current authenticated user's information
    * 
-   * @returns Response containing the current user's information
+   * This query requires authentication and returns the profile of the currently
+   * logged-in user. It uses the Firebase UID from the authentication context to
+   * identify the user.
+   * 
+   * @param ctx - Authentication context containing user information
+   * @returns UserResponse with the current user's data or error details
+   * @throws {ValidationError} If the user is not found in the database
    * 
    * @example
    * ```graphql
@@ -71,7 +92,6 @@ export class UserQueries {
         };
       }
 
-
       return { success: true, user };
     } catch (error: any) {
       logger.error('Failed to fetch current user', {
@@ -90,9 +110,13 @@ export class UserQueries {
   }
 
   /**
-   * Query to fetch all users
+   * Query to fetch all users in the system
    * 
-   * @returns Response containing array of all users in the system
+   * This query retrieves a list of all users in the database.
+   * Consider implementing pagination for large datasets.
+   * 
+   * @returns UsersResponse containing array of all users or error details
+   * @throws {PrismaError} If database query fails
    * 
    * @example
    * ```graphql
@@ -132,10 +156,16 @@ export class UserQueries {
   }
 
   /**
-   * Query to fetch a single user by ID
+   * Query to fetch a single user by ID or Firebase UID
    * 
-   * @param id - The ID of the user to fetch
-   * @returns Response containing the user if found
+   * This query allows looking up a user using either their database ID
+   * or their Firebase UID. At least one identifier must be provided.
+   * 
+   * @param id - Optional database ID of the user
+   * @param firebase_uid - Optional Firebase UID of the user
+   * @returns UserResponse containing the found user or error details
+   * @throws {ValidationError} If neither ID nor Firebase UID is provided
+   * @throws {NotFoundError} If user is not found
    * 
    * @example
    * ```graphql
@@ -187,7 +217,6 @@ export class UserQueries {
           }]
         };
       }
-
 
       return { success: true, user };
     } catch (error: any) {

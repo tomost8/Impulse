@@ -1,10 +1,12 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
 import Queue from 'bull';
-import { toZonedTime } from 'date-fns-tz';
 import { startOfDay, addDays } from 'date-fns';
 import logger from '../config/logger';
 
+/**
+ * Interface defining the structure of an activity expiration job
+ */
 interface ActivityExpirationJob {
   activityId: number;
   userId: number;
@@ -12,33 +14,45 @@ interface ActivityExpirationJob {
   scheduledDatetime: Date;
 }
 
+/**
+ * Service handling activity expiration scheduling and processing
+ * 
+ * This service provides functionality for:
+ * - Managing activity expiration through Bull queue
+ * - Scheduling expiration jobs with timezone awareness
+ * - Handling job failures and retries
+ * - Graceful cleanup of expired activities
+ * 
+ * @remarks
+ * Uses Bull queue for reliable job scheduling and processing
+ */
 @Service()
 export class ActivityExpirationService {
   public expirationQueue: Queue.Queue;
 
   constructor(private prisma: PrismaClient) {
-    // 创建 Bull 队列
+    // Initialize Bull queue for activity expiration
     this.expirationQueue = new Queue<ActivityExpirationJob>('activity-expiration', {
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
       },
       defaultJobOptions: {
-        removeOnComplete: true, // 完成后删除任务
-        attempts: 3, // 失败重试3次
+        removeOnComplete: true, // Remove jobs after completion
+        attempts: 3, // Retry failed jobs 3 times
         backoff: {
           type: 'exponential',
-          delay: 1000, // 初始延迟1秒
+          delay: 1000, // Initial delay of 1 second
         },
       },
     });
 
-    // 处理过期任务
+    // Process expiration jobs
     this.expirationQueue.process(async (job) => {
       const { activityId, userId, timezone } = job.data;
       
       try {
-        // 更新活动状态为过期
+        // Update activity status to expired
         await this.prisma.activity.updateMany({
           where: {
             id: activityId,
@@ -62,11 +76,11 @@ export class ActivityExpirationService {
           userId,
           timezone,
         });
-        throw error; // 重试机制会处理
+        throw error; // Let the retry mechanism handle it
       }
     });
 
-    // 错误处理
+    // Error handling for queue events
     this.expirationQueue.on('error', (error) => {
       logger.error('Activity expiration queue error:', error);
     });
@@ -81,7 +95,14 @@ export class ActivityExpirationService {
   }
 
   /**
-   * 为新活动安排过期任务
+   * Schedule an expiration job for a new activity
+   * 
+   * @param activityId - ID of the activity to expire
+   * @param userId - ID of the user who owns the activity
+   * @param timezone - User's timezone for accurate scheduling
+   * @param scheduledDatetime - The scheduled datetime for the activity
+   * @throws {Error} If scheduling fails
+   * @remarks Expiration is scheduled for the start of the next day after scheduledDatetime
    */
   public async scheduleActivityExpiration(
     activityId: number,
@@ -90,16 +111,16 @@ export class ActivityExpirationService {
     scheduledDatetime: Date
   ) {
     try {
-      // 直接用 UTC 时间计算下一天凌晨
+      // Calculate next day's start in UTC
       const expirationTime = startOfDay(addDays(scheduledDatetime, 1));
 
       console.log('expirationTime', expirationTime);
 
-      // 计算延迟时间（毫秒）
+      // Calculate delay in milliseconds
       const delay = expirationTime.getTime() - Date.now();
-    //   const delay = 10000;
       console.log('delay', delay);
-      // 添加到延迟队列
+
+      // Add to delayed queue
       await this.expirationQueue.add(
         {
           activityId,
@@ -133,11 +154,15 @@ export class ActivityExpirationService {
   }
 
   /**
-   * 清理已取消的活动的过期任务
+   * Cancel expiration job for an activity
+   * 
+   * @param activityId - ID of the activity whose expiration job should be cancelled
+   * @throws {Error} If cancellation fails
+   * @remarks This method will find and remove any pending or delayed jobs for the activity
    */
   public async cancelActivityExpiration(activityId: number) {
     try {
-      // 查找并删除相关的任务
+      // Find and remove related jobs
       const jobs = await this.expirationQueue.getJobs(['delayed', 'waiting']);
       for (const job of jobs) {
         if (job.data.activityId === activityId) {
@@ -158,7 +183,10 @@ export class ActivityExpirationService {
   }
 
   /**
-   * 优雅关闭队列
+   * Gracefully shut down the expiration queue
+   * 
+   * @remarks This should be called when the application is shutting down
+   * @returns Promise that resolves when the queue is closed
    */
   public async shutdown() {
     await this.expirationQueue.close();
