@@ -277,7 +277,7 @@ export class PostService {
           }
         });
         hasAccess = !!membership;
-      } else if (options.targetType === 'chat') {
+      } else if (options.targetType === 'group') {
         const membership = await this.prisma.chatMember.findFirst({
           where: {
             chat_id: options.targetId,
