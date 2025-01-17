@@ -11,6 +11,17 @@ import { authMiddleware } from '../../../middleware/authMiddleware';
 /**
  * GraphQL mutation resolvers for User-related operations
  * 
+ * This resolver class handles all user mutations including:
+ * - User profile updates
+ * - User deletion
+ * - Firebase authentication integration
+ * 
+ * @remarks
+ * All mutations return a UserResponse type that includes:
+ * - success: boolean indicating operation success
+ * - user: the affected user (if applicable)
+ * - errors: array of validation or operation errors
+ * 
  * @example
  * ```graphql
  * mutation {
@@ -38,61 +49,16 @@ export class UserMutations {
   constructor(private usersService: UsersService) {}
 
   /**
-   * Mutation to create a new user
-   * 
-   * @param input - User creation data
-   * @returns Response containing the newly created user or error details
-   * 
-   * @example
-   * ```graphql
-   * mutation {
-   *   createUser(input: {
-   *     email: "john@example.com"
-   *     name: "John Doe"
-   *   }) {
-   *     success
-   *     user {
-   *       id
-   *       email
-   *     }
-   *     errors {
-   *       field
-   *       message
-   *     }
-   *   }
-   * }
-   * ```
-   */
-  // @Mutation(() => UserResponse)
-  // async createUser(@Arg('input') input: CreateUserInput): Promise<UserResponse> {
-  //   try {
-  //     const user = await this.usersService.create(input);
-      
-  //     logger.info('User creation successful', { 
-  //       userId: user.id,
-  //       email: user.email 
-  //     });
-
-  //     return {
-  //       success: true,
-  //       user
-  //     };
-  //   } catch (error) {
-  //     return {
-  //       success: false,
-  //       errors: [{
-  //         field: error instanceof ValidationError ? 'email' : 'general',
-  //         message: error instanceof Error ? error.message : 'Failed to create user'
-  //       }]
-  //     };
-  //   }
-  // }
-
-  /**
    * Mutation to update the current user's profile
    * 
-   * @param input - Updated user data
-   * @returns Response containing the updated user or error details
+   * This mutation requires authentication and updates the profile of the currently
+   * logged-in user. It uses the Firebase UID from the authentication context to
+   * identify the user.
+   * 
+   * @param context - GraphQL context containing authenticated user information
+   * @param input - Updated user data containing fields to modify
+   * @returns UserResponse with the updated user or error details
+   * @throws {ValidationError} If the update validation fails
    * 
    * @example
    * ```graphql
@@ -148,10 +114,14 @@ export class UserMutations {
   }
 
   /**
-   * Mutation to delete a user
+   * Mutation to delete a user from the system
+   * 
+   * This mutation permanently removes a user and all associated data.
+   * It should be used with caution as the operation cannot be undone.
    * 
    * @param id - ID of the user to delete
-   * @returns Response indicating success or failure
+   * @returns UserResponse indicating operation success or failure
+   * @throws {NotFoundError} If the user doesn't exist
    * 
    * @example
    * ```graphql
@@ -187,19 +157,48 @@ export class UserMutations {
     }
   }
 
+  /**
+   * Mutation to handle Firebase authentication and user creation/retrieval
+   * 
+   * This mutation is called after successful Firebase authentication to either:
+   * 1. Retrieve an existing user based on Firebase UID
+   * 2. Create a new user if one doesn't exist for the Firebase UID
+   * 
+   * @param context - GraphQL context containing Firebase user information
+   * @returns UserResponse with the authenticated user or error details
+   * @throws {ValidationError} If user creation/retrieval fails
+   * 
+   * @example
+   * ```graphql
+   * mutation {
+   *   firebaseAuth {
+   *     success
+   *     user {
+   *       id
+   *       email
+   *       firebase_uid
+   *     }
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
   @Mutation(() => UserResponse)
   @UseMiddleware(authMiddleware)
   async firebaseAuth(@Ctx() context: any): Promise<UserResponse> {
     try {
       const { uid, email } = context.user;
       
-      // find user by firebase uid
+      // Find user by firebase uid
       let user = await this.usersService.findByFirebaseUid(uid);
       
       if (!user) {
-        // if user not found, create new user
+        // Create new user if not found
         user = await this.usersService.create({
-          email: email || 'test@example.com',  // 使用 token 中的邮箱或默认值
+          email: email || 'test@example.com',  // Use email from token or default
           firebase_uid: uid,
         });
       }

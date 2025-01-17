@@ -9,10 +9,16 @@ import { parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
 /**
- * Service handling activity-related business logic
+ * Service handling activity-related business logic and database operations
  * 
- * This service provides methods for managing activities in the system,
- * including CRUD operations and activity-specific business logic.
+ * This service provides methods for managing activities in the system, including:
+ * - CRUD operations for activity management
+ * - Activity scheduling and expiration handling
+ * - Timezone-aware datetime processing
+ * - Integration with posts and user management
+ * 
+ * @remarks
+ * Uses Prisma as the ORM and integrates with ActivityExpirationService for scheduling
  */
 @Service()
 export class ActivitiesService {
@@ -21,12 +27,16 @@ export class ActivitiesService {
     private activityExpirationService: ActivityExpirationService
   ) {}
 
-
   /**
-   * Retrieve activities from the database with optional filtering
+   * Retrieve activities from the database with optional filtering and pagination
    * 
-   * @param options - Filter and pagination options
-   * @returns Promise resolving to an array of activities
+   * @param options - Query options for filtering and pagination
+   * @param options.skip - Number of records to skip
+   * @param options.take - Number of records to take
+   * @param options.category - Filter activities by category
+   * @param options.status - Filter activities by status
+   * @returns Promise<Activity[]> Array of activities with their associated posts
+   * @throws {PrismaError} If database query fails
    */
   async findAll(options?: {
     skip?: number;
@@ -53,10 +63,10 @@ export class ActivitiesService {
   }
 
   /**
-   * Find an activity by its ID
+   * Find a specific activity by its ID
    * 
    * @param id - The unique identifier of the activity
-   * @returns Promise resolving to the activity
+   * @returns Promise<Activity> The found activity with associated post data
    * @throws {NotFoundError} If activity doesn't exist
    */
   async findById(id: number): Promise<Activity> {
@@ -80,15 +90,17 @@ export class ActivitiesService {
   }
 
   /**
-   * Create a new activity
+   * Create a new activity with timezone handling and expiration scheduling
    * 
-   * @param data - Activity creation data
-   * @returns Promise resolving to the created activity
-   * @throws {ValidationError} If validation fails
+   * @param data - Activity creation data containing required information
+   * @returns Promise<Activity> The newly created activity
+   * @throws {ValidationError} If validation fails or user timezone is not set
+   * @throws {PrismaError} If database operations fail
+   * @remarks This method handles timezone conversion and schedules expiration tasks
    */
   async create(data: CreateActivityInput): Promise<Activity> {
     try {
-      // 1. 获取用户的时区信息
+      // Get user's timezone information
       const user = await this.prisma.user.findUnique({
         where: { id: data.userId },
         select: { timezone: true }
@@ -98,9 +110,9 @@ export class ActivitiesService {
         throw new ValidationError('User timezone is not set');
       }
 
-      // 使用事务确保活动创建和队列调度都成功
+      // Use transaction to ensure both activity creation and scheduling succeed
       return await this.prisma.$transaction(async (prisma) => {
-        // 2. 创建活动
+        // Create the activity
         const activity = await prisma.activity.create({
           data: {
             ...data,
@@ -116,7 +128,7 @@ export class ActivitiesService {
           }
         });
 
-        // 3. 如果有预定时间，调度过期任务
+        // Schedule expiration task if scheduled datetime is set
         if (activity.scheduledDatetime) {
           try {
             await this.activityExpirationService.scheduleActivityExpiration(
@@ -126,7 +138,7 @@ export class ActivitiesService {
               activity.scheduledDatetime
             );
           } catch (error) {
-            // 如果调度失败，抛出自定义错误，事务会回滚
+            // If scheduling fails, throw custom error to trigger transaction rollback
             throw new ValidationError(
               'Failed to schedule activity expiration. Please try again.',
               {
@@ -141,19 +153,19 @@ export class ActivitiesService {
         return activity;
       });
     } catch (error) {
-      // 记录错误
+      // Log the error for debugging
       logger.error('Failed to create activity:', { error, data });
       
-      // 转换错误类型
+      // Handle specific error types
       if (error instanceof ValidationError) {
-        throw error;  // 直接传递验证错误
+        throw error;  // Pass through validation errors
       } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2003') {
           throw new ValidationError(`Invalid postId: ${data.postId}`);
         }
       }
       
-      // 其他错误转换为通用错误
+      // Convert other errors to validation error
       throw new ValidationError(
         'Failed to create activity. Please try again.',
         { originalError: error instanceof Error ? error.message : 'Unknown error' }
@@ -162,16 +174,18 @@ export class ActivitiesService {
   }
 
   /**
-   * Update an existing activity
+   * Update an existing activity with timezone and expiration handling
    * 
    * @param id - ID of the activity to update
    * @param data - Updated activity data
-   * @returns Promise resolving to the updated activity
+   * @returns Promise<Activity> The updated activity
    * @throws {NotFoundError} If activity doesn't exist
+   * @throws {ValidationError} If validation fails
+   * @remarks This method handles rescheduling of expiration tasks if scheduledDatetime changes
    */
   async update(id: number, data: UpdateActivityInput): Promise<Activity> {
     try {
-      // 1. 如果更新包含scheduledDatetime，需要处理时区转换和重新安排过期任务
+      // Handle scheduledDatetime updates with timezone conversion and task rescheduling
       let utcScheduledDatetime = data.scheduledDatetime;
       if (data.scheduledDatetime) {
         const activity = await this.prisma.activity.findUnique({
@@ -180,17 +194,17 @@ export class ActivitiesService {
         });
 
         if (activity) {
-          // 获取用户时区
+          // Get user's timezone
           const user = await this.prisma.user.findUnique({
             where: { id: activity.userId },
             select: { timezone: true }
           });
 
           if (user?.timezone) {
-            // 取消旧的过期任务
+            // Cancel existing expiration task
             await this.activityExpirationService.cancelActivityExpiration(id);
             
-            // 创建新的过期任务
+            // Schedule new expiration task
             await this.activityExpirationService.scheduleActivityExpiration(
               id,
               activity.userId,
@@ -201,12 +215,12 @@ export class ActivitiesService {
         }
       }
 
-      // 如果状态变更为completed，取消对应的bull任务
+      // Cancel expiration task if status changes to completed
       if (data.status === 'completed') {
         await this.activityExpirationService.cancelActivityExpiration(id);
       }
 
-      // 2. 更新活动
+      // Update the activity
       return await this.prisma.activity.update({
         where: { id },
         data: {
@@ -234,18 +248,19 @@ export class ActivitiesService {
   }
 
   /**
-   * Delete an activity from the system
+   * Delete an activity and cancel its expiration task
    * 
    * @param id - ID of the activity to delete
-   * @returns Promise resolving to the deleted activity
+   * @returns Promise<Activity> The deleted activity
    * @throws {NotFoundError} If activity doesn't exist
+   * @throws {PrismaError} If database operation fails
    */
   async delete(id: number): Promise<Activity> {
     try {
-      // 1. 取消过期任务
+      // Cancel the expiration task
       await this.activityExpirationService.cancelActivityExpiration(id);
 
-      // 2. 删除活动
+      // Delete the activity
       return await this.prisma.activity.delete({
         where: { id },
         include: {
@@ -265,6 +280,16 @@ export class ActivitiesService {
     }
   }
 
+  /**
+   * Find all activities for a specific user with optional filtering
+   * 
+   * @param userId - ID of the user to find activities for
+   * @param options - Query options for filtering and pagination
+   * @param options.skip - Number of records to skip
+   * @param options.take - Number of records to take
+   * @param options.status - Filter activities by status
+   * @returns Promise<Activity[]> Array of activities for the user
+   */
   async findByUserId(
     userId: number, 
     options?: { 
