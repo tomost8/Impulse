@@ -5,8 +5,6 @@ import { UpdatePointInput } from '../modules/point';
 import { CreateRewardInput, UpdateRewardInput } from '../modules/point';
 import { CreateRedeemInput, UpdateRedeemInput } from '../modules/point';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
-import { RequestStatus } from '../modules/common/types/enumTypes';
-import { CreateChatInput } from '../modules/chat';
 
 
 /**
@@ -52,7 +50,7 @@ export class PointsService {
     try {
       const currentPoints = await this.getPoint(id);
       if (!currentPoints) {
-        throw new NotFoundError('User points not found');
+        throw new NotFoundError(`User ${id} (or their point info) not found`);
       }
 
       const pointsToAdd = input.points_added ?? 0;
@@ -62,6 +60,7 @@ export class PointsService {
         },
         data: {
           points: currentPoints.points + pointsToAdd,
+          spending_points: currentPoints.spending_points + pointsToAdd,
           weekly_points: input.reset_weekly_points ? 0 : currentPoints.weekly_points + pointsToAdd,
           monthly_points: input.reset_monthly_points ? 0 : currentPoints.monthly_points + pointsToAdd
         },
@@ -70,9 +69,6 @@ export class PointsService {
         }
       });
     } catch (error: any) {
-      if (error.code === 'P2025') {
-        throw new NotFoundError(`User points not found`);
-      }
       throw error;
     }
   }
@@ -149,7 +145,7 @@ export class RewardsService {
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
-        throw new NotFoundError(`Reward not found`);
+        throw new NotFoundError(`Reward ${id} not found`);
       }
       throw error;
     }
@@ -171,7 +167,7 @@ export class RewardsService {
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
-        throw new NotFoundError(`reward not found`);
+        throw new NotFoundError(`Reward ${id} not found`);
       }
       throw error;
     }
@@ -233,20 +229,16 @@ export class RedeemsService {
       const user_redeeming = await this.prisma.point.update({
         where: {
           user_id: input.user_id,
-          points: {
-            gte: reward_redeemed.required_points //+ points_spent
+          spending_points: {
+            gte: reward_redeemed.required_points
           }
         },
         data: {
-          points_spent: {
-            increment: reward_redeemed.required_points
+          spending_points: {
+            decrement: reward_redeemed.required_points
           }
         }
       });
-      
-      if (!user_redeeming) {
-        throw new NotFoundError('user not found or user not enough points');
-      };
       return await this.prisma.redeem.create({
         data: {
           user_id: input.user_id,
@@ -259,6 +251,9 @@ export class RedeemsService {
         }
       });
     } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundError(`User ${input.user_id} either not found or does not have enough points to redeem reward ${input.reward_id}`);
+      }
       throw error;
     }
   }
@@ -293,7 +288,7 @@ export class RedeemsService {
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
-        throw new NotFoundError(`Reward not found`);
+        throw new NotFoundError(`Redeem ${id} not found`);
       }
       throw error;
     }
@@ -315,7 +310,7 @@ export class RedeemsService {
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
-        throw new NotFoundError(`redeem not found`);
+        throw new NotFoundError(`Redeem ${id} not found`);
       }
       throw error;
     }

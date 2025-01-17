@@ -34,9 +34,9 @@ export class Point {
   @Field(() => Int)
   points!: number;
 
-  /** Total points spent in redeems */
+  /** Total points available to spend on redeems */
   @Field(() => Int)
-  points_spent!: number;
+  spending_points!: number;
 
   /** Weekly points */
   @Field(() => Int)

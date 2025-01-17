@@ -49,6 +49,19 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+### Mutation - Delete User (Admin Only)
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($id: Int!) { deleteUser(id: $id) { success errors { field message } } }",
+  "variables": {
+    "id": 2
+  }
+}
+
+
 ### GraphQL Friend Request API Tests ###
 
 ### Mutation - Create Friend Request
@@ -324,11 +337,11 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation ($id: Int!, $input: UpdatePointInput!){ updatePoint(id: $id, input: $input) { success point { user { id first_name last_name } points points_spent weekly_points monthly_points } errors { field message } } }",  
+  "query": "mutation ($id: Int!, $input: UpdatePointInput!){ updatePoint(id: $id, input: $input) { success point { user { id first_name last_name } points spending_points weekly_points monthly_points } errors { field message } } }",  
   "variables": {
-    "id": 1,
+    "id": 3,
     "input": {
-      "points_added": 0
+      "points_added": 10000
     }
   }
 }
@@ -341,9 +354,34 @@ Content-Type: application/json
   "query": "mutation ($input: CreateRedeemInput!){ createRedeem(input: $input) { success redeem { user { id first_name last_name } reward { id title required_points } points_spent status  } errors { field message } } }",  
   "variables": {
     "input": {
-      "user_id": 1,
+      "user_id": 3,
       "reward_id": 2
     }
+  }
+}
+
+### Mutation - Update a Redeem
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!, $input: UpdateRedeemInput!){ updateRedeem(id: $id, input: $input) { success redeem { id user { id first_name last_name } reward { id title description required_points } points_spent status } errors { field message } } }",  
+  "variables": {
+    "id": 3,
+    "input": {
+      "status": "ACCEPTED"
+    }
+  }
+}
+
+### Mutation - Delete a Redeem
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation ($id: Int!){ deleteRedeem(id: $id) { success errors { field message } } }",  
+  "variables": {
+    "id": 3
   }
 }
 
@@ -364,6 +402,7 @@ Content-Type: application/json
   }
 }
 
+
 ### Mutation - Update a Reward
 POST http://localhost:3000/graphql
 Content-Type: application/json
@@ -371,7 +410,7 @@ Content-Type: application/json
 {
   "query": "mutation ($id: Int!, $input: UpdateRewardInput!){ updateReward(id: $id, input: $input) { success reward { id title description required_points } errors { field message } } }",  
   "variables": {
-    "id": 3,
+    "id": 1,
     "input": {
       "description": "$15",
       "required_points": 10000

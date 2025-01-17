@@ -34,7 +34,7 @@ export class PointQueries {
    * query { getPoint(
    * id: 1
    * ) { success point { 
-   * 
+   * user { id first_name last_name } points spending_points weekly_points monthly_points
    * } errors { field message } } }
    * 
    * ```
@@ -87,7 +87,7 @@ export class RewardQueries {
    * ```graphql
    * query { getRewards(
    * ) { success rewards { 
-   * 
+   * id title description required_points
    * } errors { field message } } }
    * 
    * ```
@@ -142,7 +142,7 @@ export class RedeemQueries {
    * query { getRedeems(
    * id: 1
    * ) { success redeems { 
-   * 
+   * user { id first_name last_name } reward { id title required_points } points_spent status
    * } errors { field message } } }
    * 
    * ```

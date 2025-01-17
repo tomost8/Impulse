@@ -136,3 +136,37 @@ Content-Type: application/json
     "id": 2
   }
 }
+
+
+### Query - Get user's point info
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!){ getPoint(id: $id) { success point { user { id first_name last_name } points spending_points weekly_points monthly_points } errors { field message } } }",  
+  "variables": {
+    "id": 3
+  }
+}
+
+### Query - Get all rewards
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { getRewards { success rewards { id title description required_points } errors { field message } } }"
+}
+
+### Query - Get all redeems for user
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($id: Int!){ getRedeems(id: $id) { success redeems { user { id first_name last_name } reward { id title required_points } points_spent status  } errors { field message } } }",  
+  "variables": {
+    "id": 3
+  }
+}
+
+
+  

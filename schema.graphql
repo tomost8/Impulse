@@ -315,8 +315,8 @@ type Point {
   monthly_points: Int!
   monthly_update_at: Date
   points: Int!
-  points_spent: Int!
   preferences: JSON
+  spending_points: Int!
   status: String!
   updated_at: Date!
   user: User!

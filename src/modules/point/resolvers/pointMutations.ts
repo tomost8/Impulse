@@ -36,9 +36,9 @@ export class PointMutations {
    * @example
    * ```graphql
    * mutation { updatePoint(
-   * id: 1, input: { }
+   * id: 1, input: { point_added: 100}
    * ) { success point { 
-   * 
+   * user { id first_name last_name } points spending_points weekly_points monthly_points
    * } errors { field message } } }
    * ```
    */
@@ -91,9 +91,9 @@ export class RewardMutations {
    * @example
    * ```graphql
    * mutation { createReward(
-   * input: { }
+   * input: { title: "gift card", description: "$10", required_points: 7500}
    * ) { success reward { 
-   * 
+   * id title description required_points
    * } errors { field message } } }
    * ```
    */
@@ -132,9 +132,9 @@ export class RewardMutations {
    * @example
    * ```graphql
    * mutation { updateReward(
-   * sender_id: 3, receiver_id: 41, input: { status: "accepted" }
+   * id: 1, input: { description: "$15", required_points: 10000 }
    * ) { success reward { 
-   * 
+   * id title description required_points
    * } errors { field message } } }
    * ```
    */
@@ -175,7 +175,7 @@ export class RewardMutations {
    * @example
    * ```graphql
    * mutation { deleteReward(
-   * 
+   * id: 1
    * ) { success
    * errors { field message } } }
    * ```
@@ -228,9 +228,9 @@ export class RedeemMutations {
    * @example
    * ```graphql
    * mutation { createRedeem(
-   * input: { }
+   * input: { user_id: 3, reward_id: 2 }
    * ) { success redeem { 
-   * 
+   * id user { id first_name last_name } reward { id title description required_points } points_spent status
    * } errors { field message } } }
    * ```
    */
@@ -269,9 +269,9 @@ export class RedeemMutations {
    * @example
    * ```graphql
    * mutation { updateRedeem(
-   * 
+   * id: 1, input: { status: "ACCEPTED" }
    * ) { success redeem { 
-   * 
+   * id user { id first_name last_name } reward { id title description required_points } points_spent status
    * } errors { field message } } }
    * ```
    */
@@ -312,7 +312,7 @@ export class RedeemMutations {
    * @example
    * ```graphql
    * mutation { deleteRedeem(
-   * 
+   * id: 1
    * ) { success
    * errors { field message } } }
    * ```
