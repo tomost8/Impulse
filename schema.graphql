@@ -46,8 +46,8 @@ enum Category {
 
 type Chat {
   created_at: DateTimeISO!
-  creator: User!
-  creator_id: Int!
+  creator: User
+  creator_id: Int
   id: Int!
   password: String
   profile_pic: String
@@ -426,10 +426,10 @@ type Query {
   getAllCommunities: CommunitiesResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
   getChat(id: Int!): ChatResponse!
-  getChatMembers(id: Int!): ChatMembersResponse!
+  getChatMembers(id: Int!, sort_by: UserSortType): ChatMembersResponse!
   getCommunity(id: Int!): CommunityResponse!
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
-  getCommunityMembers(id: Int!): CommunityMembersResponse!
+  getCommunityMembers(id: Int!, sort_by: UserSortType): CommunityMembersResponse!
   getFriendRequests(id: Int!): FriendshipsResponse!
   getFriendships(id: Int!): FriendshipsResponse!
   getMessages(id: Int!): MessagesResponse!
@@ -611,6 +611,12 @@ type UserResponse {
   errors: [FieldError!]
   success: Boolean!
   user: User
+}
+
+enum UserSortType {
+  POINTS_ALL
+  POINTS_MONTHLY
+  POINTS_WEEKLY
 }
 
 type UsersResponse {

@@ -49,6 +49,25 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+### Mutation - update User 3 Profile
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
+  "variables": {
+    "input": {
+      "first_name": "Sally",
+      "last_name": "Park",
+      "username": "SallyPark",
+      "gender": "female",
+      "dob": "2024-01-18",
+      "status": "active"
+    }
+  }
+}
+
 ### Mutation - Delete User (Admin Only)
 POST {{baseUrl}}/graphql
 Content-Type: application/json
@@ -57,7 +76,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deleteUser(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 2
+    "id": 3
   }
 }
 
@@ -116,7 +135,7 @@ Content-Type: application/json
   "query": "mutation ($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description thumbnail influencer { id first_name last_name email } } errors { field message } } }",
   "variables": {
     "input": {
-      "name": "John's Community 2",
+      "name": "John's Community",
       "influencer_id": 1
     }
   }
@@ -190,7 +209,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 2
+      "user_id": 3
     }
   }
 }
@@ -341,7 +360,7 @@ Content-Type: application/json
   "variables": {
     "id": 3,
     "input": {
-      "points_added": 10000
+      "points_added": 300
     }
   }
 }

@@ -6,7 +6,8 @@ import { CreateCommunityMemberInput, UpdateCommunityMemberInput } from '../modul
 import { CreateCommunityCategoryInput } from '../modules/community/schema/communityInputs';
 import { Category } from '../modules/common/types/enumTypes';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
-import { Role, RequestStatus } from '../modules/common/types/enumTypes';
+import { Role, RequestStatus, UserSortType } from '../modules/common/types/enumTypes';
+import { usersSortingConfig } from '../modules/common/types/sortingTypes';
 
 /**
  * Service handling community-related business logic
@@ -144,19 +145,23 @@ export class CommunityMembersService {
    * @returns Promise resolving to the community members if found, null otherwise
    * @throws {PrismaError} If database query fails
    */
-  async findById(id: number): Promise<CommunityMember[] | null> {
+  async findById(
+    id: number,
+    sort_by?: UserSortType
+  ): Promise<CommunityMember[] | null> {
     return await this.prisma.communityMember.findMany({
-        where: { 
-            community_id: id
+      where: { 
+        community_id: id
+      },
+      include: {
+        community: {
+          include: {
+            influencer: true
+          }
         },
-        include: {
-          community: {
-            include: {
-              influencer: true
-            }
-          },
-          user: true
-        }
+        user: true
+      },
+      ...(sort_by && { orderBy: usersSortingConfig[sort_by] })
     });
   }
 

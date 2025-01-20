@@ -82,7 +82,7 @@ ALTER TABLE "messages" DROP COLUMN "conversation_id",
 ADD COLUMN     "chat_id" INTEGER NOT NULL;
 
 -- AlterTable
-ALTER TABLE "users" DROP CONSTRAINT "users_pkey",
+ALTER TABLE "users" DROP CONSTRAINT "users_pkey" CASCADE,
 DROP COLUMN "id",
 ADD COLUMN     "user_id" SERIAL NOT NULL,
 ADD CONSTRAINT "users_pkey" PRIMARY KEY ("user_id");

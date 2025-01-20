@@ -73,6 +73,18 @@ Content-Type: application/json
   }
 }
 
+### Query - Get Community Members by Community ID w/ sorting (leaderboard)
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($communityId: Int!, $sort_by: UserSortType!) { getCommunityMembers(id: $communityId, sort_by: $sort_by) {success community_members { user { id first_name last_name } role status } errors { field message } } }",
+  "variables": {
+    "communityId": 1,
+    "sort_by": "POINTS_WEEKLY"
+  }
+}
+
 ### Query - Get User Communities by User ID
 POST http://localhost:3000/graphql
 Content-Type: application/json
@@ -112,6 +124,18 @@ Content-Type: application/json
   "query": "query ($chatId: Int!) { getChatMembers(id: $chatId) { success chat_members { user { id first_name last_name } role status } errors { field message } } }",
   "variables": {
     "chatId": 1
+  }
+}
+
+### Query - Get Chat Members by Chat ID w/ sorting leaderboard
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query ($chatId: Int!, $sortBy: UserSortType!) { getChatMembers(id: $chatId, sort_by: $sortBy) { success chat_members { user { id first_name last_name } role status } errors { field message } } }",
+  "variables": {
+    "chatId": 1,
+    "sortBy": "POINTS_ALL"
   }
 }
 

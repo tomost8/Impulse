@@ -37,6 +37,12 @@ enum RequestStatus {
   REJECTED
 }
 
+enum UserSortType {
+  POINTS_WEEKLY
+  POINTS_MONTHLY
+  POINTS_ALL
+}
+
 // 示例模型
 model User {
   id              Int       @id @default(autoincrement()) @map("user_id")
@@ -63,11 +69,11 @@ model User {
   community_memberships CommunityMember[]
   chats_created         Chat[]
   chat_memberships      ChatMember[]
-  activities          Activity[]
+  activities            Activity[]
   messages              Message[]
   posts                 Post[]
   post_views            PostView[]
-  points                Point[]
+  point                 Point?
   redeems               Redeem[]
 
   @@index([username])
@@ -137,8 +143,8 @@ model Chat {
   title       String?
   password    String?
   profile_pic String?
-  creator     User     @relation(fields: [creator_id], references: [id])
-  creator_id  Int
+  creator     User?    @relation(fields: [creator_id], references: [id])
+  creator_id  Int?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -200,20 +206,20 @@ model Activity {
 }
 
 model Post {
-  id          Int          @id @default(autoincrement())
-  author      User         @relation(fields: [author_id], references: [id])
-  author_id   Int
-  caption     String?
-  mediaUrl   String?      @map("media_url")
-  is_deleted  Boolean      @default(false)
-  activity    Activity?
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-  expires_at  DateTime?    // story类型设置24小时，chat类型为null
+  id           Int          @id @default(autoincrement())
+  author       User         @relation(fields: [author_id], references: [id])
+  author_id    Int
+  caption      String?
+  mediaUrl     String?      @map("media_url")
+  is_deleted   Boolean      @default(false)
+  activity     Activity?
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  expires_at   DateTime? // story类型设置24小时，chat类型为null
   post_targets PostTarget[]
   post_views   PostView[]
   Message      Message[]
-  category    String?
+  category     String?
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
