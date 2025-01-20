@@ -10,8 +10,7 @@ import { TimeSubscriptions } from '../modules/common/resolvers/timeSubscriptions
 import { UserSubscriptions } from '../modules/user/resolvers/userSubscriptions';
 import { pubsub } from './pubsub';
 import { PointQueries, PointMutations, RewardQueries, RewardMutations, RedeemQueries, RedeemMutations } from '../modules/point';
-import { DateScalar } from '../modules/common/scalars/dateScalar';
-
+import { NotificationMutations } from '../modules/notification/resolvers/NotificationMutations';
 import './prisma'; // 确保 Prisma 客户端被初始化
 
 export const createSchema = async () => {
@@ -44,7 +43,8 @@ export const createSchema = async () => {
       RewardQueries, 
       RewardMutations, 
       RedeemQueries, 
-      RedeemMutations
+      RedeemMutations,
+      NotificationMutations
     ],
     container: Container,
     validate: { forbidUnknownValues: false },

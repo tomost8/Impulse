@@ -861,3 +861,53 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+
+### Mutation - Send Broadcast Notification
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!) { sendBroadcastNotification(input: $input) }",
+  "variables": {
+    "input": {
+      "title": "Important Broadcast",
+      "content": "This is a test broadcast notification",
+      "type": "ADMIN_BROADCAST",
+      "sender_id": 1
+    }
+  }
+}
+
+### Mutation - Send Community Notification
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!, $communityId: Int!) { sendCommunityNotification(input: $input, communityId: $communityId) }",
+  "variables": {
+    "communityId": 1,
+    "input": {
+      "title": "Community Update",
+      "content": "This is a test community notification",
+      "type": "COMMUNITY",
+      "sender_id": 1
+    }
+  }
+}
+
+### Expected Responses:
+# 1. Broadcast Notification Response:
+# {
+#   "data": {
+#     "sendBroadcastNotification": true
+#   }
+# }
+
+# 2. Community Notification Response:
+# {
+#   "data": {
+#     "sendCommunityNotification": true
+#   }
+# }

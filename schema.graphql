@@ -208,6 +208,18 @@ input CreateMessageInput {
   sender_id: Int!
 }
 
+input CreateNotificationInput {
+  community_id: Int
+  content: String!
+  group_id: Int
+  recipient_ids: [Int!]
+  schedule_time: DateTimeISO
+  schedule_type: String
+  sender_id: Int!
+  title: String!
+  type: NotificationType!
+}
+
 input CreatePostInput {
   activityId: Int!
   authorId: Int!
@@ -325,6 +337,8 @@ type Mutation {
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
+  sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
+  sendCommunityNotification(communityId: Float!, input: CreateNotificationInput!): Boolean!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
   updateChat(id: Int!, input: UpdateChatInput!): ChatResponse!
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
@@ -337,6 +351,14 @@ type Mutation {
   updateReward(id: Int!, input: UpdateRewardInput!): RewardResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
   viewPost(postId: Int!, userId: Int!): BaseResponse!
+}
+
+"""Types of notifications in the system"""
+enum NotificationType {
+  ADMIN_BROADCAST
+  COMMUNITY_NOTICE
+  GROUP_NOTICE
+  REMINDER
 }
 
 type Point {
