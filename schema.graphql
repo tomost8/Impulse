@@ -214,7 +214,7 @@ input CreateNotificationInput {
   group_id: Int
   recipient_ids: [Int!]
   schedule_time: DateTimeISO
-  schedule_type: String
+  schedule_type: NotificationScheduleType
   sender_id: Int
   title: String!
   type: NotificationType!
@@ -314,6 +314,7 @@ type MessagesResponse {
 }
 
 type Mutation {
+  cancelReminder(notificationId: Int!): Boolean!
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
   createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
@@ -324,6 +325,7 @@ type Mutation {
   createMessage(input: CreateMessageInput!): MessageResponse!
   createPost(input: CreatePostInput!): PostResponse!
   createRedeem(input: CreateRedeemInput!): RedeemResponse!
+  createReminder(input: CreateNotificationInput!): Boolean!
   createReward(input: CreateRewardInput!): RewardResponse!
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
@@ -351,6 +353,14 @@ type Mutation {
   updateReward(id: Int!, input: UpdateRewardInput!): RewardResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
   viewPost(postId: Int!, userId: Int!): BaseResponse!
+}
+
+"""Schedule type for recurring notifications"""
+enum NotificationScheduleType {
+  DAILY
+  MONTHLY
+  ONCE
+  WEEKLY
 }
 
 """Types of notifications in the system"""

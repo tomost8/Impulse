@@ -2,11 +2,12 @@ import { Field, ObjectType, Int, registerEnumType } from 'type-graphql';
 import { FieldError } from '../../common/types/errorTypes';
 import { User } from '../../user/schema/userTypes';
 import { DateScalar } from '../../common/scalars/dateScalar';
-import { NotificationType as PrismaNotificationType, NotificationStatus as PrismaNotificationStatus } from '@prisma/client';
+import { NotificationType as PrismaNotificationType, NotificationStatus as PrismaNotificationStatus, NotificationScheduleType as PrismaNotificationScheduleType } from '@prisma/client';
 
 // Use Prisma's generated enums
 export { PrismaNotificationType as NotificationType };
 export { PrismaNotificationStatus as NotificationStatus };
+export { PrismaNotificationScheduleType as NotificationScheduleType };
 
 // Register Prisma's enums with TypeGraphQL
 registerEnumType(PrismaNotificationType, {
@@ -17,6 +18,11 @@ registerEnumType(PrismaNotificationType, {
 registerEnumType(PrismaNotificationStatus, {
   name: 'NotificationStatus',
   description: 'Status of a notification',
+});
+
+registerEnumType(PrismaNotificationScheduleType, {
+  name: 'NotificationScheduleType',
+  description: 'Schedule type for recurring notifications',
 });
 
 /**

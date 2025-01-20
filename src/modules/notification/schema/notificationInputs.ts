@@ -1,6 +1,6 @@
 import { Field, InputType, Int } from 'type-graphql';
 import { IsString, IsInt, IsOptional, IsEnum, IsBoolean, IsDate, MinLength, MaxLength } from 'class-validator';
-import { NotificationStatus, NotificationType } from './notificationTypes';
+import { NotificationStatus, NotificationType, NotificationScheduleType } from './notificationTypes';
 
 /**
  * Input type for creating a new notification
@@ -37,10 +37,10 @@ export class CreateNotificationInput {
   @IsOptional()
   group_id?: number | null;
 
-  @Field(() => String, { nullable: true })
-  @IsEnum(['once', 'daily', 'weekly', 'monthly'])
+  @Field(() => NotificationScheduleType, { nullable: true })
+  @IsEnum(NotificationScheduleType)
   @IsOptional()
-  schedule_type?: 'once' | 'daily' | 'weekly' | 'monthly' | null;
+  schedule_type?: NotificationScheduleType | null;
 
   @Field(() => Date, { nullable: true })
   @IsDate()
