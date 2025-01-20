@@ -70,7 +70,7 @@ model User {
   dob             DateTime? @db.Date
   gender          String?
   profile_picture String?
-  role            String    @default("user")
+  role            String    @default("USER")
   status          String    @default("pending")
   timezone        String?
   searchable      Boolean   @default(true)

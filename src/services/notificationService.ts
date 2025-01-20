@@ -21,7 +21,7 @@ export class NotificationService {
           type: NotificationType.ADMIN_BROADCAST,
           title: data.title,
           content: data.content,
-          sender: { connect: { id: data.sender_id } }
+          sender: { connect: { id: data.sender_id ?? 0 } }
         }
       });
 
@@ -108,7 +108,7 @@ export class NotificationService {
       const isCommunityAdmin = await this.prisma.communityMember.findFirst({
         where: {
           community_id: communityId,
-          user_id: data.sender_id,
+          user_id: data.sender_id ?? 0,
           role: 'ADMIN',
         }
       });
@@ -127,7 +127,7 @@ export class NotificationService {
           type: NotificationType.COMMUNITY_NOTICE,
           title: data.title,
           content: data.content,
-          sender: { connect: { id: data.sender_id } },
+          sender: { connect: { id: data.sender_id ?? 0 } },
           community_id: communityId
         }
       });

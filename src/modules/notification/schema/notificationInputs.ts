@@ -23,9 +23,9 @@ export class CreateNotificationInput {
   @MaxLength(1000)
   content!: string;
 
-  @Field(() => Int)
+  @Field(() => Int, { nullable: true})
   @IsInt()
-  sender_id!: number;
+  sender_id?: number | null;
 
   @Field(() => Int, { nullable: true })
   @IsInt()

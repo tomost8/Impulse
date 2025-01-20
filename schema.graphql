@@ -215,7 +215,7 @@ input CreateNotificationInput {
   recipient_ids: [Int!]
   schedule_time: DateTimeISO
   schedule_type: String
-  sender_id: Int!
+  sender_id: Int
   title: String!
   type: NotificationType!
 }
@@ -338,7 +338,7 @@ type Mutation {
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
-  sendCommunityNotification(communityId: Float!, input: CreateNotificationInput!): Boolean!
+  sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
   updateChat(id: Int!, input: UpdateChatInput!): ChatResponse!
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
