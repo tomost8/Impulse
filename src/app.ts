@@ -21,6 +21,7 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { PostService } from './services/postService';
+import { PointResetService } from './services/pointResetService';
 import { configureWebSocket } from './config/websocket';
 
 export async function createApp() {
@@ -40,6 +41,7 @@ export async function createApp() {
 
   // 初始化活动过期服务
   const activityExpirationService = Container.get(ActivityExpirationService);
+  const pointResetService = Container.get(PointResetService);
   
   const server = new ApolloServer({
     schema,
@@ -52,6 +54,7 @@ export async function createApp() {
             async drainServer() {
               // 优雅关闭活动过期服务
               await activityExpirationService.shutdown();
+              await pointResetService.shutdown();
             },
           };
         },
@@ -91,6 +94,7 @@ export async function createApp() {
     queues: [
       new BullAdapter(postService.postTargetsQueue),
       new BullAdapter(activityExpirationService.expirationQueue),
+      new BullAdapter(pointResetService.pointsResetQueue)
     ],
     serverAdapter: serverAdapter,
   });

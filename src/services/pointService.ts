@@ -48,27 +48,24 @@ export class PointsService {
    */
   async update(id: number, input: UpdatePointInput): Promise<Point> {
     try {
-      const currentPoints = await this.getPoint(id);
-      if (!currentPoints) {
-        throw new NotFoundError(`User ${id} (or their point info) not found`);
-      }
-
-      const pointsToAdd = input.points_added ?? 0;
       return await this.prisma.point.update({
         where: { 
           user_id: id
         },
         data: {
-          points: currentPoints.points + pointsToAdd,
-          spending_points: currentPoints.spending_points + pointsToAdd,
-          weekly_points: input.reset_weekly_points ? 0 : currentPoints.weekly_points + pointsToAdd,
-          monthly_points: input.reset_monthly_points ? 0 : currentPoints.monthly_points + pointsToAdd
+          points: { increment: input.points_added },
+          spending_points: { increment: input.points_added },
+          weekly_points: { increment: input.points_added },
+          monthly_points: { increment: input.points_added }
         },
         include: {
           user: true
         }
       });
     } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundError(`User ${id} not found`);
+      }
       throw error;
     }
   }

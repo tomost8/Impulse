@@ -33,21 +33,21 @@ export class Friendship {
   @Field(() => Int)
   id!: number;
 
-  /** User who sent request */
+  /** User */
   @Field(() => User)
-  sender!: User;
+  user!: User;
 
-  /** Sender ID */
+  /** User ID */
   @Field(() => Int)
-  sender_id!: number;
+  user_id!: number;
 
-  /** User who received request */
+  /** Friend */
   @Field(() => User)
-  receiver!: User;
+  friend!: User;
 
-  /** Receiver ID */
+  /** Friend ID */
   @Field(() => Int)
-  receiver_id!: number;
+  friend_id!: number;
 
   /** Status of user in community */
   @Field(() => RequestStatus)

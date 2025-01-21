@@ -4,7 +4,9 @@ import { Chat, ChatMember, Message } from '../modules/chat/schema/chatTypes';
 import { CreateChatInput, CreateChatMemberInput, CreateMessageInput } from '../modules/chat/schema/chatInputs';
 import { UpdateChatInput, UpdateChatMemberInput } from '../modules/chat/schema/chatInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
-import { Role, RequestStatus } from '../modules/common/types/enumTypes';
+import { Role, RequestStatus, UserSortType } from '../modules/common/types/enumTypes';
+import { usersSortingConfig } from '../modules/common/types/sortingTypes';
+
 
 /**
  * Service handling chat-related business logic
@@ -142,7 +144,10 @@ export class ChatMembersService {
    * @returns Promise resolving to the chat members if found, null otherwise
    * @throws {PrismaError} If database query fails
    */
-  async findById(id: number): Promise<ChatMember[] | null> {
+  async findById(
+    id: number,
+    sort_by?: UserSortType
+  ): Promise<ChatMember[] | null> {
     return await this.prisma.chatMember.findMany({
         where: { 
             chat_id: id
@@ -154,7 +159,8 @@ export class ChatMembersService {
             }
           },
           user: true
-        }
+        },
+        ...(sort_by && { orderBy: usersSortingConfig[sort_by] })
     });
   }
 
@@ -162,10 +168,13 @@ export class ChatMembersService {
    * Find all chats of a user given user ID
    * 
    * @param id - The unique identifier of the user
+   * @param sortType - UserSortType
    * @returns Promise resolving to the chat/user relations if found, null otherwise
    * @throws {PrismaError} If database query fails
    */
-  async findByUserId(id: number): Promise<ChatMember[] | null> {
+  async findByUserId(
+    id: number
+  ): Promise<ChatMember[] | null> {
     return await this.prisma.chatMember.findMany({
         where: { 
             user_id: id
