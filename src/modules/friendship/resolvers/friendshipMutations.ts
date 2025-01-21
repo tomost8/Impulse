@@ -36,12 +36,6 @@ export class FriendshipMutations {
   async createFriendship(@Arg('input') input: CreateFriendshipInput): Promise<FriendshipResponse> {
     try {
       const friendship = await this.friendshipsService.create(input);
-      
-      logger.info('Friendship relation creation successful', { 
-        senderId: friendship.sender_id,
-        receiverId: friendship.receiver_id,
-      });
-
       return {
         success: true,
         friendship
@@ -61,15 +55,15 @@ export class FriendshipMutations {
    * Mutation to update a friendship
    * e.g. accept/reject a friend request
    * 
-   * @param sender_id - ID of the sender
-   * @param receiver_id - ID of the receiver
+   * @param user_id - ID of the user (that is accepting/rejecting request)
+   * @param friend_id - ID of the friend (that sent the request)
    * @param input - Updated friendship status data
    * @returns Response containing the updated friendship or error details
    * 
    * @example
    * ```graphql
    * mutation { updateFriendship(
-   * sender_id: 3, receiver_id: 41, input: { status: "accepted" }
+   * user_id: 3, friend_id: 41, input: { status: "accepted" }
    * ) { success friendship { 
    * 
    * } errors { field message } } }
@@ -77,19 +71,12 @@ export class FriendshipMutations {
    */
   @Mutation(() => FriendshipResponse)
   async updateFriendship(
-    @Arg('sender_id', () => Int) sender_id: number,
-    @Arg('receiver_id', () => Int) receiver_id: number,
+    @Arg('user_id', () => Int) user_id: number,
+    @Arg('friend_id', () => Int) friend_id: number,
     @Arg('input') input: UpdateFriendshipInput
   ): Promise<FriendshipResponse> {
     try {
-      const friendship = await this.friendshipsService.update(sender_id, receiver_id, input);
-      
-      logger.info('Friendship relation update successful', { 
-        senderId: friendship.sender_id,
-        receiverId: friendship.receiver_id,
-        updates: input 
-      });
-
+      const friendship = await this.friendshipsService.update(user_id, friend_id, input);
       return {
         success: true,
         friendship

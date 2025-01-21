@@ -3,9 +3,9 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query ($id: Int!) { getFriendships(id: $id) { success friendships { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
+  "query": "query ($id: Int!) { getFriendships(id: $id) { success friendships { friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 2
   }
 }
 
@@ -14,7 +14,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query ($id: Int!) { getFriendRequests(id: $id) { success friendships { sender {id first_name last_name } receiver {id first_name last_name } status } errors { field message } } }",
+  "query": "query ($id: Int!) { getFriendRequests(id: $id) { success friendships { friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
     "id": 2
   }

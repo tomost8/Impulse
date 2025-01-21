@@ -63,8 +63,8 @@ model User {
   updated_at      DateTime  @default(now()) @updatedAt
   last_login_at   DateTime?
 
-  friendships_sent      Friendship[]      @relation("FriendsSent")
-  friendships_received  Friendship[]      @relation("FriendsReceived")
+  friendships_with      Friendship[]      @relation("FriendsWith")
+  friendships_of        Friendship[]      @relation("FriendsOf")
   communities_owned     Community[]
   community_memberships CommunityMember[]
   chats_created         Chat[]
@@ -81,18 +81,19 @@ model User {
 }
 
 model Friendship {
-  id          Int           @id @default(autoincrement())
-  sender      User          @relation("FriendsSent", fields: [sender_id], references: [id], onDelete: Cascade)
-  sender_id   Int
-  receiver    User          @relation("FriendsReceived", fields: [receiver_id], references: [id], onDelete: Cascade)
-  receiver_id Int
-  status      RequestStatus @default(PENDING)
-  chat        Chat?         @relation(fields: [chat_id], references: [id])
-  chat_id     Int?
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @default(now()) @updatedAt
+  id         Int           @id @default(autoincrement())
+  user       User          @relation("FriendsWith", fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  friend     User          @relation("FriendsOf", fields: [friend_id], references: [id], onDelete: Cascade)
+  friend_id  Int
+  status     RequestStatus @default(PENDING)
+  role       String?
+  chat       Chat?         @relation(fields: [chat_id], references: [id])
+  chat_id    Int?
+  created_at DateTime      @default(now())
+  updated_at DateTime      @default(now()) @updatedAt
 
-  @@unique([sender_id, receiver_id])
+  @@unique([user_id, friend_id])
   @@map("friendships")
 }
 

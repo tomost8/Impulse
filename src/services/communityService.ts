@@ -8,6 +8,7 @@ import { Category } from '../modules/common/types/enumTypes';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import { Role, RequestStatus, UserSortType } from '../modules/common/types/enumTypes';
 import { usersSortingConfig } from '../modules/common/types/sortingTypes';
+import { FriendshipsService } from './friendshipService';
 
 /**
  * Service handling community-related business logic
@@ -197,17 +198,46 @@ export class CommunityMembersService {
    */
   async create(input: CreateCommunityMemberInput): Promise<CommunityMember> {
     try {
-        return await this.prisma.communityMember.create({
-            data: input,
+      const new_member = await this.prisma.communityMember.create({
+        data: input,
+        include: {
+          community: {
             include: {
-              community: {
-                include: {
-                  influencer: true
-                }
-              },
-              user: true
+              influencer: true
             }
+          },
+          user: true
+        }
+      });
+      // add friends if not already
+      const influencerId = new_member.community.influencer_id;
+      const existingFriendship = await this.prisma.friendship.findFirst({
+        where: {
+          user_id: input.user_id,
+          friend_id: influencerId
+        }
+      });
+      // Create friendship if it doesn't exist
+      if (!existingFriendship) {
+        const friendship_member = await this.prisma.friendship.create({
+          data: {
+            user_id: input.user_id,
+            friend_id: influencerId,
+            role: "community member"
+          }
         });
+        const friendship_leader = await this.prisma.friendship.create({
+          data: {
+            user_id: influencerId,
+            friend_id: input.user_id,
+            role: "community leader"
+          }
+        });
+        // should probably extract the create direct function to chatService 
+        const friendshipService = new FriendshipsService(this.prisma);
+        const friendship = await friendshipService.createChat(influencerId, input.user_id);
+      }
+      return new_member
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new Error(`There is alreay relation between user with ID ${input.user_id} and community with ID ${input.community_id}`);
