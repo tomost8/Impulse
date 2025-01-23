@@ -364,3 +364,23 @@ model NotificationRecipient {
   @@index([notification_id, status])
   @@map("notification_recipients")
 }
+
+
+model Comment {
+  id              Int       @id @default(autoincrement())
+  post            Post      @relation(fields: [post_id], references: [id], onDelete: Cascade) // 对应的Post
+  post_id         Int
+  user            User      @relation(fields: [user_id], references: [id], onDelete: Cascade) // 评论用户
+  user_id         Int
+  parent_comment  Comment?  @relation("ParentComment", fields: [parent_comment_id], references: [id], onDelete: Cascade) // 父评论
+  parent_comment_id Int?    // 如果是回复其他评论，则此字段指向父评论ID
+  content         String    // 评论内容
+  created_at      DateTime  @default(now()) // 创建时间
+  updated_at      DateTime  @default(now()) @updatedAt // 更新时间
+  replies         Comment[] @relation("ParentComment") // 与父评论形成的关系
+
+  @@index([post_id, created_at]) // 根据Post和时间进行索引
+  @@index([user_id])             // 根据User进行索引
+  @@map("comments")
+}
+
