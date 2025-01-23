@@ -39,17 +39,17 @@ enum RequestStatus {
 
 // Notification System Models
 enum NotificationType {
-  ADMIN_BROADCAST    // 管理员全局广播
-  COMMUNITY_NOTICE   // 社区通知
-  GROUP_NOTICE      // 群组通知
-  REMINDER          // 个人提醒
+  ADMIN_BROADCAST // 管理员全局广播
+  COMMUNITY_NOTICE // 社区通知
+  GROUP_NOTICE // 群组通知
+  REMINDER // 个人提醒
 }
 
 enum NotificationStatus {
-  PENDING    // 待发送
-  SENT      // 已发送
-  FAILED    // 发送失败
-  READ      // 已读
+  PENDING // 待发送
+  SENT // 已发送
+  FAILED // 发送失败
+  READ // 已读
 }
 
 enum NotificationScheduleType {
@@ -79,20 +79,21 @@ model User {
   updated_at      DateTime  @default(now()) @updatedAt
   last_login_at   DateTime?
 
-  friendships_sent      Friendship[]      @relation("FriendsSent")
-  friendships_received  Friendship[]      @relation("FriendsReceived")
+  friendships_sent      Friendship[]            @relation("FriendsSent")
+  friendships_received  Friendship[]            @relation("FriendsReceived")
   communities_owned     Community[]
   community_memberships CommunityMember[]
   chats_created         Chat[]
   chat_memberships      ChatMember[]
-  activities          Activity[]
+  activities            Activity[]
   messages              Message[]
   posts                 Post[]
   post_views            PostView[]
   points                Point[]
   redeems               Redeem[]
-  notifications_sent     Notification[]          @relation("NotificationSender")
-  notification_received  NotificationRecipient[]
+  notifications_sent    Notification[]          @relation("NotificationSender")
+  notification_received NotificationRecipient[]
+  comments              Comment[]
 
   @@index([username])
   @@map("users")
@@ -224,20 +225,21 @@ model Activity {
 }
 
 model Post {
-  id          Int          @id @default(autoincrement())
-  author      User         @relation(fields: [author_id], references: [id])
-  author_id   Int
-  caption     String?
-  mediaUrl   String?      @map("media_url")
-  is_deleted  Boolean      @default(false)
-  activity    Activity?
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-  expires_at  DateTime?    // story类型设置24小时，chat类型为null
+  id           Int          @id @default(autoincrement())
+  author       User         @relation(fields: [author_id], references: [id])
+  author_id    Int
+  caption      String?
+  mediaUrl     String?      @map("media_url")
+  is_deleted   Boolean      @default(false)
+  activity     Activity?
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  expires_at   DateTime? // story类型设置24小时，chat类型为null
   post_targets PostTarget[]
   post_views   PostView[]
   Message      Message[]
-  category    String?
+  category     String?
+  comments     Comment[]
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
@@ -318,27 +320,27 @@ model Redeem {
 }
 
 model Notification {
-  id          Int               @id @default(autoincrement())
-  type        NotificationType
-  title       String
-  content     String
-  sender      User              @relation("NotificationSender", fields: [sender_id], references: [id])
-  sender_id   Int
-  created_at  DateTime          @default(now())
-  updated_at  DateTime          @updatedAt
-  
+  id         Int              @id @default(autoincrement())
+  type       NotificationType
+  title      String
+  content    String
+  sender     User             @relation("NotificationSender", fields: [sender_id], references: [id])
+  sender_id  Int
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+
   // 用于社区/群组通知
   community_id Int?
-  group_id    Int?
-  
+  group_id     Int?
+
   // 用于定时提醒
-  schedule_type NotificationScheduleType?       
-  schedule_time DateTime?      // 计划发送时间
-  last_sent    DateTime?      // 最后一次发送时间
-  is_active    Boolean        @default(true)
-  
+  schedule_type NotificationScheduleType?
+  schedule_time DateTime? // 计划发送时间
+  last_sent     DateTime? // 最后一次发送时间
+  is_active     Boolean                   @default(true)
+
   // 通知接收记录
-  recipients   NotificationRecipient[]
+  recipients NotificationRecipient[]
 
   @@index([sender_id])
   @@index([type])
@@ -349,10 +351,10 @@ model Notification {
 }
 
 model NotificationRecipient {
-  id              Int               @id @default(autoincrement())
-  notification    Notification      @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  id              Int                @id @default(autoincrement())
+  notification    Notification       @relation(fields: [notification_id], references: [id], onDelete: Cascade)
   notification_id Int
-  recipient       User              @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  recipient       User               @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
   recipient_id    Int
   status          NotificationStatus @default(PENDING)
   sent_at         DateTime?
@@ -365,22 +367,20 @@ model NotificationRecipient {
   @@map("notification_recipients")
 }
 
-
 model Comment {
-  id              Int       @id @default(autoincrement())
-  post            Post      @relation(fields: [post_id], references: [id], onDelete: Cascade) // 对应的Post
-  post_id         Int
-  user            User      @relation(fields: [user_id], references: [id], onDelete: Cascade) // 评论用户
-  user_id         Int
-  parent_comment  Comment?  @relation("ParentComment", fields: [parent_comment_id], references: [id], onDelete: Cascade) // 父评论
-  parent_comment_id Int?    // 如果是回复其他评论，则此字段指向父评论ID
-  content         String    // 评论内容
-  created_at      DateTime  @default(now()) // 创建时间
-  updated_at      DateTime  @default(now()) @updatedAt // 更新时间
-  replies         Comment[] @relation("ParentComment") // 与父评论形成的关系
+  id                Int       @id @default(autoincrement())
+  post              Post      @relation(fields: [post_id], references: [id], onDelete: Cascade) // 对应的Post
+  post_id           Int
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade) // 评论用户
+  user_id           Int
+  parent_comment    Comment?  @relation("ParentComment", fields: [parent_comment_id], references: [id], onDelete: Cascade) // 父评论
+  parent_comment_id Int? // 如果是回复其他评论，则此字段指向父评论ID
+  content           String // 评论内容
+  created_at        DateTime  @default(now()) // 创建时间
+  updated_at        DateTime  @default(now()) @updatedAt // 更新时间
+  replies           Comment[] @relation("ParentComment") // 子评论（回复）
 
   @@index([post_id, created_at]) // 根据Post和时间进行索引
-  @@index([user_id])             // 根据User进行索引
+  @@index([user_id]) // 根据User进行索引
   @@map("comments")
 }
-

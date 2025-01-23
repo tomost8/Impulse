@@ -454,7 +454,7 @@ Authorization: Bearer {{authToken}}
     "input": {
       "userId": 1,
       "category": "workout",
-      "scheduledDatetime": "2025-01-15T13:00:00Z",
+      "scheduledDatetime": "2025-01-24T13:00:00Z",
       "duration": 60
     }
   }
@@ -595,7 +595,7 @@ Content-Type: application/json
       "authorId": 1,
       "activityId": 2,
       "post_targets": [
-            {"target_type": "user", "target_id": 2},
+            {"target_type": "user", "target_id": 1},
             {"target_type": "community", "target_id": 1}
       ],
       "mediaUrl":"https://www.google.com"
