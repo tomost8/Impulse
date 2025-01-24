@@ -6,6 +6,7 @@ import { Message, MessageResponse, MessagesResponse } from '../schema/chatTypes'
 import { ChatsService, ChatMembersService, MessagesService } from '../../../services/chatService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { UserSortType } from '../../common/types/enumTypes';
 
 /**
  * GraphQL query resolvers for Chat-related operations
@@ -122,9 +123,12 @@ export class ChatMemberQueries {
    * ```
    */
   @Query(() => ChatMembersResponse)
-  async getChatMembers(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
+  async getChatMembers(
+    @Arg('id', () => Int) id: number,
+    @Arg('sort_by', () => UserSortType, {nullable: true}) sort_by?: UserSortType
+  ): Promise<ChatMembersResponse> {
     try {
-      const chat_members = await this.chatMembersService.findById(id);
+      const chat_members = await this.chatMembersService.findById(id, sort_by);
       if (!chat_members) {
         logger.warn('Chat not found', { chatId: id });
         return {

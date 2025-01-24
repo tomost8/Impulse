@@ -50,12 +50,12 @@ export class Chat {
   profile_pic!: string | null;
 
   /** User who created chat */
-  @Field(() => User)
-  creator!: User;
+  @Field(() => User, { nullable: true })
+  creator!: User | null;
 
   /** ID of user who created chat */
-  @Field(() => Int)
-  creator_id!: number;
+  @Field(() => Int, { nullable: true })
+  creator_id!: number | null;
 
   /** Timestamp of when the chat was created */
   @Field(() => Date)

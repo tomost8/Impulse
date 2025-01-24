@@ -6,7 +6,7 @@ import { RequestStatus } from '../../common/types/enumTypes';
  * Input type for updating a user's points
  * 
  * @remarks
- * All fields are optional as this is used for partial updates
+ * only one field to add points so not optional
  * 
  * @example
  * const update: UpdatePointInput = {
@@ -16,22 +16,9 @@ import { RequestStatus } from '../../common/types/enumTypes';
 @InputType()
 export class UpdatePointInput {
   /** Points added */
-  @Field(() => Int, { nullable: true })
-  @IsOptional()
+  @Field(() => Int)
   @IsInt({ message: 'Points added must be an int' })
-  points_added?: number | null;
-
-  /** reset weekly points */
-  @Field(() => Boolean, { nullable: true })
-  @IsOptional()
-  @IsBoolean({ message: 'Reset weekly points must be a bool' })
-  reset_weekly_points?: boolean | null;
-
-  /** reset monthly points */
-  @Field(() => Boolean, { nullable: true })
-  @IsOptional()
-  @IsBoolean({ message: 'Reset monthly points must be a bool' })
-  reset_monthly_points?: boolean | null;
+  points_added!: number;
 } 
 
 /**
