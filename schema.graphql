@@ -208,6 +208,18 @@ input CreateMessageInput {
   sender_id: Int!
 }
 
+input CreateNotificationInput {
+  community_id: Int
+  content: String!
+  group_id: Int
+  recipient_ids: [Int!]
+  schedule_time: DateTimeISO
+  schedule_type: NotificationScheduleType
+  sender_id: Int
+  title: String!
+  type: NotificationType!
+}
+
 input CreatePostInput {
   activityId: Int!
   authorId: Int!
@@ -302,6 +314,7 @@ type MessagesResponse {
 }
 
 type Mutation {
+  cancelReminder(notificationId: Int!): Boolean!
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
   createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
@@ -312,6 +325,7 @@ type Mutation {
   createMessage(input: CreateMessageInput!): MessageResponse!
   createPost(input: CreatePostInput!): PostResponse!
   createRedeem(input: CreateRedeemInput!): RedeemResponse!
+  createReminder(input: CreateNotificationInput!): Boolean!
   createReward(input: CreateRewardInput!): RewardResponse!
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
@@ -325,6 +339,8 @@ type Mutation {
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
+  sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
+  sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
   updateChat(id: Int!, input: UpdateChatInput!): ChatResponse!
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
@@ -337,6 +353,22 @@ type Mutation {
   updateReward(id: Int!, input: UpdateRewardInput!): RewardResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
   viewPost(postId: Int!, userId: Int!): BaseResponse!
+}
+
+"""Schedule type for recurring notifications"""
+enum NotificationScheduleType {
+  DAILY
+  MONTHLY
+  ONCE
+  WEEKLY
+}
+
+"""Types of notifications in the system"""
+enum NotificationType {
+  ADMIN_BROADCAST
+  COMMUNITY_NOTICE
+  GROUP_NOTICE
+  REMINDER
 }
 
 type Point {

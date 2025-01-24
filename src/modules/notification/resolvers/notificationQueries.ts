@@ -1,0 +1,117 @@
+import { Resolver, Query, Ctx, UseMiddleware, Int, Arg } from 'type-graphql';
+import { Service } from 'typedi';
+import { PrismaClient, NotificationType, Notification as PrismaNotification } from '@prisma/client';
+import { authMiddleware } from '../../../middleware/authMiddleware';
+import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
+import { NotificationsResponse, Notification } from '../schema/notificationTypes';
+import { ValidationError } from '../../common/errors/graphql.error';
+import { UsersService } from '../../../services/userService';
+
+@Service()
+@Resolver()
+export class NotificationQueries {
+  constructor(
+    private prisma: PrismaClient,
+    private usersService: UsersService
+  ) {}
+
+  @Query(() => NotificationsResponse)
+  @UseMiddleware(authMiddleware, LogOperationMiddleware)
+  async getReminders(
+    @Ctx() context: any,
+  ): Promise<NotificationsResponse> {
+    try {
+      const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
+      
+      if (!user) {
+        throw new ValidationError('User not found');
+      }
+
+      const notifications = await this.prisma.notification.findMany({
+        where: {
+          type: NotificationType.REMINDER,
+          sender_id: user.id,
+          is_active: true
+        },
+        include: {
+          sender: true,
+          recipients: {
+            include: {
+              recipient: true,
+              notification: true
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        }
+      });
+
+      return {
+        success: true,
+        notifications: notifications as unknown as Notification[]
+      };
+    } catch (error) {
+      return {
+        success: false,
+        notifications: [],
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch reminders'
+        }]
+      };
+    }
+  }
+
+  @Query(() => NotificationsResponse)
+  @UseMiddleware(authMiddleware, LogOperationMiddleware)
+  async getReminderById(
+    @Arg('id', () => Int) id: number,
+    @Ctx() context: any,
+  ): Promise<NotificationsResponse> {
+    try {
+      const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
+      
+      if (!user) {
+        throw new ValidationError('User not found');
+      }
+
+      const notification = await this.prisma.notification.findFirst({
+        where: {
+          id,
+          type: NotificationType.REMINDER,
+          sender_id: user.id
+        },
+        include: {
+          sender: true,
+          recipients: {
+            include: {
+              recipient: true,
+              notification: true
+            }
+          }
+        }
+      });
+
+      if (!notification) {
+        throw new ValidationError('Reminder not found or unauthorized');
+      }
+
+      return {
+        success: true,
+        notifications: [notification as unknown as Notification]
+      };
+    } catch (error) {
+      return {
+        success: false,
+        notifications: [],
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch reminder'
+        }]
+      };
+    }
+  }
+} 

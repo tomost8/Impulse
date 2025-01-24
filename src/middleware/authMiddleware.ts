@@ -7,7 +7,7 @@ const DEV_USER = {
   uid: 'dev-test-003',
   email: 'test003@example.com',
   name: 'Developer User',
-  role: 'admin'
+  role: 'ADMIN'
 };
 
 // 开发环境的静态 token

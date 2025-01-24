@@ -23,6 +23,7 @@ import { ExpressAdapter } from '@bull-board/express';
 import { PostService } from './services/postService';
 import { PointResetService } from './services/pointResetService';
 import { configureWebSocket } from './config/websocket';
+import { ReminderService } from './services/reminderService';
 
 export async function createApp() {
   const app = express();
@@ -89,12 +90,14 @@ export async function createApp() {
   // 设置 Bull Board
   const serverAdapter = new ExpressAdapter();
   const postService = Container.get(PostService);
+  const reminderService = Container.get(ReminderService);
   
   const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
     queues: [
       new BullAdapter(postService.postTargetsQueue),
       new BullAdapter(activityExpirationService.expirationQueue),
       new BullAdapter(pointResetService.pointsResetQueue)
+      new BullAdapter(reminderService.reminderQueue),
     ],
     serverAdapter: serverAdapter,
   });

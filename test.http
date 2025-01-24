@@ -355,7 +355,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 2
+      "user_id": 3
     }
   }
 }
@@ -379,10 +379,10 @@ Content-Type: application/json
   "query": "mutation ($communityId: Int!, $userId: Int!, $input: UpdateCommunityMemberInput!) { updateCommunityMember(community_id: $communityId, user_id: $userId, input: $input) { success community_member { community { name influencer { first_name last_name } influencer_id } community_id user { first_name last_name } user_id role status } errors { field message } } }",
   "variables": {
     "communityId": 1,
-    "userId": 2,
+    "userId": 3,
     "input": {
-      "role": "member",
-      "status": "approved"
+      "role": "USER",
+      "status": "ACCEPTED"
     }
   }
 }
@@ -394,7 +394,7 @@ Content-Type: application/json
 {
   "query": "mutation ($userId: Int!, $communityId: Int!) { deleteCommunityMember(user_id: $userId, community_id: $communityId) { success errors { field message } } }",  
   "variables": {
-    "communityId": 2,
+    "communityId": 1,
     "userId": 3
   }
 }
@@ -860,4 +860,224 @@ Authorization: Bearer {{authToken}}
     "take": 10
   }
 }
+
+
+### Mutation - Send Broadcast Notification
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!) { sendBroadcastNotification(input: $input) }",
+  "variables": {
+    "input": {
+      "title": "Important Broadcast",
+      "content": "This is a test broadcast notification",
+      "type": "ADMIN_BROADCAST",
+      "sender_id": 1
+    }
+  }
+}
+
+### Mutation - Send Community Notification
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!, $communityId: Int!) { sendCommunityNotification(input: $input, communityId: $communityId) }",
+  "variables": {
+    "communityId": 1,
+    "input": {
+      "title": "Community Update",
+      "content": "This is a test community notification",
+      "type": "COMMUNITY_NOTICE"
+    }
+  }
+}
+
+### Expected Responses:
+# 1. Broadcast Notification Response:
+# {
+#   "data": {
+#     "sendBroadcastNotification": true
+#   }
+# }
+
+# 2. Community Notification Response:
+# {
+#   "data": {
+#     "sendCommunityNotification": true
+#   }
+# }
+
+### Reminder API Tests ###
+
+### Mutation - Create One-time Reminder
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!) { createReminder(input: $input) }",
+  "variables": {
+    "input": {
+      "title": "One-time Reminder",
+      "content": "This is one-time reminder!",
+      "type": "REMINDER",
+      "schedule_type": "ONCE",
+      "schedule_time": "2025-01-20T23:31:00.000Z"
+    }
+  }
+}
+
+### Mutation - Create Daily Reminder
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!) { createReminder(input: $input) }",
+  "variables": {
+    "input": {
+      "title": "Daily Workout Reminder",
+      "content": "Time for your daily exercise!",
+      "type": "REMINDER",
+      "schedule_type": "DAILY",
+      "schedule_time": "2024-01-20T14:30:00.000Z"
+    }
+  }
+}
+
+### Mutation - Create Weekly Reminder
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!) { createReminder(input: $input) }",
+  "variables": {
+    "input": {
+      "title": "Weekly Team Meeting",
+      "content": "Join the weekly team sync",
+      "type": "REMINDER",
+      "schedule_type": "WEEKLY",
+      "schedule_time": "2024-01-22T09:00:00.000Z"
+    }
+  }
+}
+
+### Mutation - Create Monthly Reminder
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateNotificationInput!) { createReminder(input: $input) }",
+  "variables": {
+    "input": {
+      "title": "Monthly Report Due",
+      "content": "Submit your monthly report",
+      "type": "REMINDER",
+      "schedule_type": "MONTHLY",
+      "schedule_time": "2024-01-25T10:00:00.000Z"
+    }
+  }
+}
+
+### Query - Get All Reminders
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { getReminders { success notifications { id title content schedule_type schedule_time last_sent is_active sender { id first_name last_name } recipients { status sent_at read_at } } errors { field message } } }"
+}
+
+### Query - Get Specific Reminder
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($id: Int!) { getReminderById(id: $id) { success notifications { id title content schedule_type schedule_time last_sent is_active sender { id first_name last_name } recipients { status sent_at read_at } } errors { field message } } }",
+  "variables": {
+    "id": 1
+  }
+}
+
+### Mutation - Cancel Reminder
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($notificationId: Int!) { cancelReminder(notificationId: $notificationId) }",
+  "variables": {
+    "notificationId": 1
+  }
+}
+
+### Expected Responses:
+
+# 1. Create Reminder Response:
+# {
+#   "data": {
+#     "createReminder": true
+#   }
+# }
+
+# 2. Get Reminders Response:
+# {
+#   "data": {
+#     "getReminders": {
+#       "success": true,
+#       "notifications": [
+#         {
+#           "id": 1,
+#           "title": "Daily Workout Reminder",
+#           "content": "Time for your daily exercise!",
+#           "schedule_type": "DAILY",
+#           "schedule_time": "2024-01-20T14:30:00.000Z",
+#           "last_sent": null,
+#           "is_active": true,
+#           "sender": {
+#             "id": 1,
+#             "first_name": "John",
+#             "last_name": "Doe"
+#           },
+#           "recipients": [
+#             {
+#               "status": "PENDING",
+#               "sent_at": null,
+#               "read_at": null
+#             }
+#           ]
+#         }
+#       ],
+#       "errors": null
+#     }
+#   }
+# }
+
+# 3. Cancel Reminder Response:
+# {
+#   "data": {
+#     "cancelReminder": true
+#   }
+# }
+
+### Testing Steps:
+# 1. First create a reminder using one of the create mutations
+# 2. Copy the returned reminder ID
+# 3. Use that ID to test the getReminderById query
+# 4. Test canceling the reminder using the same ID
+# 5. Verify the reminder is no longer active using getReminders query
+
+### Notes:
+# - All times should be in UTC (ISO 8601 format)
+# - schedule_type must be one of: "ONCE", "DAILY", "WEEKLY", "MONTHLY"
+# - The reminder will be sent at the specified time in the user's timezone
+# - For recurring reminders (DAILY, WEEKLY, MONTHLY), the schedule_time sets the initial time and recurrence pattern
+# - Canceled reminders will still appear in queries but with is_active = false
 

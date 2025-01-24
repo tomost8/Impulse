@@ -21,7 +21,7 @@ async function generateTestToken() {
 
     // 设置自定义声明
     await getAuth().setCustomUserClaims(uid, {
-      role: 'admin'
+      role: 'ADMIN'
     });
 
     // 只生成 Custom Token

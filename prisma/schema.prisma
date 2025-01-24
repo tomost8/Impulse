@@ -43,6 +43,28 @@ enum UserSortType {
   POINTS_ALL
 }
 
+// Notification System Models
+enum NotificationType {
+  ADMIN_BROADCAST    // 管理员全局广播
+  COMMUNITY_NOTICE   // 社区通知
+  GROUP_NOTICE      // 群组通知
+  REMINDER          // 个人提醒
+}
+
+enum NotificationStatus {
+  PENDING    // 待发送
+  SENT      // 已发送
+  FAILED    // 发送失败
+  READ      // 已读
+}
+
+enum NotificationScheduleType {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 // 示例模型
 model User {
   id              Int       @id @default(autoincrement()) @map("user_id")
@@ -54,7 +76,7 @@ model User {
   dob             DateTime? @db.Date
   gender          String?
   profile_picture String?
-  role            String    @default("user")
+  role            String    @default("USER")
   status          String    @default("pending")
   timezone        String?
   searchable      Boolean   @default(true)
@@ -75,6 +97,8 @@ model User {
   post_views            PostView[]
   point                 Point?
   redeems               Redeem[]
+  notifications_sent     Notification[]          @relation("NotificationSender")
+  notification_received  NotificationRecipient[]
 
   @@index([username])
   @@map("users")
@@ -298,4 +322,52 @@ model Redeem {
   updated_at      DateTime      @updatedAt
 
   @@map("redeems")
+}
+
+model Notification {
+  id          Int               @id @default(autoincrement())
+  type        NotificationType
+  title       String
+  content     String
+  sender      User              @relation("NotificationSender", fields: [sender_id], references: [id])
+  sender_id   Int
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  
+  // 用于社区/群组通知
+  community_id Int?
+  group_id    Int?
+  
+  // 用于定时提醒
+  schedule_type NotificationScheduleType?       
+  schedule_time DateTime?      // 计划发送时间
+  last_sent    DateTime?      // 最后一次发送时间
+  is_active    Boolean        @default(true)
+  
+  // 通知接收记录
+  recipients   NotificationRecipient[]
+
+  @@index([sender_id])
+  @@index([type])
+  @@index([schedule_time, is_active])
+  @@index([community_id])
+  @@index([group_id])
+  @@map("notifications")
+}
+
+model NotificationRecipient {
+  id              Int               @id @default(autoincrement())
+  notification    Notification      @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  notification_id Int
+  recipient       User              @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  recipient_id    Int
+  status          NotificationStatus @default(PENDING)
+  sent_at         DateTime?
+  read_at         DateTime?
+  error_message   String?
+
+  @@unique([notification_id, recipient_id])
+  @@index([recipient_id, status])
+  @@index([notification_id, status])
+  @@map("notification_recipients")
 }
