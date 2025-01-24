@@ -157,6 +157,48 @@ export class CommentService {
       },
     });
   }  
+
+
+  /**
+   * Delete a comment and its replies
+   * 
+   * @param commentId - ID of the comment to delete
+   * @param userId - ID of the user deleting the comment
+   * @returns Promise<{ success: boolean; message?: string }>
+   */
+  async deleteComment(commentId: number, userId: number): Promise<{ success: boolean; message?: string }> {
+    try {
+      // 检查评论是否存在
+      const comment = await this.prisma.comment.findUnique({
+        where: { id: commentId },
+        include: { user: true },
+      });
+  
+      if (!comment) {
+        return { success: false, message: 'Comment not found' };
+      }
+  
+      // 检查权限：只有作者或管理员可以删除
+      if (comment.user_id !== userId) {
+        // 如果有管理员角色，可以在这里添加检查逻辑
+        return { success: false, message: 'You do not have permission to delete this comment' };
+      }
+  
+      // 删除评论及其子评论
+      await this.prisma.comment.delete({
+        where: { id: commentId },
+      });
+  
+      return { success: true };
+    } catch (error) {
+      console.error(`Failed to delete comment ${commentId}:`, error);
+      return { success: false, message: 'An error occurred while deleting the comment' };
+    }
+  }
+  
+
+
+
 }
 
 

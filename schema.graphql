@@ -363,6 +363,7 @@ type Mutation {
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
   deleteChatMember(chat_id: Int!, user_id: Int!): ChatMemberResponse!
+  deleteComment(commentId: Int!): BaseResponse!
   deleteCommunity(id: Int!): CommunityResponse!
   deleteCommunityCategory(category: Category!, community_id: Int!): CommunityCategoryResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!

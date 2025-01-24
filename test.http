@@ -1115,3 +1115,15 @@ Authorization: Bearer {{authToken}}
     "take": 10
   }
 }
+
+### Mutation - Delete Comment
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($commentId: Int!) { deleteComment(commentId: $commentId) { success errors { field message } } }",
+  "variables": {
+    "commentId": 123
+  }
+}

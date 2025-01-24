@@ -1,4 +1,4 @@
-import { Resolver, Mutation, Arg, Ctx, UseMiddleware } from 'type-graphql';
+import { Resolver, Mutation, Arg, Ctx, UseMiddleware, Int } from 'type-graphql';
 import { Service } from 'typedi';
 
 import { CommentService } from '../../../services/commentService';
@@ -8,6 +8,7 @@ import { CreateCommentInput } from '../ scheme/commentInputs';
 import { UsersService } from '../../../services/userService';
 import { authMiddleware } from '../../../middleware/authMiddleware';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
+import { BaseResponse } from '../../post/schema/postTypes';
 
 
 @Service()
@@ -25,7 +26,6 @@ export class CommentMutations {
     @Ctx() context: any,
   ): Promise<CommentResponse> {
     try {
-
         const { uid } = context.user;
         const user = await this.usersService.findByFirebaseUid(uid);
 
@@ -56,4 +56,54 @@ export class CommentMutations {
       };
     }
   }
+
+
+  @Mutation(() => BaseResponse)
+  @UseMiddleware(authMiddleware, LogOperationMiddleware)
+  async deleteComment(
+    @Arg('commentId', () => Int) commentId: number,
+    @Ctx() context: any
+  ): Promise<BaseResponse> {
+    try {
+      // 从 context 获取用户 ID
+      const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
+
+      if (!user || !user.id) {
+        return {
+          success: false,
+          errors: [{
+            field: 'general',
+            message: 'User not authenticated'
+          }]
+        };
+      }
+
+      const result = await this.commentService.deleteComment(commentId, user.id);
+
+      if (!result.success) {
+        return {
+          success: false,
+          errors: [{
+            field: 'general',
+            message: result.message || 'Failed to delete comment'
+          }]
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'An unknown error occurred'
+        }]
+      };
+    }
+  }
+
 }
