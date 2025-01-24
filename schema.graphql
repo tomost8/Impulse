@@ -373,6 +373,7 @@ type Mutation {
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
+  likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
@@ -437,6 +438,7 @@ type Post {
   expires_at: DateTimeISO
   id: Int!
   is_deleted: Boolean!
+  liked: Boolean
   mediaUrl: String
   messages: [Message!]
   post_targets: [PostTarget!]!

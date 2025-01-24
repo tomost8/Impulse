@@ -420,14 +420,21 @@ export class PostService {
           select: {
             post_views: true
           }
-        }
+        },
+        likes: options?.currentUserId
+        ? { where: { user_id: options.currentUserId }, select: { id: true } }
+        : false,
+
       },
       orderBy: {
         created_at: 'desc'
       }
     });
 
-    return posts;
+    return posts.map((post) => ({
+      ...post,
+      liked: post.likes.length > 0, // 如果用户已点赞，则为 true
+    }));  
   }
 
   /**

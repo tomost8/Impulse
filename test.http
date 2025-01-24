@@ -355,7 +355,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 3
+      "user_id": 1
     }
   }
 }
@@ -454,7 +454,7 @@ Authorization: Bearer {{authToken}}
     "input": {
       "userId": 1,
       "category": "workout",
-      "scheduledDatetime": "2025-01-24T13:00:00Z",
+      "scheduledDatetime": "2025-01-25T13:00:00Z",
       "duration": 60
     }
   }
@@ -593,7 +593,7 @@ Content-Type: application/json
     "input": {
       "caption": "Both user and community",
       "authorId": 1,
-      "activityId": 2,
+      "activityId": 3,
       "post_targets": [
             {"target_type": "user", "target_id": 1},
             {"target_type": "community", "target_id": 1}
@@ -820,11 +820,11 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
+  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id liked mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
   "variables": {
-    "targetType": "community",
+    "targetType": "user",
     "targetId": 1,
-    "currentUserId": 2,
+    "currentUserId": 1,
     "unreadOnly": false,
     "skip": 0,
     "take": 10,
@@ -1124,6 +1124,19 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($commentId: Int!) { deleteComment(commentId: $commentId) { success errors { field message } } }",
   "variables": {
-    "commentId": 123
+    "commentId": 1
+  }
+}
+
+
+### 测试点赞功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($postId: Int!) { likePost(postId: $postId) { success } }",
+  "variables": {
+    "postId": 1
   }
 }

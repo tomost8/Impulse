@@ -51,6 +51,9 @@ export class Post {
 
   @Field(() => [Comment], { nullable: true })
   comments?: Comment[];
+
+  @Field(() => Boolean, { nullable: true })
+  liked?: boolean; 
 }
 
 @ObjectType()

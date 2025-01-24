@@ -94,7 +94,7 @@ model User {
   notifications_sent    Notification[]          @relation("NotificationSender")
   notification_received NotificationRecipient[]
   comments              Comment[]
-
+  likes                 Like[]
   @@index([username])
   @@map("users")
 }
@@ -240,7 +240,7 @@ model Post {
   Message      Message[]
   category     String?
   comments     Comment[]
-
+  likes        Like[]
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
   @@map("posts")
@@ -366,6 +366,19 @@ model NotificationRecipient {
   @@index([notification_id, status])
   @@map("notification_recipients")
 }
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id   Int
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id   Int
+  created_at DateTime @default(now()) 
+
+  @@unique([post_id, user_id])
+  @@index([post_id]) 
+}
+
 
 model Comment {
   id                Int       @id @default(autoincrement())
