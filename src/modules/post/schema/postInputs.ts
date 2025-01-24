@@ -1,5 +1,4 @@
 import { InputType, Field, Int } from 'type-graphql';
-import { GraphQLJSON } from 'graphql-type-json';
 import { IsString, IsOptional, IsInt, IsBoolean, IsArray, IsDate } from 'class-validator';
 
 @InputType()

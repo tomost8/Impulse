@@ -91,6 +91,26 @@ type ChatsResponse {
   success: Boolean!
 }
 
+type Comment {
+  content: String!
+  created_at: DateTimeISO!
+  id: Int!
+  parent_comment: Comment
+  parent_comment_id: Int
+  post: Post
+  post_id: Int!
+  replies: [Comment!]
+  updated_at: DateTimeISO!
+  user: User
+  user_id: Int!
+}
+
+type CommentResponse {
+  comment: Comment
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type CommunitiesResponse {
   communities: [Community!]
   errors: [FieldError!]
@@ -177,6 +197,12 @@ input CreateChatInput {
 input CreateChatMemberInput {
   chat_id: Int!
   user_id: Int!
+}
+
+input CreateCommentInput {
+  content: String!
+  parent_comment_id: Int
+  post_id: Int!
 }
 
 input CreateCommunityCategoryInput {
@@ -318,6 +344,7 @@ type Mutation {
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
   createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
+  createComment(input: CreateCommentInput!): CommentResponse!
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createCommunityCategory(input: CreateCommunityCategoryInput!): CommunityCategoryResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
@@ -398,6 +425,7 @@ type Post {
   author_id: Int!
   caption: String
   category: String
+  comments: [Comment!]
   created_at: DateTimeISO!
   expires_at: DateTimeISO
   id: Int!
