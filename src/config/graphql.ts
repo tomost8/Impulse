@@ -13,6 +13,7 @@ import { PointQueries, PointMutations, RewardQueries, RewardMutations, RedeemQue
 import { NotificationMutations } from '../modules/notification/resolvers/NotificationMutations';
 import './prisma'; // 确保 Prisma 客户端被初始化
 import { CommentMutations } from '../modules/comment/resolvers/commentMutations';
+import { CommentQueries } from '../modules/comment/resolvers/commentQueries';
 
 export const createSchema = async () => {
   const schema = await buildSchema({
@@ -46,7 +47,8 @@ export const createSchema = async () => {
       RedeemQueries, 
       RedeemMutations,
       NotificationMutations,
-      CommentMutations
+      CommentMutations,
+      CommentQueries
     ],
     container: Container,
     validate: { forbidUnknownValues: false },

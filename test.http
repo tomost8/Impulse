@@ -1081,3 +1081,37 @@ Authorization: Bearer {{authToken}}
 # - For recurring reminders (DAILY, WEEKLY, MONTHLY), the schedule_time sets the initial time and recurrence pattern
 # - Canceled reminders will still appear in queries but with is_active = false
 
+
+
+
+### 测试评论功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateCommentInput!) { createComment(input: $input) { success comment { id content post_id user_id parent_comment_id created_at updated_at } errors { field message } } }",
+  "variables": {
+    "input": {
+      "content": "This is a test comment reply's reply!",
+      "post_id": 1,
+      "parent_comment_id": 2
+    }
+  }
+}
+
+
+
+### Query - Get Comments by Post ID
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($postId: Int!, $skip: Int, $take: Int) { postComments(postId: $postId, skip: $skip, take: $take) { success comments { id content post_id user_id parent_comment_id created_at updated_at user { id username profile_picture } replies { id content user { id username } created_at } } errors { field message } } }",
+  "variables": {
+    "postId": 1,
+    "skip": 0,
+    "take": 10
+  }
+}

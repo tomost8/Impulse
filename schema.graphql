@@ -111,6 +111,12 @@ type CommentResponse {
   success: Boolean!
 }
 
+type CommentsResponse {
+  comments: [Comment!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type CommunitiesResponse {
   communities: [Community!]
   errors: [FieldError!]
@@ -501,6 +507,7 @@ type Query {
   getUserCommunities(id: Int!): CommunityMembersResponse!
   me: UserResponse!
   post(id: Int!): PostResponse!
+  postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!

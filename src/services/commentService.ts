@@ -114,4 +114,49 @@ export class CommentService {
       );
     }
   }
+
+
+
+
+
+  async findCommentsByPostId(
+    postId: number,
+    options?: { skip?: number; take?: number }
+  ): Promise<Comment[]> {
+    return await this.prisma.comment.findMany({
+      where: {
+        post_id: postId,
+        parent_comment_id: null, // 仅加载顶层评论
+      },
+      skip: options?.skip,
+      take: options?.take,
+      orderBy: { created_at: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profile_picture: true, // 加载评论用户信息
+          },
+        },
+        replies: {
+          take: 5, // 限制每条评论最多加载5条回复
+          orderBy: { created_at: 'asc' },
+          select: {
+            id: true,
+            content: true,
+            created_at: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }  
 }
+
+
