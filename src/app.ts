@@ -96,7 +96,7 @@ export async function createApp() {
     queues: [
       new BullAdapter(postService.postTargetsQueue),
       new BullAdapter(activityExpirationService.expirationQueue),
-      new BullAdapter(pointResetService.pointsResetQueue)
+      new BullAdapter(pointResetService.pointsResetQueue),
       new BullAdapter(reminderService.reminderQueue),
     ],
     serverAdapter: serverAdapter,

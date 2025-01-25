@@ -49,9 +49,13 @@ export class Friendship {
   @Field(() => Int)
   friend_id!: number;
 
-  /** Status of user in community */
+  /** Status of user in friendship */
   @Field(() => RequestStatus)
   status!: RequestStatus;
+
+  /** role of user in friendship */
+  @Field(() => String, { nullable: true })
+  role!: string | null;
 
   /** Direct chat between users */
   @Field(() => Chat, { nullable: true })

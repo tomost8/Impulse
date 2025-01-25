@@ -8,10 +8,16 @@ CREATE TYPE "Role" AS ENUM ('ADMIN', 'USER');
 CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
 
 -- CreateEnum
+CREATE TYPE "UserSortType" AS ENUM ('POINTS_WEEKLY', 'POINTS_MONTHLY', 'POINTS_ALL');
+
+-- CreateEnum
 CREATE TYPE "NotificationType" AS ENUM ('ADMIN_BROADCAST', 'COMMUNITY_NOTICE', 'GROUP_NOTICE', 'REMINDER');
 
 -- CreateEnum
 CREATE TYPE "NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'READ');
+
+-- CreateEnum
+CREATE TYPE "NotificationScheduleType" AS ENUM ('ONCE', 'DAILY', 'WEEKLY', 'MONTHLY');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -24,8 +30,11 @@ CREATE TABLE "users" (
     "dob" DATE,
     "gender" TEXT,
     "profile_picture" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'user',
+    "bio" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'USER',
     "status" TEXT NOT NULL DEFAULT 'pending',
+    "primary_goal" "Category",
+    "secondary_goal" "Category",
     "timezone" TEXT,
     "searchable" BOOLEAN NOT NULL DEFAULT true,
     "fcm_token" TEXT,
@@ -39,9 +48,10 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "friendships" (
     "id" SERIAL NOT NULL,
-    "sender_id" INTEGER NOT NULL,
-    "receiver_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "friend_id" INTEGER NOT NULL,
     "status" "RequestStatus" NOT NULL DEFAULT 'PENDING',
+    "role" TEXT,
     "chat_id" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -91,7 +101,7 @@ CREATE TABLE "chats" (
     "title" TEXT,
     "password" TEXT,
     "profile_pic" TEXT,
-    "creator_id" INTEGER NOT NULL,
+    "creator_id" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -231,7 +241,7 @@ CREATE TABLE "notifications" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "community_id" INTEGER,
     "group_id" INTEGER,
-    "schedule_type" TEXT,
+    "schedule_type" "NotificationScheduleType",
     "schedule_time" TIMESTAMP(3),
     "last_sent" TIMESTAMP(3),
     "is_active" BOOLEAN NOT NULL DEFAULT true,
@@ -262,7 +272,7 @@ CREATE UNIQUE INDEX "users_firebase_uid_key" ON "users"("firebase_uid");
 CREATE INDEX "users_username_idx" ON "users"("username");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "friendships_sender_id_receiver_id_key" ON "friendships"("sender_id", "receiver_id");
+CREATE UNIQUE INDEX "friendships_user_id_friend_id_key" ON "friendships"("user_id", "friend_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "community_categories_community_id_category_key" ON "community_categories"("community_id", "category");
@@ -331,10 +341,10 @@ CREATE INDEX "notification_recipients_notification_id_status_idx" ON "notificati
 CREATE UNIQUE INDEX "notification_recipients_notification_id_recipient_id_key" ON "notification_recipients"("notification_id", "recipient_id");
 
 -- AddForeignKey
-ALTER TABLE "friendships" ADD CONSTRAINT "friendships_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "friendships" ADD CONSTRAINT "friendships_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "friendships" ADD CONSTRAINT "friendships_receiver_id_fkey" FOREIGN KEY ("receiver_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "friendships" ADD CONSTRAINT "friendships_friend_id_fkey" FOREIGN KEY ("friend_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "friendships" ADD CONSTRAINT "friendships_chat_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "chats"("chat_id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -352,7 +362,7 @@ ALTER TABLE "community_members" ADD CONSTRAINT "community_members_community_id_f
 ALTER TABLE "community_members" ADD CONSTRAINT "community_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "chats" ADD CONSTRAINT "chats_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "users"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "chats" ADD CONSTRAINT "chats_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "users"("user_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "chat_members" ADD CONSTRAINT "chat_members_chat_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "chats"("chat_id") ON DELETE CASCADE ON UPDATE CASCADE;

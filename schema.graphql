@@ -266,6 +266,7 @@ type Friendship {
   friend: User!
   friend_id: Int!
   id: Int!
+  role: String
   status: RequestStatus!
   updated_at: DateTimeISO!
   user: User!
@@ -618,6 +619,7 @@ input UpdateUserInput {
 }
 
 type User {
+  bio: String
   created_at: DateTimeISO!
   dob: Date
   email: String!
@@ -628,9 +630,11 @@ type User {
   id: Int!
   last_login_at: DateTimeISO
   last_name: String
+  primary_goal: Category
   profile_picture: String
   role: String!
   searchable: Boolean!
+  secondary_goal: Category
   status: String!
   timezone: String
   updated_at: DateTimeISO!

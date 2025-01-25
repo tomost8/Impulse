@@ -211,7 +211,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "query($id: Int!) { user(id: $id) { success user { id email firebase_uid first_name last_name username gender profile_picture role status timezone searchable last_login_at } errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 3
   }
 }
 

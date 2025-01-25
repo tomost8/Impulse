@@ -150,6 +150,8 @@ export class CommunityMembersService {
     id: number,
     sort_by?: UserSortType
   ): Promise<CommunityMember[] | null> {
+    const orderBy = sort_by ? usersSortingConfig[sort_by] : undefined;
+
     return await this.prisma.communityMember.findMany({
       where: { 
         community_id: id
@@ -162,7 +164,7 @@ export class CommunityMembersService {
         },
         user: true
       },
-      ...(sort_by && { orderBy: usersSortingConfig[sort_by] })
+      orderBy
     });
   }
 
@@ -223,14 +225,16 @@ export class CommunityMembersService {
           data: {
             user_id: input.user_id,
             friend_id: influencerId,
-            role: "community member"
+            role: "community member",
+            status: "ACCEPTED"
           }
         });
         const friendship_leader = await this.prisma.friendship.create({
           data: {
             user_id: influencerId,
             friend_id: input.user_id,
-            role: "community leader"
+            role: "community leader",
+            status: "ACCEPTED"
           }
         });
         // should probably extract the create direct function to chatService 

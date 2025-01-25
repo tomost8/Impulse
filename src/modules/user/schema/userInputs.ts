@@ -62,6 +62,11 @@ export class CreateUserInput {
   @IsOptional()
   profile_picture?: string;
 
+  /** Bio of the new user */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  bio?: string;
+
   /** Timezone of the new user */
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -126,6 +131,11 @@ export class UpdateUserInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   profile_picture?: string;
+
+  /** Bio */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  bio?: string;
 
   /** Timezone */
   @Field(() => String, { nullable: true })

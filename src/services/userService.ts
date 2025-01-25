@@ -4,6 +4,8 @@ import { User } from '../modules/user/schema/userTypes';
 import { CreateUserInput, UpdateUserInput } from '../modules/user/schema/userInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import { pubsub } from '../config/pubsub';
+import { UserSortType } from '../modules/common/types/enumTypes';
+import { usersSortingConfig } from '../modules/common/types/sortingTypes';
 
 export const USER_CREATED = 'USER_CREATED';
 
@@ -29,8 +31,9 @@ export class UsersService {
    * @returns Promise<User[]> Array of all users in the system
    * @throws {PrismaError} If database query fails
    */
-  async findAll(): Promise<User[]> {
-    return await this.prisma.user.findMany();
+  async findAll(sort_by?: UserSortType): Promise<User[]> {
+    const orderBy = sort_by ? usersSortingConfig[sort_by] : undefined;
+    return await this.prisma.user.findMany({orderBy});
   }
 
   /**

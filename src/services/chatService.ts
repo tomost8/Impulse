@@ -148,6 +148,8 @@ export class ChatMembersService {
     id: number,
     sort_by?: UserSortType
   ): Promise<ChatMember[] | null> {
+    const orderBy = sort_by ? usersSortingConfig[sort_by] : undefined;
+
     return await this.prisma.chatMember.findMany({
         where: { 
             chat_id: id
@@ -160,7 +162,7 @@ export class ChatMembersService {
           },
           user: true
         },
-        ...(sort_by && { orderBy: usersSortingConfig[sort_by] })
+        orderBy
     });
   }
 

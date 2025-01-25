@@ -3,9 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import { Friendship } from '../modules/friendship/schema/friendshipTypes';
 import { CreateFriendshipInput, UpdateFriendshipInput } from '../modules/friendship';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
-import { RequestStatus } from '../modules/common/types/enumTypes';
-import { CreateChatInput } from '../modules/chat';
-
+import { UserSortType } from '../modules/common/types/enumTypes';
+import { usersSortingConfig } from '../modules/common/types/sortingTypes';
 
 /**
  * Service handling friendship-related business logic
@@ -26,7 +25,11 @@ export class FriendshipsService {
    * @returns Promise resolving to the friendships if found, null otherwise
    * @throws {PrismaError} If database query fails
    */
-  async getFriends(id: number): Promise<Friendship[] | null> {
+  async getFriends(
+    id: number,
+    sort_by?: UserSortType
+  ): Promise<Friendship[] | null> {
+    const orderBy = sort_by ? usersSortingConfig[sort_by] : undefined;
     return await this.prisma.friendship.findMany({
         where: { 
           user_id: id,
@@ -38,7 +41,8 @@ export class FriendshipsService {
           chat: {
             include: {creator: true}
           }
-        }
+        },
+        orderBy
     });
   }
 

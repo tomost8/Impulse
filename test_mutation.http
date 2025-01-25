@@ -91,8 +91,8 @@ Content-Type: application/json
   "query": "mutation ($input: CreateFriendshipInput!) { createFriendship(input: $input) { success friendship { user {id first_name last_name } friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
     "input": {
-      "sender_id": 1,
-      "receiver_id": 2
+      "sender_id": 2,
+      "receiver_id": 3
     }
   }
 }
@@ -120,7 +120,7 @@ Content-Type: application/json
   "query": "mutation($userId: Int!, $friendId: Int!) { deleteFriendship(user_id: $userId, friend_id: $friendId) { success errors { field message } } }",
   "variables": {
     "userId": 1,
-    "friendId": 2
+    "friendId": 3
   }
 }
 

@@ -2,6 +2,7 @@ import { Field, ObjectType, Int } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
 import { FieldError } from '../../common/types/errorTypes';
 import { DateScalar } from '../../common/scalars/dateScalar';
+import { Category } from '../../common/types/enumTypes';
 
 /**
  * User entity representing a user in the system
@@ -61,6 +62,18 @@ export class User {
   /** User's profile picture */
   @Field(() => String, { nullable: true })
   profile_picture!: string | null;
+
+  /** User's bio */
+  @Field(() => String, { nullable: true })
+  bio!: string | null;
+
+  /** User's bio */
+  @Field(() => Category, { nullable: true })
+  primary_goal!: Category | null;
+
+  /** User's bio */
+  @Field(() => Category, { nullable: true })
+  secondary_goal!: Category | null;
 
   /** User's role */
   @Field(() => String)
