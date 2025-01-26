@@ -1137,7 +1137,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($postId: Int!) { likePost(postId: $postId) { success  errors { field message }  } }",
   "variables": {
-    "postId": 2
+    "postId": 1
   }
 }
 
@@ -1149,6 +1149,6 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($postId: Int!) { unlikePost(postId: $postId) { success  errors { field message }  } }",
   "variables": {
-    "postId": 2
+    "postId": 1
   }
 }
