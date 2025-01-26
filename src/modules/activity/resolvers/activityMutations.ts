@@ -1,4 +1,4 @@
-import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
+import { Resolver, Mutation, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
 import { Activity, ActivityResponse } from '../schema/activityTypes';
 import { CreateActivityInput, UpdateActivityInput } from '../schema/activityInputs';
@@ -6,6 +6,8 @@ import { ActivitiesService } from '../../../services/activityService';
 import { ValidationError } from '../../common/errors/graphql.error';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { authMiddleware } from '../../../middleware/authMiddleware';
+import { UsersService } from '../../../services/userService';
 
 /**
  * GraphQL mutation resolvers for Activity-related operations
@@ -46,7 +48,7 @@ import logger from '../../../config/logger';
 @Resolver(Activity)
 @UseMiddleware(LogOperationMiddleware)
 export class ActivityMutations {
-  constructor(private activitiesService: ActivitiesService) {}
+  constructor(private activitiesService: ActivitiesService, private usersService: UsersService) {}
 
   /**
    * Mutation to create a new activity with scheduling
@@ -79,11 +81,19 @@ export class ActivityMutations {
    * ```
    */
   @Mutation(() => ActivityResponse)
+  @UseMiddleware(authMiddleware)
   async createActivity(
-    @Arg('input') input: CreateActivityInput
+    @Arg('input') input: CreateActivityInput,
+    @Ctx() context: any
   ): Promise<ActivityResponse> {
+    const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
+    if (!user) {
+      throw new ValidationError('User not found');
+    }
+
     try {
-      const activity = await this.activitiesService.create(input);
+      const activity = await this.activitiesService.create({ ...input, userId: user.id });
       return {
         success: true,
         activity

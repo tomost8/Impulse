@@ -30,10 +30,6 @@ export class CreateActivityInput {
   @IsInt()
   @IsOptional()
   postId?: number;
-
-  @Field(() => Int)
-  @IsInt()
-  userId: number;
 }
 
 @InputType()

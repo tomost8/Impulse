@@ -355,7 +355,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 3
+      "user_id": 1
     }
   }
 }
@@ -452,9 +452,8 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id category scheduledDatetime duration status post { id author { id first_name last_name } } } errors { field message } } }",
   "variables": {
     "input": {
-      "userId": 1,
       "category": "workout",
-      "scheduledDatetime": "2025-01-15T13:00:00Z",
+      "scheduledDatetime": "2025-01-25T13:00:00Z",
       "duration": 60
     }
   }
@@ -485,7 +484,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deleteActivity(id: $id) { success activity { id category status } errors { field message } } }",
   "variables": {
-    "id": 43
+    "id": 5
   }
 }
 
@@ -583,7 +582,7 @@ Authorization: Bearer {{authToken}}
 
 
 
-### 创建带有100个目标用户的帖子
+### create post with both user and community
 POST http://localhost:3000/graphql
 Content-Type: application/json
 
@@ -593,9 +592,9 @@ Content-Type: application/json
     "input": {
       "caption": "Both user and community",
       "authorId": 1,
-      "activityId": 2,
+      "activityId": 3,
       "post_targets": [
-            {"target_type": "user", "target_id": 2},
+            {"target_type": "user", "target_id": 1},
             {"target_type": "community", "target_id": 1}
       ],
       "mediaUrl":"https://www.google.com"
@@ -604,7 +603,7 @@ Content-Type: application/json
 }
 
 
-### 创建带有100个目标用户的帖子
+### create post with multiple targets
 POST http://localhost:3000/graphql
 Content-Type: application/json
 
@@ -820,11 +819,11 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
+  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id liked likeCount mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
   "variables": {
-    "targetType": "community",
+    "targetType": "user",
     "targetId": 1,
-    "currentUserId": 2,
+    "currentUserId": 1,
     "unreadOnly": false,
     "skip": 0,
     "take": 10,
@@ -1081,3 +1080,74 @@ Authorization: Bearer {{authToken}}
 # - For recurring reminders (DAILY, WEEKLY, MONTHLY), the schedule_time sets the initial time and recurrence pattern
 # - Canceled reminders will still appear in queries but with is_active = false
 
+
+
+
+### 测试评论功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreateCommentInput!) { createComment(input: $input) { success comment { id content post_id user_id parent_comment_id created_at updated_at } errors { field message } } }",
+  "variables": {
+    "input": {
+      "content": "This is a test comment reply's reply!",
+      "post_id": 1,
+      "parent_comment_id": 2
+    }
+  }
+}
+
+
+
+### Query - Get Comments by Post ID
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($postId: Int!, $skip: Int, $take: Int) { postComments(postId: $postId, skip: $skip, take: $take) { success comments { id content post_id user_id parent_comment_id created_at updated_at user { id username profile_picture } replies { id content user { id username } created_at } } errors { field message } } }",
+  "variables": {
+    "postId": 1,
+    "skip": 0,
+    "take": 10
+  }
+}
+
+### Mutation - Delete Comment
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($commentId: Int!) { deleteComment(commentId: $commentId) { success errors { field message } } }",
+  "variables": {
+    "commentId": 1
+  }
+}
+
+
+### 测试点赞功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($postId: Int!) { likePost(postId: $postId) { success  errors { field message }  } }",
+  "variables": {
+    "postId": 1
+  }
+}
+
+### 测试取消点赞功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($postId: Int!) { unlikePost(postId: $postId) { success  errors { field message }  } }",
+  "variables": {
+    "postId": 1
+  }
+}

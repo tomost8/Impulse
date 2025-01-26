@@ -56,7 +56,7 @@ export class PostService {
     take?: number;
     category?: string;
   }): Promise<Post[]> {
-    return await this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       skip: options?.skip,
       take: options?.take,
       where: {
@@ -64,9 +64,20 @@ export class PostService {
       },
       include: {
         author: true,
-        post_targets: true
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true  // 只添加这一行来获取点赞数
+          }
+        }
       }
     });
+
+
+    return posts.map(post => ({
+      ...post,
+      likeCount: post._count.likes
+    }));
   }
 
   /**
@@ -119,7 +130,12 @@ export class PostService {
           },
           include: {
             author: true,
-            post_targets: true
+            post_targets: true,
+            _count: {
+              select: {
+                likes: true
+              }
+            }
           }
         });
 
@@ -146,7 +162,11 @@ export class PostService {
           }
         }
 
-        return post;
+        return {
+          ...post,
+          likeCount: post._count.likes
+        };
+
       }, {
         timeout: 10000,
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted
@@ -243,14 +263,23 @@ export class PostService {
    */
   async update(id: number, data: UpdatePostInput): Promise<Post> {
     try {
-      return await this.prisma.post.update({
+      const post = await this.prisma.post.update({
         where: { id },
         data,
         include: {
           author: true,
-          post_targets: true
+          post_targets: true,
+          _count: {
+            select: {
+              likes: true
+            }
+          }
         }
       });
+      return {
+        ...post,
+        likeCount: post._count.likes
+      };
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundError(`Post with id ${id} not found`);
@@ -269,13 +298,22 @@ export class PostService {
    */
   async delete(id: number): Promise<Post> {
     try {
-      return await this.prisma.post.delete({
+      const post = await this.prisma.post.delete({
         where: { id },
         include: {
           author: true,
-          post_targets: true
+          post_targets: true,
+          _count: {
+            select: {
+              likes: true
+            }
+          }
         }
       });
+      return {
+        ...post,
+        likeCount: post._count.likes
+      };
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundError(`Post with id ${id} not found`);
@@ -292,7 +330,7 @@ export class PostService {
    * @returns Promise<Post[]> Array of posts by the user
    */
   async findByUserId(userId: number, options?: { skip?: number; take?: number; }): Promise<Post[]> {
-    return await this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       skip: options?.skip,
       take: options?.take,
       where: {
@@ -300,9 +338,19 @@ export class PostService {
       },
       include: {
         author: true,
-        post_targets: true
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true
+          }
+        }
       }
     });
+
+    return posts.map(post => ({
+      ...post,
+      likeCount: post._count.likes
+    }));
   }
 
   /**
@@ -317,7 +365,12 @@ export class PostService {
       where: { id },
       include: {
         author: true,
-        post_targets: true
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true
+          }
+        }
       }
     });
 
@@ -325,7 +378,10 @@ export class PostService {
       throw new NotFoundError(`Post with id ${id} not found`);
     }
 
-    return post;
+    return {
+      ...post,
+      likeCount: post._count.likes
+    };
   }
 
   /**
@@ -418,16 +474,25 @@ export class PostService {
         post_views: true,
         _count: {
           select: {
-            post_views: true
+            post_views: true,
+            likes: true 
           }
-        }
+        },
+        likes: options?.currentUserId
+        ? { where: { user_id: options.currentUserId }, select: { id: true } }
+        : false,
+
       },
       orderBy: {
         created_at: 'desc'
       }
     });
 
-    return posts;
+    return posts.map((post) => ({
+      ...post,
+      liked: post.likes.length > 0, // 如果用户已点赞，则为 true
+      likeCount: post._count.likes
+    }));  
   }
 
   /**

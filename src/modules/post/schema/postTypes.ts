@@ -1,9 +1,9 @@
 import { ObjectType, Field, Int } from 'type-graphql';
-import { GraphQLJSON } from 'graphql-type-json';
 import { User } from '../../user/schema/userTypes';
 import { Activity } from '../../activity/schema/activityTypes';
 import { FieldError } from '../../common/types/errorTypes';
 import { Message } from '../../chat/schema/chatTypes';
+import { Comment } from '../../comment/ scheme/commentTypes';
 
 @ObjectType()
 export class Post {
@@ -48,6 +48,15 @@ export class Post {
 
   @Field(() => [Message], { nullable: true })
   messages?: Message[] | null;
+
+  @Field(() => [Comment], { nullable: true })
+  comments?: Comment[];
+
+  @Field(() => Boolean, { nullable: true })
+  liked?: boolean; 
+
+  @Field(() => Int, { nullable: true })
+  likeCount?: number;
 }
 
 @ObjectType()

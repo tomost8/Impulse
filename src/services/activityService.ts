@@ -98,7 +98,7 @@ export class ActivitiesService {
    * @throws {PrismaError} If database operations fail
    * @remarks This method handles timezone conversion and schedules expiration tasks
    */
-  async create(data: CreateActivityInput): Promise<Activity> {
+  async create(data: CreateActivityInput & { userId: number }): Promise<Activity> {
     try {
       // Get user's timezone information
       const user = await this.prisma.user.findUnique({
