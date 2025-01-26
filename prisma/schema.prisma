@@ -37,6 +37,12 @@ enum RequestStatus {
   REJECTED
 }
 
+enum UserSortType {
+  POINTS_WEEKLY
+  POINTS_MONTHLY
+  POINTS_ALL
+}
+
 // Notification System Models
 enum NotificationType {
   ADMIN_BROADCAST // 管理员全局广播
@@ -79,8 +85,8 @@ model User {
   updated_at      DateTime  @default(now()) @updatedAt
   last_login_at   DateTime?
 
-  friendships_sent      Friendship[]            @relation("FriendsSent")
-  friendships_received  Friendship[]            @relation("FriendsReceived")
+  friendships_with      Friendship[]      @relation("FriendsWith")
+  friendships_of        Friendship[]      @relation("FriendsOf")
   communities_owned     Community[]
   community_memberships CommunityMember[]
   chats_created         Chat[]
@@ -89,7 +95,7 @@ model User {
   messages              Message[]
   posts                 Post[]
   post_views            PostView[]
-  points                Point[]
+  point                 Point?
   redeems               Redeem[]
   notifications_sent    Notification[]          @relation("NotificationSender")
   notification_received NotificationRecipient[]
@@ -100,18 +106,19 @@ model User {
 }
 
 model Friendship {
-  id          Int           @id @default(autoincrement())
-  sender      User          @relation("FriendsSent", fields: [sender_id], references: [id], onDelete: Cascade)
-  sender_id   Int
-  receiver    User          @relation("FriendsReceived", fields: [receiver_id], references: [id], onDelete: Cascade)
-  receiver_id Int
-  status      RequestStatus @default(PENDING)
-  chat        Chat?         @relation(fields: [chat_id], references: [id])
-  chat_id     Int?
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @default(now()) @updatedAt
+  id         Int           @id @default(autoincrement())
+  user       User          @relation("FriendsWith", fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  friend     User          @relation("FriendsOf", fields: [friend_id], references: [id], onDelete: Cascade)
+  friend_id  Int
+  status     RequestStatus @default(PENDING)
+  role       String?
+  chat       Chat?         @relation(fields: [chat_id], references: [id])
+  chat_id    Int?
+  created_at DateTime      @default(now())
+  updated_at DateTime      @default(now()) @updatedAt
 
-  @@unique([sender_id, receiver_id])
+  @@unique([user_id, friend_id])
   @@map("friendships")
 }
 
@@ -162,8 +169,8 @@ model Chat {
   title       String?
   password    String?
   profile_pic String?
-  creator     User     @relation(fields: [creator_id], references: [id])
-  creator_id  Int
+  creator     User?    @relation(fields: [creator_id], references: [id])
+  creator_id  Int?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

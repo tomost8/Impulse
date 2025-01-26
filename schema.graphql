@@ -46,8 +46,8 @@ enum Category {
 
 type Chat {
   created_at: DateTimeISO!
-  creator: User!
-  creator_id: Int!
+  creator: User
+  creator_id: Int
   id: Int!
   password: String
   profile_pic: String
@@ -294,13 +294,13 @@ type Friendship {
   chat: Chat
   chat_id: Int
   created_at: DateTimeISO!
+  friend: User!
+  friend_id: Int!
   id: Int!
-  receiver: User!
-  receiver_id: Int!
-  sender: User!
-  sender_id: Int!
   status: RequestStatus!
   updated_at: DateTimeISO!
+  user: User!
+  user_id: Int!
 }
 
 type FriendshipResponse {
@@ -381,7 +381,7 @@ type Mutation {
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
   updateCommunity(id: Int!, input: UpdateCommunityInput!): CommunityResponse!
   updateCommunityMember(community_id: Int!, input: UpdateCommunityMemberInput!, user_id: Int!): CommunityMemberResponse!
-  updateFriendship(input: UpdateFriendshipInput!, receiver_id: Int!, sender_id: Int!): FriendshipResponse!
+  updateFriendship(friend_id: Int!, input: UpdateFriendshipInput!, user_id: Int!): FriendshipResponse!
   updatePoint(id: Int!, input: UpdatePointInput!): PointResponse!
   updatePost(id: Int!, input: UpdatePostInput!): PostResponse!
   updateRedeem(id: Int!, input: UpdateRedeemInput!): RedeemResponse!
@@ -496,10 +496,10 @@ type Query {
   getAllCommunities: CommunitiesResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
   getChat(id: Int!): ChatResponse!
-  getChatMembers(id: Int!): ChatMembersResponse!
+  getChatMembers(id: Int!, sort_by: UserSortType): ChatMembersResponse!
   getCommunity(id: Int!): CommunityResponse!
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
-  getCommunityMembers(id: Int!): CommunityMembersResponse!
+  getCommunityMembers(id: Int!, sort_by: UserSortType): CommunityMembersResponse!
   getFriendRequests(id: Int!): FriendshipsResponse!
   getFriendships(id: Int!): FriendshipsResponse!
   getMessages(id: Int!): MessagesResponse!
@@ -621,9 +621,7 @@ input UpdateFriendshipInput {
 }
 
 input UpdatePointInput {
-  points_added: Int
-  reset_monthly_points: Boolean
-  reset_weekly_points: Boolean
+  points_added: Int!
 }
 
 input UpdatePostInput {
@@ -682,6 +680,12 @@ type UserResponse {
   errors: [FieldError!]
   success: Boolean!
   user: User
+}
+
+enum UserSortType {
+  POINTS_ALL
+  POINTS_MONTHLY
+  POINTS_WEEKLY
 }
 
 type UsersResponse {

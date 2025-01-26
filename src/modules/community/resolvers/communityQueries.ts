@@ -9,6 +9,7 @@ import { CommunityCategory, CommunityCategoryResponse, CommunityCategoriesRespon
 import { CommunityCategoriesService } from '../../../services/communityService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { UserSortType } from '../../common/types/enumTypes';
 
 /**
  * GraphQL query resolvers for Community-related operations
@@ -128,9 +129,12 @@ export class CommunityMemberQueries {
    * ```
    */
   @Query(() => CommunityMembersResponse)
-  async getCommunityMembers(@Arg('id', () => Int) id: number): Promise<CommunityMembersResponse> {
+  async getCommunityMembers(
+    @Arg('id', () => Int) id: number,
+    @Arg('sort_by', () => UserSortType, {nullable: true}) sort_by?: UserSortType
+  ): Promise<CommunityMembersResponse> {
     try {
-      const community_members = await this.communityMembersService.findById(id);
+      const community_members = await this.communityMembersService.findById(id, sort_by);
       if (!community_members) {
         logger.warn('Community not found', { communityId: id });
         return {
