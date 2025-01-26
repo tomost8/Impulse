@@ -189,7 +189,6 @@ input CreateActivityInput {
   name: String
   postId: Int
   scheduledDatetime: DateTimeISO
-  userId: Int!
 }
 
 input CreateChatInput {

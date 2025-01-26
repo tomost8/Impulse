@@ -452,7 +452,6 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id category scheduledDatetime duration status post { id author { id first_name last_name } } } errors { field message } } }",
   "variables": {
     "input": {
-      "userId": 1,
       "category": "workout",
       "scheduledDatetime": "2025-01-25T13:00:00Z",
       "duration": 60
@@ -485,7 +484,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deleteActivity(id: $id) { success activity { id category status } errors { field message } } }",
   "variables": {
-    "id": 43
+    "id": 5
   }
 }
 
@@ -583,7 +582,7 @@ Authorization: Bearer {{authToken}}
 
 
 
-### 创建带有100个目标用户的帖子
+### create post with both user and community
 POST http://localhost:3000/graphql
 Content-Type: application/json
 
@@ -604,7 +603,7 @@ Content-Type: application/json
 }
 
 
-### 创建带有100个目标用户的帖子
+### create post with multiple targets
 POST http://localhost:3000/graphql
 Content-Type: application/json
 

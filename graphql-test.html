@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GraphQL API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .tab-container {
+            margin: 20px 0;
+        }
+        .tab-buttons {
+            margin-bottom: 10px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            margin-right: 5px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+        }
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>GraphQL API Test</h1>
+    
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="showTab('auth')">Authentication</button>
+            <button class="tab-button" onclick="showTab('user')">User</button>
+            <button class="tab-button" onclick="showTab('post')">Post</button>
+            <button class="tab-button" onclick="showTab('activity')">Activity</button>
+            <button class="tab-button" onclick="showTab('comment')">Comment</button>
+            <button class="tab-button" onclick="showTab('like')">Like</button>
+        </div>
+
+        <!-- Authentication Tab -->
+        <div id="auth" class="tab-content active">
+            <h2>Firebase Authentication</h2>
+            <div class="form-group">
+                <label>Firebase UID:</label>
+                <input type="text" id="firebaseUid" value="dev-test-001">
+            </div>
+            <button onclick="firebaseAuth()">Login/Create User</button>
+        </div>
+
+        <!-- User Tab -->
+        <div id="user" class="tab-content">
+            <h2>User Operations</h2>
+            <div class="form-group">
+                <label>Update User Profile:</label>
+                <input type="text" id="firstName" placeholder="First Name">
+                <input type="text" id="lastName" placeholder="Last Name">
+                <input type="text" id="username" placeholder="Username">
+            </div>
+            <button onclick="updateUser()">Update Profile</button>
+            <button onclick="getCurrentUser()">Get Current User</button>
+        </div>
+
+        <!-- Post Tab -->
+        <div id="post" class="tab-content">
+            <h2>Post Operations</h2>
+            <div class="form-group">
+                <label>Create Post:</label>
+                <textarea id="postCaption" placeholder="Post caption"></textarea>
+                <input type="text" id="mediaUrl" placeholder="Media URL">
+            </div>
+            <button onclick="createPost()">Create Post</button>
+            <button onclick="getPosts()">Get Posts</button>
+        </div>
+
+        <!-- Activity Tab -->
+        <div id="activity" class="tab-content">
+            <h2>Activity Operations</h2>
+            <div class="form-group">
+                <label>Create Activity:</label>
+                <input type="text" id="activityName" placeholder="Activity name">
+                <input type="datetime-local" id="scheduledTime">
+            </div>
+            <button onclick="createActivity()">Create Activity</button>
+            <button onclick="getActivities()">Get Activities</button>
+        </div>
+
+        <!-- Comment Tab -->
+        <div id="comment" class="tab-content">
+            <h2>Comment Operations</h2>
+            <div class="form-group">
+                <label>Create Comment:</label>
+                <input type="number" id="postId" placeholder="Post ID">
+                <textarea id="commentContent" placeholder="Comment content"></textarea>
+            </div>
+            <button onclick="createComment()">Create Comment</button>
+            <button onclick="getComments()">Get Comments</button>
+        </div>
+
+        <!-- Like Tab -->
+        <div id="like" class="tab-content">
+            <h2>Like Operations</h2>
+            <div class="form-group">
+                <label>Post ID:</label>
+                <input type="number" id="likePostId" placeholder="Post ID">
+            </div>
+            <button onclick="likePost()">Like Post</button>
+            <button onclick="unlikePost()">Unlike Post</button>
+        </div>
+    </div>
+
+    <div id="response"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/graphql';
+        let authToken = 'dev-token-123';
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+        }
+
+        async function graphqlRequest(query, variables = {}) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ query, variables })
+                });
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+                return data;
+            } catch (error) {
+                document.getElementById('response').innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        }
+
+        // Authentication
+        async function firebaseAuth() {
+            const firebaseUid = document.getElementById('firebaseUid').value;
+            const query = `
+                mutation {
+                    firebaseAuth {
+                        success
+                        user {
+                            id
+                            email
+                            firebase_uid
+                            first_name
+                            last_name
+                            role
+                            status
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            await graphqlRequest(query);
+        }
+
+        // User Operations
+        async function updateUser() {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const username = document.getElementById('username').value;
+            
+            const query = `
+                mutation($input: UpdateUserInput!) {
+                    updateUser(input: $input) {
+                        success
+                        user {
+                            id
+                            first_name
+                            last_name
+                            username
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            const variables = {
+                input: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    username: username
+                }
+            };
+            await graphqlRequest(query, variables);
+        }
+
+        async function getCurrentUser() {
+            const query = `
+                query {
+                    me {
+                        success
+                        user {
+                            id
+                            email
+                            first_name
+                            last_name
+                            username
+                            status
+                            last_login_at
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            await graphqlRequest(query);
+        }
+
+        // Post Operations
+        async function createPost() {
+            const caption = document.getElementById('postCaption').value;
+            const mediaUrl = document.getElementById('mediaUrl').value;
+            
+            const query = `
+                mutation($input: CreatePostInput!) {
+                    createPost(input: $input) {
+                        success
+                        post {
+                            id
+                            caption
+                            mediaUrl
+                            author {
+                                id
+                                first_name
+                                last_name
+                            }
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            const variables = {
+                input: {
+                    caption,
+                    mediaUrl,
+                    category: "social"
+                }
+            };
+            await graphqlRequest(query, variables);
+        }
+
+        async function getPosts() {
+            const query = `
+                query {
+                    posts(skip: 0, take: 10) {
+                        success
+                        posts {
+                            id
+                            caption
+                            mediaUrl
+                            category
+                            author {
+                                id
+                                first_name
+                                last_name
+                            }
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            await graphqlRequest(query);
+        }
+
+        // Activity Operations
+        async function createActivity() {
+            const name = document.getElementById('activityName').value;
+            const scheduledTime = document.getElementById('scheduledTime').value;
+            
+            // 确保输入的时间不为空
+            if (!scheduledTime) {
+                document.getElementById('response').innerHTML = `<span class="error">Error: Please select a date and time</span>`;
+                return;
+            }
+
+            // 正确处理日期时间转换
+            try {
+                // 将本地时间转换为 UTC ISO 字符串
+                const localDate = new Date(scheduledTime);
+                if (isNaN(localDate.getTime())) {
+                    throw new Error('Invalid date format');
+                }
+                
+                const query = `
+                    mutation($input: CreateActivityInput!) {
+                        createActivity(input: $input) {
+                            success
+                            activity {
+                                id
+                                name
+                                scheduledDatetime
+                                status
+                            }
+                            errors {
+                                field
+                                message
+                            }
+                        }
+                    }
+                `;
+                const variables = {
+                    input: {
+                        name,
+                        scheduledDatetime: localDate.toISOString(),
+                        category: "workout"
+                    }
+                };
+                await graphqlRequest(query, variables);
+            } catch (error) {
+                document.getElementById('response').innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        }
+
+        async function getActivities() {
+            const query = `
+                query {
+                    activities(skip: 0, take: 10) {
+                        success
+                        activities {
+                            id
+                            name
+                            scheduledDatetime
+                            status
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            await graphqlRequest(query);
+        }
+
+        // Comment Operations
+        async function createComment() {
+            const postId = document.getElementById('postId').value;
+            const content = document.getElementById('commentContent').value;
+            
+            const query = `
+                mutation($input: CreateCommentInput!) {
+                    createComment(input: $input) {
+                        success
+                        comment {
+                            id
+                            content
+                            post_id
+                            user_id
+                            created_at
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            const variables = {
+                input: {
+                    post_id: parseInt(postId),
+                    content
+                }
+            };
+            await graphqlRequest(query, variables);
+        }
+
+        async function getComments() {
+            const postId = document.getElementById('postId').value;
+            const query = `
+                query($postId: Int!) {
+                    postComments(postId: $postId, skip: 0, take: 10) {
+                        success
+                        comments {
+                            id
+                            content
+                            created_at
+                            user {
+                                id
+                                username
+                            }
+                        }
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            const variables = { postId: parseInt(postId) };
+            await graphqlRequest(query, variables);
+        }
+
+        // Like Operations
+        async function likePost() {
+            const postId = document.getElementById('likePostId').value;
+            const query = `
+                mutation($postId: Int!) {
+                    likePost(postId: $postId) {
+                        success
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            const variables = { postId: parseInt(postId) };
+            await graphqlRequest(query, variables);
+        }
+
+        async function unlikePost() {
+            const postId = document.getElementById('likePostId').value;
+            const query = `
+                mutation($postId: Int!) {
+                    unlikePost(postId: $postId) {
+                        success
+                        errors {
+                            field
+                            message
+                        }
+                    }
+                }
+            `;
+            const variables = { postId: parseInt(postId) };
+            await graphqlRequest(query, variables);
+        }
+    </script>
+</body>
+</html> 
