@@ -291,4 +291,47 @@ async likePost(
     };
   }
 }
+
+
+@Mutation(() => BaseResponse)
+@UseMiddleware(authMiddleware)
+async unlikePost(
+  @Arg('postId', () => Int) postId: number,
+  @Ctx() context: any
+): Promise<BaseResponse> {
+  try {
+    const { uid } = context.user;
+
+    const user = await this.usersService.findByFirebaseUid(uid);
+
+
+    if (!user || !user.id) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: 'User not found'
+        }]
+      };
+    }
+
+    const result = await this.likeService.unlikePost(postId, user.id);
+
+    return {
+      success: result.success
+    };
+  } catch (error) {
+    console.error('Failed to unlike post:', error);
+    return {
+      success: false,
+      errors: [{
+        field: 'general',
+        message: error instanceof Error ? error.message : 'Failed to unlike post'
+      }]
+    };
+  }
+}
+
+
+
 }

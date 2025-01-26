@@ -54,6 +54,9 @@ export class Post {
 
   @Field(() => Boolean, { nullable: true })
   liked?: boolean; 
+
+  @Field(() => Int, { nullable: true })
+  likeCount?: number;
 }
 
 @ObjectType()

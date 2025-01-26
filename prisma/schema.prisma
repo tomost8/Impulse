@@ -241,6 +241,7 @@ model Post {
   category     String?
   comments     Comment[]
   likes        Like[]
+  like_count   Int          @default(0)
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
   @@map("posts")

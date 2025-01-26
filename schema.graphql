@@ -376,6 +376,7 @@ type Mutation {
   likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
+  unlikePost(postId: Int!): BaseResponse!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
   updateChat(id: Int!, input: UpdateChatInput!): ChatResponse!
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
@@ -438,6 +439,7 @@ type Post {
   expires_at: DateTimeISO
   id: Int!
   is_deleted: Boolean!
+  likeCount: Int
   liked: Boolean
   mediaUrl: String
   messages: [Message!]

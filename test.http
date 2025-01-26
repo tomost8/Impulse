@@ -820,7 +820,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id liked mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
+  "query": "query($targetType: String, $targetId: Int, $currentUserId: Int, $unreadOnly: Boolean, $category: String, $skip: Int, $take: Int) { posts(targetType: $targetType, targetId: $targetId, currentUserId: $currentUserId, unreadOnly: $unreadOnly, category: $category, skip: $skip, take: $take) { success posts { id liked likeCount mediaUrl caption category author { id first_name last_name } } errors { field message } } }",
   "variables": {
     "targetType": "user",
     "targetId": 1,
@@ -1135,8 +1135,20 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "mutation($postId: Int!) { likePost(postId: $postId) { success } }",
+  "query": "mutation($postId: Int!) { likePost(postId: $postId) { success  errors { field message }  } }",
   "variables": {
-    "postId": 1
+    "postId": 2
+  }
+}
+
+### 测试取消点赞功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($postId: Int!) { unlikePost(postId: $postId) { success  errors { field message }  } }",
+  "variables": {
+    "postId": 2
   }
 }
