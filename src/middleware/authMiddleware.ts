@@ -11,7 +11,7 @@ const DEV_USER = {
 };
 
 // 开发环境的静态 token
-const DEV_TOKEN = 'dev-token-123';
+const DEV_TOKEN = 'dev-token-003';
 
 export interface AuthContext {
   user: {

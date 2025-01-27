@@ -54,7 +54,9 @@ export class ActivitiesService {
       include: {
         post: {
           include: {
-            author: true,
+            author: {
+              include: {point: true}
+            },
             post_targets: true
           }
         }
@@ -75,7 +77,9 @@ export class ActivitiesService {
       include: {
         post: {
           include: {
-            author: true,
+            author: {
+              include: {point: true}
+            },
             post_targets: true
           }
         }
@@ -121,7 +125,9 @@ export class ActivitiesService {
           include: {
             post: {
               include: {
-                author: true,
+                author: {
+                  include: {point: true}
+                },
                 post_targets: true
               }
             }
@@ -230,7 +236,9 @@ export class ActivitiesService {
         include: {
           post: {
             include: {
-              author: true,
+              author: {
+                include: {point: true}
+              },
               post_targets: true
             }
           }
@@ -266,7 +274,9 @@ export class ActivitiesService {
         include: {
           post: {
             include: {
-              author: true,
+              author: {
+                include: {point: true}
+              },
               post_targets: true
             }
           }
@@ -308,7 +318,9 @@ export class ActivitiesService {
       include: {
         post: {
           include: {
-            author: true,
+            author: {
+              include: {point: true}
+            },
             post_targets: true
           }
         }

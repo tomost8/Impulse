@@ -63,7 +63,9 @@ export class PostService {
         category: options?.category
       },
       include: {
-        author: true,
+        author: {
+          include: {point: true}
+        },
         post_targets: true
       }
     });
@@ -118,7 +120,9 @@ export class PostService {
             }
           },
           include: {
-            author: true,
+            author: {
+              include: {point: true}
+            },
             post_targets: true
           }
         });
@@ -247,7 +251,9 @@ export class PostService {
         where: { id },
         data,
         include: {
-          author: true,
+          author: {
+            include: {point: true}
+          },
           post_targets: true
         }
       });
@@ -272,7 +278,9 @@ export class PostService {
       return await this.prisma.post.delete({
         where: { id },
         include: {
-          author: true,
+          author: {
+            include: {point: true}
+          },
           post_targets: true
         }
       });
@@ -299,7 +307,9 @@ export class PostService {
         author_id: userId
       },
       include: {
-        author: true,
+        author: {
+          include: {point: true}
+        },
         post_targets: true
       }
     });
@@ -316,7 +326,9 @@ export class PostService {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
-        author: true,
+        author: {
+          include: {point: true}
+        },
         post_targets: true
       }
     });
@@ -413,7 +425,9 @@ export class PostService {
       skip: options?.skip,
       take: options?.take,
       include: {
-        author: true,
+        author: {
+          include: {point: true}
+        },
         post_targets: true,
         post_views: true,
         _count: {

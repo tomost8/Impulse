@@ -36,10 +36,16 @@ export class FriendshipsService {
           status: "ACCEPTED"
         },
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         },
         orderBy
@@ -53,18 +59,24 @@ export class FriendshipsService {
    * @returns Promise resolving to the friend requests if found, null otherwise
    * @throws {PrismaError} If database query fails
    */
-  async getFriendRequests(id: number): Promise<Friendship[] | null> {
+  async getFriendRequests(id: number, user_role: string): Promise<Friendship[] | null> {
     return await this.prisma.friendship.findMany({
         where: { 
             user_id: id,
-            role: "receiver",
+            role: user_role,
             status: "PENDING"
         },
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         }
     });
@@ -86,10 +98,16 @@ export class FriendshipsService {
           role: "sender"
         },
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         }
       });
@@ -100,8 +118,12 @@ export class FriendshipsService {
           role: "receiver"
         },
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
             include: {creator: true}
           }
@@ -168,10 +190,16 @@ export class FriendshipsService {
           chat_id: new_chat.id
         },
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         }
       });
@@ -186,10 +214,16 @@ export class FriendshipsService {
           chat_id: new_chat.id
         },
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         }
       });
@@ -226,10 +260,16 @@ export class FriendshipsService {
         },
         data: input,
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         }
       });
@@ -244,10 +284,16 @@ export class FriendshipsService {
         },
         data: input,
         include: {
-          user: true,
-          friend: true,
+          user: {
+            include: {point: true}
+          },
+          friend: {
+            include: {point: true}
+          },
           chat: {
-            include: {creator: true}
+            include: {creator: {
+              include: {point: true}
+            }}
           }
         }
       });

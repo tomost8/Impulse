@@ -1,6 +1,7 @@
 import { Field, InputType } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString, IsDate } from 'class-validator';
 import { DateScalar } from '../../common/scalars/dateScalar';
+import { Category } from '../../common/types/enumTypes';
 
 /**
  * Input type for creating a new user
@@ -136,6 +137,16 @@ export class UpdateUserInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   bio?: string;
+
+  /** Primary Goal */
+  @Field(() => Category, { nullable: true })
+  @IsOptional()
+  primary_goal?: Category;
+
+  /** Secondary Goal */
+  @Field(() => Category, { nullable: true })
+  @IsOptional()
+  secondary_goal?: Category;
 
   /** Timezone */
   @Field(() => String, { nullable: true })

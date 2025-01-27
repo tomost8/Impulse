@@ -5,6 +5,7 @@ import { UsersService } from '../../../services/userService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
 import logger from '../../../config/logger';
+import { UserSortType } from '../../common/types/enumTypes';
 
 /**
  * GraphQL query resolvers for User-related operations
@@ -137,9 +138,11 @@ export class UserQueries {
    * ```
    */
   @Query(() => UsersResponse)
-  async users(): Promise<UsersResponse> {
+  async users(
+    @Arg('sort_by', () => UserSortType, {nullable: true}) sort_by?: UserSortType
+  ): Promise<UsersResponse> {
     try {
-      const users = await this.usersService.findAll();
+      const users = await this.usersService.findAll(sort_by);
       return {
         success: true,
         users

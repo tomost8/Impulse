@@ -1,6 +1,6 @@
 ### GraphQL User API Tests ###
 @baseUrl = http://localhost:3000
-@authToken = dev-token-123
+@authToken = dev-token-003
 
 ### Mutation - Firebase Authentication login/create
 POST {{baseUrl}}/graphql
@@ -17,14 +17,17 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
+  "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob bio status primary_goal secondary_goal } errors { field message } } }",
   "variables": {
     "input": {
       "first_name": "John",
       "last_name": "Doe",
       "username": "johndoe",
       "gender": "male",
-      "dob": "2024-01-02",
+      "bio": "hi i'm john",
+      "primary_goal": "RISE_AND_SHINE",
+      "secondary_goal": "STUDYING_WORKING",
+      "dob": "2000-01-25",
       "status": "active"
     }
   }
@@ -43,6 +46,9 @@ Authorization: Bearer {{authToken}}
       "last_name": "Smith",
       "username": "janesmith",
       "gender": "female",
+      "bio": "hi i'm jane",
+      "primary_goal": "WORKING_OUT",
+      "secondary_goal": "PASSION_HOBBY",
       "dob": "2024-01-11",
       "status": "active"
     }
@@ -62,6 +68,9 @@ Authorization: Bearer {{authToken}}
       "last_name": "Park",
       "username": "SallyPark",
       "gender": "female",
+      "bio": "hi i'm sally",
+      "primary_goal": "FOOD",
+      "secondary_goal": "WELLNESS",
       "dob": "2024-01-18",
       "status": "active"
     }
@@ -104,7 +113,7 @@ Content-Type: application/json
 {
   "query": "mutation ($userId: Int!, $friendId: Int!, $input: UpdateFriendshipInput!) { updateFriendship(user_id: $userId, friend_id: $friendId, input: $input) { success friendship { user {id first_name last_name } friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
-    "userId": 2,
+    "userId": 3,
     "friendId": 1,
     "input": {
       "status": "ACCEPTED"
@@ -209,7 +218,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 3
+      "user_id": 2
     }
   }
 }
@@ -358,9 +367,9 @@ Content-Type: application/json
 {
   "query": "mutation ($id: Int!, $input: UpdatePointInput!){ updatePoint(id: $id, input: $input) { success point { user { id first_name last_name } points spending_points weekly_points monthly_points } errors { field message } } }",  
   "variables": {
-    "id": 1,
+    "id": 2,
     "input": {
-      "points_added": 300
+      "points_added": 500
     }
   }
 }
@@ -416,7 +425,7 @@ Content-Type: application/json
     "input": {
       "title": "gift card",
       "description": "$10",
-      "required_points": 1000
+      "required_points": 7500
     }
   }
 }

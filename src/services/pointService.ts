@@ -199,7 +199,9 @@ export class RedeemsService {
         user_id: id
       },
       include: {
-        user: true,
+        user: {
+          include: {point: true}
+        },
         reward: true
       }
     });
@@ -243,7 +245,9 @@ export class RedeemsService {
           points_spent: reward_redeemed.required_points
         },
         include: {
-          user: true,
+          user: {
+            include: {point: true}
+          },
           reward: true
         }
       });
@@ -279,7 +283,9 @@ export class RedeemsService {
         },
         data: input_no_null,
         include: {
-          user: true,
+          user: {
+            include: {point: true}
+          },
           reward: true
         }
       });

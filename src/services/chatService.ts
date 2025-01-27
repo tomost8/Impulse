@@ -29,7 +29,11 @@ export class ChatsService {
    */
   async findAll(): Promise<Chat[]> {
     return await this.prisma.chat.findMany({
-        include: { creator: true },
+        include: { 
+          creator: {
+            include: {point: true}
+          } 
+        } 
     });
   }
 
@@ -43,7 +47,11 @@ export class ChatsService {
   async findById(id: number): Promise<Chat | null> {
     return await this.prisma.chat.findUnique({
         where: { id },
-        include: { creator: true },
+        include: { 
+          creator: {
+            include: {point: true}
+          } 
+        } 
     });
   }
 
@@ -58,7 +66,11 @@ export class ChatsService {
     try {
         let chat = await this.prisma.chat.create({
             data: input,
-            include: { creator: true },
+            include: { 
+              creator: {
+                include: {point: true}
+              } 
+            },
         });
         let creator_relation = await this.prisma.chatMember.create({
           data: {
@@ -91,7 +103,11 @@ export class ChatsService {
       return await this.prisma.chat.update({
         where: { id },
         data: input,
-        include: { creator: true },
+        include: { 
+          creator: {
+            include: {point: true}
+          } 
+        },
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
@@ -157,10 +173,14 @@ export class ChatMembersService {
         include: {
           chat: {
             include: {
-              creator: true
+              creator: {
+                include: {point: true}
+              }
             }
           },
-          user: true
+          user: {
+            include: {point: true}
+          }
         },
         orderBy
     });
@@ -184,10 +204,14 @@ export class ChatMembersService {
         include: {
           chat: {
             include: {
-              creator: true
+              creator: {
+                include: {point: true}
+              }
             }
           },
-          user: true
+          user: {
+            include: {point: true}
+          }
         }
     });
   }
@@ -206,10 +230,14 @@ export class ChatMembersService {
             include: {
               chat: {
                 include: {
-                  creator: true
+                  creator: {
+                    include: {point: true}
+                  }
                 }
               },
-              user: true
+              user: {
+                include: {point: true}
+              }
             }
         });
     } catch (error: any) {
@@ -246,10 +274,14 @@ export class ChatMembersService {
         include: {
           chat: {
             include: {
-              creator: true
+              creator: {
+                include: {point: true}
+              }
             }
           },
-          user: true
+          user: {
+            include: {point: true}
+          }
         }
       });
     } catch (error: any) {
@@ -315,13 +347,19 @@ export class MessagesService {
         include: {
           chat: {
             include: {
-              creator: true
+              creator: {
+                include: {point: true}
+              }
             }
           },
-          sender: true,
+          sender: {
+            include: {point: true}
+          },
           post: {
             include: {
-              author: true,
+              author: {
+                include: {point: true}
+              },
               post_targets: true,
               post_views: true,
             }
@@ -344,13 +382,19 @@ export class MessagesService {
             include: {
               chat: {
                 include: {
-                  creator: true
+                  creator: {
+                    include: {point: true}
+                  }
                 }
               },
-              sender: true,
+              sender: {
+                include: {point: true}
+              },
               post: {
                 include: {
-                  author: true,
+                  author: {
+                    include: {point: true}
+                  },
                   post_targets: true,
                   post_views: true,
                 }

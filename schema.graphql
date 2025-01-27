@@ -381,7 +381,6 @@ type Point {
   spending_points: Int!
   status: String!
   updated_at: DateTimeISO!
-  user: User!
   user_id: Int!
   weekly_points: Int!
   weekly_update_at: DateTimeISO
@@ -463,8 +462,8 @@ type Query {
   getCommunity(id: Int!): CommunityResponse!
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
   getCommunityMembers(id: Int!, sort_by: UserSortType): CommunityMembersResponse!
-  getFriendRequests(id: Int!): FriendshipsResponse!
-  getFriendships(id: Int!): FriendshipsResponse!
+  getFriendRequests(id: Int!, role: String!): FriendshipsResponse!
+  getFriendships(id: Int!, sort_by: UserSortType): FriendshipsResponse!
   getMessages(id: Int!): MessagesResponse!
   getPoint(id: Int!): PointResponse!
   getPostTargetsProgress(postId: Int!): PostTargetsProgress!
@@ -477,7 +476,7 @@ type Query {
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!
-  users: UsersResponse!
+  users(sort_by: UserSortType): UsersResponse!
 }
 
 type Redeem {
@@ -605,14 +604,17 @@ input UpdateRewardInput {
 }
 
 input UpdateUserInput {
+  bio: String
   dob: Date
   fcm_token: String
   first_name: String
   gender: String
   last_name: String
+  primary_goal: Category
   profile_picture: String
   role: String
   searchable: Boolean
+  secondary_goal: Category
   status: String
   timezone: String
   username: String
@@ -630,6 +632,7 @@ type User {
   id: Int!
   last_login_at: DateTimeISO
   last_name: String
+  point: Point
   primary_goal: Category
   profile_picture: String
   role: String!

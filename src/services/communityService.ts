@@ -31,7 +31,11 @@ export class CommunitiesService {
    */
   async findAll(): Promise<Community[]> {
     return await this.prisma.community.findMany({
-        include: { influencer: true },
+        include: { 
+          influencer: {
+            include: {point: true}
+          }
+        } 
     });
   }
 
@@ -45,7 +49,11 @@ export class CommunitiesService {
   async findById(id: number): Promise<Community | null> {
     return await this.prisma.community.findUnique({
         where: { id },
-        include: { influencer: true },
+        include: { 
+          influencer: {
+            include: {point: true}
+          }
+        } 
     });
   }
 
@@ -60,7 +68,11 @@ export class CommunitiesService {
     try {
         let community = await this.prisma.community.create({
             data: input,
-            include: { influencer: true },
+            include: { 
+              influencer: {
+                include: {point: true}
+              }
+            } 
         });
         let owner_relation = await this.prisma.communityMember.create({
           data: {
@@ -93,7 +105,11 @@ export class CommunitiesService {
       return await this.prisma.community.update({
         where: { id },
         data: input,
-        include: { influencer: true },
+        include: { 
+          influencer: {
+            include: {point: true}
+          }
+        } 
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
@@ -159,10 +175,14 @@ export class CommunityMembersService {
       include: {
         community: {
           include: {
-            influencer: true
+            influencer: {
+              include: {point: true}
+            }
           }
         },
-        user: true
+        user: {
+          include: {point: true}
+        }
       },
       orderBy
     });
@@ -183,10 +203,14 @@ export class CommunityMembersService {
         include: {
           community: {
             include: {
-              influencer: true
+              influencer: {
+                include: {point: true}
+              }
             }
           },
-          user: true
+          user: {
+            include: {point: true}
+          }
         }
     });
   }
@@ -205,10 +229,14 @@ export class CommunityMembersService {
         include: {
           community: {
             include: {
-              influencer: true
+              influencer: {
+                include: {point: true}
+              }
             }
           },
-          user: true
+          user: {
+            include: {point: true}
+          }
         }
       });
       // add friends if not already
@@ -276,10 +304,14 @@ export class CommunityMembersService {
         include: {
           community: {
             include: {
-              influencer: true
+              influencer: {
+                include: {point: true}
+              }
             }
           },
-          user: true
+          user: {
+            include: {point: true}
+          }
         }
       });
     } catch (error: any) {
@@ -346,7 +378,9 @@ export class CommunityCategoriesService {
         include: {
           community: {
             include: {
-              influencer: true
+              influencer: {
+                include: {point: true}
+              }
             }
           }
         }
@@ -368,7 +402,9 @@ export class CommunityCategoriesService {
         include: {
           community: {
             include: {
-              influencer: true
+              influencer: {
+                include: {point: true}
+              }
             }
           }
         }
@@ -389,7 +425,9 @@ export class CommunityCategoriesService {
             include: {
               community: {
                 include: {
-                  influencer: true
+                  influencer: {
+                    include: {point: true}
+                  }
                 }
               }
             }

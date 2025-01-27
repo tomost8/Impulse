@@ -3,9 +3,10 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query ($userId: Int!) { getFriendships(id: $userId) { success friendships { friend {id first_name last_name } role status } errors { field message } } }",
+  "query": "query ($userId: Int!, $sortBy: UserSortType!) { getFriendships(id: $userId, sort_by: $sortBy) { success friendships { friend {id first_name last_name point {points} } role status } errors { field message } } }",
   "variables": {
-    "userId": 3
+    "userId": 3,
+    "sortBy": "POINTS_WEEKLY"
   }
 }
 
@@ -14,9 +15,10 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query ($id: Int!) { getFriendRequests(id: $id) { success friendships { friend {id first_name last_name } role status } errors { field message } } }",
+  "query": "query ($id: Int!, $role: String!) { getFriendRequests(id: $id, role: $role) { success friendships { friend {id first_name last_name } role status } errors { field message } } }",
   "variables": {
-    "id": 3
+    "id": 1,
+    "role": "receiver"
   }
 }
 

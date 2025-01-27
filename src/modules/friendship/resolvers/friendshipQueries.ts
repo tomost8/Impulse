@@ -4,6 +4,7 @@ import { Friendship, FriendshipResponse, FriendshipsResponse } from '../schema/f
 import { FriendshipsService } from '../../../services/friendshipService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { UserSortType } from '../../common/types/enumTypes';
 
 
 /**
@@ -32,9 +33,12 @@ export class FriendshipQueries {
    * ```
    */
   @Query(() => FriendshipsResponse)
-  async getFriendships(@Arg('id', () => Int) id: number): Promise<FriendshipsResponse> {
+  async getFriendships(
+    @Arg('id', () => Int) id: number,
+    @Arg('sort_by', () => UserSortType, {nullable: true}) sort_by?: UserSortType
+  ): Promise<FriendshipsResponse> {
     try {
-      const friendships = await this.friendshipsService.getFriends(id);
+      const friendships = await this.friendshipsService.getFriends(id, sort_by);
       if (!friendships) {
         logger.warn('Friendships not found', { userId: id });
         return {
@@ -76,9 +80,12 @@ export class FriendshipQueries {
    * ```
    */
   @Query(() => FriendshipsResponse)
-  async getFriendRequests(@Arg('id', () => Int) id: number): Promise<FriendshipsResponse> {
+  async getFriendRequests(
+    @Arg('id', () => Int) id: number,
+    @Arg('role', () => String) role: string,
+  ): Promise<FriendshipsResponse> {
     try {
-      const friendships = await this.friendshipsService.getFriendRequests(id);
+      const friendships = await this.friendshipsService.getFriendRequests(id, role);
       if (!friendships) {
         logger.warn('friend requests not found', { communityId: id });
         return {

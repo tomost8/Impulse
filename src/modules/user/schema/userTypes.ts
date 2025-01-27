@@ -3,6 +3,7 @@ import { IsEmail, Length, IsOptional, IsString } from 'class-validator';
 import { FieldError } from '../../common/types/errorTypes';
 import { DateScalar } from '../../common/scalars/dateScalar';
 import { Category } from '../../common/types/enumTypes';
+import { Point } from '../../point';
 
 /**
  * User entity representing a user in the system
@@ -106,6 +107,10 @@ export class User {
   /** Timestamp of user's last login */
   @Field(() => Date, { nullable: true })
   last_login_at!: Date | null;
+
+  /** User's point information */
+  @Field(() => Point, { nullable: true })
+  point!: Point | null;
 }
 
 @ObjectType()

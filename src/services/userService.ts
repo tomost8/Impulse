@@ -33,7 +33,10 @@ export class UsersService {
    */
   async findAll(sort_by?: UserSortType): Promise<User[]> {
     const orderBy = sort_by ? usersSortingConfig[sort_by] : undefined;
-    return await this.prisma.user.findMany({orderBy});
+    return await this.prisma.user.findMany({
+      include: {point: true},
+      orderBy: orderBy
+    });
   }
 
   /**
@@ -46,6 +49,7 @@ export class UsersService {
   async findById(id: number): Promise<User | null> {
     return await this.prisma.user.findUnique({
       where: { id },
+      include: {point: true}
     });
   }
 
@@ -59,6 +63,7 @@ export class UsersService {
   async findByFirebaseUid(firebaseUid: string): Promise<User | null> {
     return await this.prisma.user.findUnique({
       where: { firebase_uid: firebaseUid },
+      include: {point: true}
     });
   }
 
@@ -75,6 +80,7 @@ export class UsersService {
     try {
       let new_user = await this.prisma.user.create({
         data: input,
+        include: {point: true}
       });
       let user_points = await this.prisma.point.create({
         data: {
@@ -108,6 +114,7 @@ export class UsersService {
       return await this.prisma.user.update({
         where: { id },
         data: input,
+        include: {point: true}
       });
     } catch (error: any) {
       if (error.code === 'P2025') {

@@ -22,10 +22,6 @@ import { FieldError } from '../../common/types/errorTypes';
  */
 @ObjectType()
 export class Point {
-  /** User whose points are tracked */
-  @Field(() => User)
-  user!: User;
-
   /** User ID */
   @Field(() => Int)
   user_id!: number;
