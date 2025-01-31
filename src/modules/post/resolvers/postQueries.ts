@@ -256,5 +256,6 @@ export class PostQueries {
       throw error;
     }
   }
+
 } 
 

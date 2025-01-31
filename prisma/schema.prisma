@@ -102,6 +102,8 @@ model User {
   redeems               Redeem[]
   notifications_sent    Notification[]          @relation("NotificationSender")
   notification_received NotificationRecipient[]
+  comments              Comment[]
+  likes                 Like[]
 
   @@index([username])
   @@map("users")
@@ -248,6 +250,9 @@ model Post {
   post_views   PostView[]
   Message      Message[]
   category     String?
+  comments     Comment[]
+  likes        Like[]
+  like_count   Int          @default(0)
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
@@ -373,4 +378,34 @@ model NotificationRecipient {
   @@index([recipient_id, status])
   @@index([notification_id, status])
   @@map("notification_recipients")
+}
+
+model Like {
+  id         Int      @id @default(autoincrement())
+  post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id    Int
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    Int
+  created_at DateTime @default(now())
+
+  @@unique([post_id, user_id])
+  @@index([post_id])
+}
+
+model Comment {
+  id                Int       @id @default(autoincrement())
+  post              Post      @relation(fields: [post_id], references: [id], onDelete: Cascade) // 对应的Post
+  post_id           Int
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade) // 评论用户
+  user_id           Int
+  parent_comment    Comment?  @relation("ParentComment", fields: [parent_comment_id], references: [id], onDelete: Cascade) // 父评论
+  parent_comment_id Int? // 如果是回复其他评论，则此字段指向父评论ID
+  content           String // 评论内容
+  created_at        DateTime  @default(now()) // 创建时间
+  updated_at        DateTime  @default(now()) @updatedAt // 更新时间
+  replies           Comment[] @relation("ParentComment") // 子评论（回复）
+
+  @@index([post_id, created_at]) // 根据Post和时间进行索引
+  @@index([user_id]) // 根据User进行索引
+  @@map("comments")
 }

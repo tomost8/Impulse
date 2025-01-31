@@ -91,6 +91,32 @@ type ChatsResponse {
   success: Boolean!
 }
 
+type Comment {
+  content: String!
+  created_at: DateTimeISO!
+  id: Int!
+  parent_comment: Comment
+  parent_comment_id: Int
+  post: Post
+  post_id: Int!
+  replies: [Comment!]
+  updated_at: DateTimeISO!
+  user: User
+  user_id: Int!
+}
+
+type CommentResponse {
+  comment: Comment
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type CommentsResponse {
+  comments: [Comment!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type CommunitiesResponse {
   communities: [Community!]
   errors: [FieldError!]
@@ -163,7 +189,6 @@ input CreateActivityInput {
   name: String
   postId: Int
   scheduledDatetime: DateTimeISO
-  userId: Int!
 }
 
 input CreateChatInput {
@@ -178,6 +203,12 @@ input CreateChatMemberInput {
   chat_id: Int!
   status: RequestStatus
   user_id: Int!
+}
+
+input CreateCommentInput {
+  content: String!
+  parent_comment_id: Int
+  post_id: Int!
 }
 
 input CreateCommunityCategoryInput {
@@ -320,6 +351,7 @@ type Mutation {
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
   createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
+  createComment(input: CreateCommentInput!): CommentResponse!
   createCommunity(input: CreateCommunityInput!): CommunityResponse!
   createCommunityCategory(input: CreateCommunityCategoryInput!): CommunityCategoryResponse!
   createCommunityMember(input: CreateCommunityMemberInput!): CommunityMemberResponse!
@@ -332,6 +364,7 @@ type Mutation {
   deleteActivity(id: Int!): ActivityResponse!
   deleteChat(id: Int!): ChatResponse!
   deleteChatMember(chat_id: Int!, user_id: Int!): ChatMemberResponse!
+  deleteComment(commentId: Int!): BaseResponse!
   deleteCommunity(id: Int!): CommunityResponse!
   deleteCommunityCategory(category: Category!, community_id: Int!): CommunityCategoryResponse!
   deleteCommunityMember(community_id: Int!, user_id: Int!): CommunityMemberResponse!
@@ -341,8 +374,10 @@ type Mutation {
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
   firebaseAuth: UserResponse!
+  likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
+  unlikePost(postId: Int!): BaseResponse!
   updateActivity(id: Int!, input: UpdateActivityInput!): ActivityResponse!
   updateChat(id: Int!, input: UpdateChatInput!): ChatResponse!
   updateChatMember(chat_id: Int!, input: UpdateChatMemberInput!, user_id: Int!): ChatMemberResponse!
@@ -399,10 +434,13 @@ type Post {
   author_id: Int!
   caption: String
   category: String
+  comments: [Comment!]
   created_at: DateTimeISO!
   expires_at: DateTimeISO
   id: Int!
   is_deleted: Boolean!
+  likeCount: Int
+  liked: Boolean
   mediaUrl: String
   messages: [Message!]
   post_targets: [PostTarget!]!
@@ -474,6 +512,7 @@ type Query {
   getUserCommunities(id: Int!): CommunityMembersResponse!
   me: UserResponse!
   post(id: Int!): PostResponse!
+  postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserResponse!
