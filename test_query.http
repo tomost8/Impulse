@@ -123,7 +123,7 @@ POST http://localhost:3000/graphql
 Content-Type: application/json
 
 {
-  "query": "query ($chatId: Int!) { getChatMembers(id: $chatId) { success chat_members { user { id first_name last_name } role status } errors { field message } } }",
+  "query": "query ($chatId: Int!) { getChatMembers(id: $chatId) { success chat_members { user { id first_name last_name profile_picture } role status } errors { field message } } }",
   "variables": {
     "chatId": 1
   }

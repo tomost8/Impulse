@@ -114,6 +114,12 @@ export class CreateChatMemberInput {
   @Field(() => Int)
   @IsInt({ message: 'User id must be an int' })
   user_id!: number;
+
+  /** Status */
+  @Field(() => RequestStatus, { nullable: true })
+  @IsOptional()
+  @IsEnum(RequestStatus, { message: 'Status must be a RequestStatus' })
+  status?: RequestStatus;
 }
 
 /**

@@ -114,7 +114,7 @@ Content-Type: application/json
   "query": "mutation ($userId: Int!, $friendId: Int!, $input: UpdateFriendshipInput!) { updateFriendship(user_id: $userId, friend_id: $friendId, input: $input) { success friendship { user {id first_name last_name } friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
     "userId": 3,
-    "friendId": 1,
+    "friendId": 2,
     "input": {
       "status": "ACCEPTED"
     }
@@ -308,8 +308,9 @@ Content-Type: application/json
   "query": "mutation ($input: CreateChatMemberInput!) { createChatMember(input: $input) { success chat_member { chat { id type title creator { id first_name last_name email } } user { id first_name last_name email } role status } errors { field message } } }",
   "variables": {
     "input": {
-      "chat_id": 1,
-      "user_id": 2
+      "chat_id": 6,
+      "user_id": 3,
+      "status": "ACCEPTED"
     }
   }
 }
@@ -336,7 +337,7 @@ Content-Type: application/json
 {
   "query": "mutation ($userId: Int!, $chatId: Int!) { deleteChatMember(user_id: $userId, chat_id: $chatId) { success errors { field message } } }",  
   "variables": {
-    "chatId": 1,
+    "chatId": 6,
     "userId": 3
   }
 }
@@ -423,9 +424,9 @@ Content-Type: application/json
   "query": "mutation ($input: CreateRewardInput!){ createReward(input: $input) { success reward { id title description required_points } errors { field message } } }",  
   "variables": {
     "input": {
-      "title": "gift card",
-      "description": "$10",
-      "required_points": 7500
+      "title": "test reward",
+      "description": "you lose a 100 points",
+      "required_points": 100
     }
   }
 }

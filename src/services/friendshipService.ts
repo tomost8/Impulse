@@ -33,7 +33,7 @@ export class FriendshipsService {
     return await this.prisma.friendship.findMany({
         where: { 
           user_id: id,
-          status: "ACCEPTED"
+          //status: "ACCEPTED"
         },
         include: {
           user: {
@@ -48,7 +48,7 @@ export class FriendshipsService {
             }}
           }
         },
-        orderBy
+        orderBy: {friend: orderBy}
     });
   }
 

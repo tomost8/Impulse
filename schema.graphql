@@ -176,6 +176,7 @@ input CreateChatInput {
 
 input CreateChatMemberInput {
   chat_id: Int!
+  status: RequestStatus
   user_id: Int!
 }
 

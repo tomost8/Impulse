@@ -182,7 +182,7 @@ export class ChatMembersService {
             include: {point: true}
           }
         },
-        orderBy
+        orderBy: {user: orderBy}
     });
   }
 

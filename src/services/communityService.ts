@@ -184,7 +184,7 @@ export class CommunityMembersService {
           include: {point: true}
         }
       },
-      orderBy
+      orderBy: {user: orderBy}
     });
   }
 
