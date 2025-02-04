@@ -74,6 +74,7 @@ model User {
   last_name       String?
   username        String?
   dob             DateTime? @db.Date
+  age             Int?  
   gender          String?
   profile_picture String?
   bio             String?

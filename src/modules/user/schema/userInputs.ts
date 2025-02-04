@@ -1,4 +1,4 @@
-import { Field, InputType } from 'type-graphql';
+import { Field, InputType, Int } from 'type-graphql';
 import { IsEmail, Length, IsOptional, IsString, IsDate } from 'class-validator';
 import { DateScalar } from '../../common/scalars/dateScalar';
 import { Category } from '../../common/types/enumTypes';
@@ -53,6 +53,11 @@ export class CreateUserInput {
   @IsOptional()
   dob?: Date;
 
+  /** Age of the new user */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  age?: number;
+
   /** Gender of the new user */
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -77,6 +82,16 @@ export class CreateUserInput {
   @Field(() => Boolean, { nullable: true })
   @IsOptional()
   searchable?: boolean;
+
+  /** Primary goal of the new user */
+  @Field(() => Category, { nullable: true })
+  @IsOptional()
+  primary_goal?: Category;
+
+  /** Secondary goal of the new user */ 
+  @Field(() => Category, { nullable: true })
+  @IsOptional()
+  secondary_goal?: Category;
 
   /** FCM token for the new user */
   @Field(() => String, { nullable: true })

@@ -56,6 +56,10 @@ export class User {
   @Field(() => DateScalar, { nullable: true })
   dob!: Date | null;
 
+  /** User's age */
+  @Field(() => Int, { nullable: true })
+  age!: number | null;
+
   /** User's gender */
   @Field(() => String, { nullable: true })
   gender!: string | null;

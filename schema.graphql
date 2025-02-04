@@ -661,6 +661,7 @@ input UpdateUserInput {
 }
 
 type User {
+  age: Int
   bio: String
   created_at: DateTimeISO!
   dob: Date
