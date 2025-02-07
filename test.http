@@ -1171,7 +1171,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "activityId": 1,
-      "caption": "这是一条 Feed 动态",
+      "caption": "Feed test",
       "mediaUrl": "https://example.com/image.jpg",
       "authorId": 1,
       "post_targets": [
@@ -1190,7 +1190,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { friendsFeedPosts(currentUserId: 1, skip: 0, take: 10) { success posts { id caption mediaUrl created_at expires_at author { id first_name last_name point { total } } post_targets { id target_type target_id } post_views { id user_id viewed_at } liked likeCount } errors { field message } } }"
+  "query": "query { friendsFeedPosts(currentUserId: 2, skip: 0, take: 10) { success posts { id caption mediaUrl created_at expires_at author { id first_name last_name} post_targets { id target_type target_id } post_views { id user_id viewed_at } liked likeCount } errors { field message } } }"
 }
 
 

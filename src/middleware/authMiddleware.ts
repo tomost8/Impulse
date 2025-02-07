@@ -29,10 +29,10 @@ export const authMiddleware = async ({ context }: { context: any }, next: () => 
     }
 
     // 在开发环境中使用静态 token
-    if (process.env.NODE_ENV === 'development' && token === DEV_TOKEN) {
-      context.user = DEV_USER;
-      return next();
-    }
+    // if (process.env.NODE_ENV === 'development' && token === DEV_TOKEN) {
+    //   context.user = DEV_USER;
+    //   return next();
+    // }
 
     // 生产环境使用 Firebase 验证
     const decodedToken = await admin.auth().verifyIdToken(token);
