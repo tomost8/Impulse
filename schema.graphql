@@ -493,6 +493,7 @@ type Query {
   activities(category: String, skip: Int, status: String, take: Int): ActivitiesResponse!
   activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
+  friendsFeedPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
@@ -644,6 +645,7 @@ input UpdateRewardInput {
 }
 
 input UpdateUserInput {
+  age: Int
   bio: String
   dob: Date
   fcm_token: String

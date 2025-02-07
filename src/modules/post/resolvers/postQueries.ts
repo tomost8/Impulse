@@ -257,5 +257,69 @@ export class PostQueries {
     }
   }
 
+  /**
+   * Query to fetch all feed posts from friends
+   * 
+   * This query retrieves all unexpired posts that:
+   * 1. Are marked as feed posts
+   * 2. Are created by the user's friends
+   * 3. Supports pagination
+   * 
+   * @param currentUserId - ID of the current user
+   * @param skip - Number of records to skip (pagination)
+   * @param take - Number of records to take (pagination)
+   * @returns PostsResponse containing feed posts from friends
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   friendsFeedPosts(
+   *     currentUserId: 1
+   *     skip: 0
+   *     take: 10
+   *   ) {
+   *     success
+   *     posts {
+   *       id
+   *       caption
+   *       mediaUrl
+   *       author {
+   *         name
+   *       }
+   *       created_at
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => PostsResponse)
+  async friendsFeedPosts(
+    @Arg('currentUserId', () => Int) currentUserId: number,
+    @Arg('skip', () => Int, { nullable: true }) skip?: number,
+    @Arg('take', () => Int, { nullable: true }) take?: number
+  ): Promise<PostsResponse> {
+    try {
+      const posts = await this.postService.findFeedPosts({
+        currentUserId,
+        skip,
+        take
+      });
+      
+      return {
+        success: true,
+        posts
+      };
+    } catch (error) {
+      logger.error('Failed to fetch friend feed posts:', error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch feed posts'
+        }]
+      };
+    }
+  }
+
 } 
 

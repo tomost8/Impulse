@@ -153,6 +153,11 @@ export class UpdateUserInput {
   @IsOptional()
   bio?: string;
 
+  /** Age */
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  age?: number;
+
   /** Primary Goal */
   @Field(() => Category, { nullable: true })
   @IsOptional()

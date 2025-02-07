@@ -28,6 +28,7 @@ CREATE TABLE "users" (
     "last_name" TEXT,
     "username" TEXT,
     "dob" DATE,
+    "age" INTEGER,
     "gender" TEXT,
     "profile_picture" TEXT,
     "bio" TEXT,
@@ -160,6 +161,7 @@ CREATE TABLE "posts" (
     "updated_at" TIMESTAMP(3) NOT NULL,
     "expires_at" TIMESTAMP(3),
     "category" TEXT,
+    "like_count" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "posts_pkey" PRIMARY KEY ("id")
 );
@@ -262,6 +264,29 @@ CREATE TABLE "notification_recipients" (
     CONSTRAINT "notification_recipients_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Like" (
+    "id" SERIAL NOT NULL,
+    "post_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "comments" (
+    "id" SERIAL NOT NULL,
+    "post_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "parent_comment_id" INTEGER,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "comments_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -340,6 +365,18 @@ CREATE INDEX "notification_recipients_notification_id_status_idx" ON "notificati
 -- CreateIndex
 CREATE UNIQUE INDEX "notification_recipients_notification_id_recipient_id_key" ON "notification_recipients"("notification_id", "recipient_id");
 
+-- CreateIndex
+CREATE INDEX "Like_post_id_idx" ON "Like"("post_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Like_post_id_user_id_key" ON "Like"("post_id", "user_id");
+
+-- CreateIndex
+CREATE INDEX "comments_post_id_created_at_idx" ON "comments"("post_id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "comments_user_id_idx" ON "comments"("user_id");
+
 -- AddForeignKey
 ALTER TABLE "friendships" ADD CONSTRAINT "friendships_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -414,3 +451,18 @@ ALTER TABLE "notification_recipients" ADD CONSTRAINT "notification_recipients_no
 
 -- AddForeignKey
 ALTER TABLE "notification_recipients" ADD CONSTRAINT "notification_recipients_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Like" ADD CONSTRAINT "Like_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Like" ADD CONSTRAINT "Like_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "comments" ADD CONSTRAINT "comments_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "comments" ADD CONSTRAINT "comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "comments" ADD CONSTRAINT "comments_parent_comment_id_fkey" FOREIGN KEY ("parent_comment_id") REFERENCES "comments"("id") ON DELETE CASCADE ON UPDATE CASCADE;

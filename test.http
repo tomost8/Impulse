@@ -182,9 +182,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
   "variables": {
     "input": {
-      "first_name": "001",
+      "first_name": "003",
       "last_name": "tester",
-      "username": "test001",
+      "username": "test003",
       "gender": "male",
       "dob": "2024-01-02",
       "timezone": "America/New_York",
@@ -453,7 +453,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "category": "workout",
-      "scheduledDatetime": "2025-01-25T13:00:00Z",
+      "scheduledDatetime": "2025-02-07T21:00:00Z",
       "duration": 60
     }
   }
@@ -699,9 +699,8 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "name": "测试活动",
-      "category": "social",
-      "userId": 1,
-      "scheduledDatetime": "2025-01-11T21:00:00.000Z" 
+      "category": "workout",
+      "scheduledDatetime": "2025-02-08T21:00:00.000Z" 
     }
   }
 }
@@ -1151,3 +1150,48 @@ Authorization: Bearer {{authToken}}
     "postId": 1
   }
 }
+
+
+### 测试获取朋友动态
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { friendsFeedPosts(currentUserId: 1) { success posts { id caption category author { id first_name last_name } post_targets { id target_type target_id } post_views { id user_id viewed_at } } errors { field message } } }"
+}
+
+### 创建 Feed 帖子
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption mediaUrl created_at author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
+  "variables": {
+    "input": {
+      "activityId": 1,
+      "caption": "这是一条 Feed 动态",
+      "mediaUrl": "https://example.com/image.jpg",
+      "authorId": 1,
+      "post_targets": [
+        {
+          "target_type": "feed",
+          "target_id": 1
+        }
+      ]
+    }
+  }
+}
+
+### 查询好友 Feed 帖子（完整版）
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { friendsFeedPosts(currentUserId: 1, skip: 0, take: 10) { success posts { id caption mediaUrl created_at expires_at author { id first_name last_name point { total } } post_targets { id target_type target_id } post_views { id user_id viewed_at } liked likeCount } errors { field message } } }"
+}
+
+
+

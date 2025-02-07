@@ -561,4 +561,87 @@ export class PostService {
       throw error;
     }
   }
+
+  /**
+   * Find all feed posts from friends
+   * 
+   * @param options - Query options for filtering and pagination
+   * @returns Promise<Post[]> Array of feed posts from friends
+   */
+  async findFeedPosts(options: {
+    currentUserId: number;
+    skip?: number;
+    take?: number;
+  }): Promise<Post[]> {
+    // 获取当前用户的好友列表
+    const friendIds = await this.prisma.friendship.findMany({
+      where: {
+        OR: [
+          { user_id: options.currentUserId, status: 'ACCEPTED' },
+          { friend_id: options.currentUserId, status: 'ACCEPTED' }
+        ]
+      },
+      select: {
+        user_id: true,
+        friend_id: true
+      }
+    });
+
+    // 构建好友ID列表
+    const friendUserIds = friendIds.map(f => 
+      f.user_id === options.currentUserId ? f.friend_id : f.user_id
+    );
+
+    // 查询好友的未过期 feed 帖子
+    const posts = await this.prisma.post.findMany({
+      where: {
+        AND: [
+          {
+            post_targets: {
+              some: {
+                target_type: 'feed'
+              }
+            }
+          },
+          {
+            author_id: {
+              in: friendUserIds
+            }
+          },
+          {
+            OR: [
+              { expires_at: null },  // 永不过期的帖子
+              { expires_at: { gt: new Date() } }  // 未过期的帖子
+            ]
+          }
+        ]
+      },
+      skip: options.skip,
+      take: options.take,
+      include: {
+        author: {
+          include: {point: true}
+        },
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true
+          }
+        },
+        likes: {
+          where: { user_id: options.currentUserId },
+          select: { id: true }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    return posts.map((post) => ({
+      ...post,
+      liked: post.likes.length > 0,
+      likeCount: post._count.likes
+    }));
+  }
 }
