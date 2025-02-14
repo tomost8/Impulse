@@ -4,8 +4,8 @@ import { AuthenticationError } from '../modules/common/errors/graphql.error';
 
 // 开发环境的模拟用户数据
 const DEV_USER = {
-  uid: 'dev-test-001',
-  email: 'test001@example.com',
+  uid: 'dev-test-002',
+  email: 'test002@example.com',
   name: 'Developer User',
   role: 'ADMIN'
 };

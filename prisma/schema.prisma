@@ -257,6 +257,9 @@ model Post {
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
+  @@index([created_at, expires_at]) 
+
+
   @@map("posts")
 }
 

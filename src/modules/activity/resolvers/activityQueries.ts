@@ -216,4 +216,74 @@ export class ActivityQueries {
       };
     }
   }
+
+  /**
+   * Query to fetch activities by date and user ID (matching only the date part of scheduledDatetime)
+   * 
+   * This query retrieves activities scheduled for a specific date and user,
+   * with support for category filtering, status filtering, and pagination.
+   * 
+   * @param date - The date to search for (YYYY-MM-DD format)
+   * @param userId - ID of the user whose activities to fetch
+   * @param skip - Number of records to skip (pagination)
+   * @param take - Number of records to take (pagination)
+   * @param category - Filter activities by category
+   * @param status - Filter activities by status
+   * @returns ActivitiesResponse containing activities for the specified date and user or error details
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   activitiesByDate(
+   *     date: "2024-03-20"
+   *     userId: 1
+   *     category: "event"
+   *     status: "pending"
+   *     skip: 0
+   *     take: 10
+   *   ) {
+   *     success
+   *     activities {
+   *       id
+   *       status
+   *       scheduledDatetime
+   *       post {
+   *         caption
+   *       }
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => ActivitiesResponse)
+  async activitiesByDate(
+    @Arg('date') date: string,
+    @Arg('userId', () => Int) userId: number,
+    @Arg('skip', () => Int, { nullable: true }) skip?: number,
+    @Arg('take', () => Int, { nullable: true }) take?: number,
+    @Arg('category', { nullable: true }) category?: string,
+    @Arg('status', { nullable: true }) status?: string
+  ): Promise<ActivitiesResponse> {
+    try {
+      const activities = await this.activitiesService.findByDate(date, userId, {
+        skip,
+        take,
+        category,
+        status
+      });
+      return {
+        success: true,
+        activities
+      };
+    } catch (error) {
+      logger.error(`Failed to fetch activities for date ${date} and user ${userId}:`, error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch activities'
+        }]
+      };
+    }
+  }
 } 
