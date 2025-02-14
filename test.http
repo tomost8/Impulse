@@ -536,7 +536,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($id: Int!) { deletePost(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 1
+    "id": 2
   }
 }
 
@@ -601,7 +601,6 @@ Content-Type: application/json
     }
   }
 }
-
 
 ### create post with multiple targets
 POST http://localhost:3000/graphql

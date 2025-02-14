@@ -364,6 +364,23 @@ export class CommunityMembersService {
 export class CommunityCategoriesService {
   constructor(private prisma: PrismaClient) {}
   /**
+   * Return all community categories
+   */
+  async findAll(): Promise<CommunityCategory[] | null> {
+    return await this.prisma.communityCategory.findMany({
+      include: {
+        community: {
+          include: {
+            influencer: {
+              include: {point: true}
+            }
+          }
+        }
+      }
+  });
+  }
+
+  /**
    * Find all categories of a community given community ID
    * 
    * @param id - The unique identifier of the community

@@ -494,6 +494,7 @@ type Query {
   activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
   friendsFeedPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
+  getAllCategories: CommunityCategoriesResponse!
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!

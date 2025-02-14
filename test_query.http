@@ -41,6 +41,14 @@ Content-Type: application/json
   }
 }
 
+### Query - Get Community Catgeories
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { getAllCategories {success community_categories { community_id category } errors { field message } } }"
+}
+
 ### Query - Get Community Catgeory by Community ID
 POST http://localhost:3000/graphql
 Content-Type: application/json

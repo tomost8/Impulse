@@ -174,7 +174,7 @@ Content-Type: application/json
 {
   "query": "mutation($id: Int!) { deleteCommunity(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 6
+    "id": 2
   }
 }
 
@@ -201,7 +201,7 @@ Content-Type: application/json
 {
   "query": "mutation($community_id: Int!, $category: Category!) { deleteCommunityCategory(community_id: $community_id, category: $category) { success errors { field message } } }",
   "variables": {
-    "community_id": 1,
+    "community_id": 3,
     "category": "FOOD"
   }
 }

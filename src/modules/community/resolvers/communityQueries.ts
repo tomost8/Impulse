@@ -215,6 +215,35 @@ export class CommunityMemberQueries {
 export class CommunityCategoryQueries {
   constructor(private communityCategoriesService: CommunityCategoriesService) {}
 
+  @Query(() => CommunityCategoriesResponse)
+  async getCommunityCategories(@Arg('id', () => Int) id: number): Promise<CommunityCategoriesResponse> {
+    try {
+      const community_categories = await this.communityCategoriesService.findById(id);
+      if (!community_categories) {
+        logger.warn('Community not found', { communityId: id });
+        return {
+          success: false,
+          errors: [{
+            field: 'id',
+            message: `Community with ID ${id} not found`
+          }]
+        }
+      }
+      return {
+        success: true,
+        community_categories
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch communities'
+        }]
+      };
+    }
+  }
+
   /**
    * Query to fetch all categories for a community
    * 
@@ -232,16 +261,15 @@ export class CommunityCategoryQueries {
    * ```
    */
   @Query(() => CommunityCategoriesResponse)
-  async getCommunityCategories(@Arg('id', () => Int) id: number): Promise<CommunityCategoriesResponse> {
+  async getAllCategories(): Promise<CommunityCategoriesResponse> {
     try {
-      const community_categories = await this.communityCategoriesService.findById(id);
+      const community_categories = await this.communityCategoriesService.findAll();
       if (!community_categories) {
-        logger.warn('Community not found', { communityId: id });
         return {
           success: false,
           errors: [{
             field: 'id',
-            message: `Community with ID ${id} not found`
+            message: `Categories not retrieved successfully`
           }]
         }
       }
