@@ -355,7 +355,7 @@ Content-Type: application/json
   "variables": {
     "input": {
       "community_id": 1,
-      "user_id": 1
+      "user_id": 3
     }
   }
 }
@@ -437,11 +437,27 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($id: Int!) { activity(id: $id) { success activity { id category status post { id author { id first_name last_name } } } errors { field message } } }",
+  "query": "query($id: Int!) { activity(id: $id) { success activity { id category status post { id updated_at author { id first_name last_name } } } errors { field message } } }",
   "variables": {
-    "id": 42
+    "id": 7
   }
 }
+
+### Query - Get Activity by Date
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($date: String!, $userId: Int!) { activitiesByDate(date: $date, userId: $userId) { success activities { id category status scheduledDatetime post { id caption author { id first_name last_name } } } errors { field message } } }",
+  "variables": {
+    "date": "2025-02-13",
+    "userId": 1
+  }
+}
+
+
+
 
 ### Mutation - Create Activity
 POST {{baseUrl}}/graphql
@@ -453,7 +469,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "category": "workout",
-      "scheduledDatetime": "2025-02-07T21:00:00Z",
+      "scheduledDatetime": "2025-02-13T09:00:00Z",
       "duration": 60
     }
   }
@@ -592,7 +608,7 @@ Content-Type: application/json
     "input": {
       "caption": "Both user and community",
       "authorId": 1,
-      "activityId": 3,
+      "activityId": 7,
       "post_targets": [
             {"target_type": "user", "target_id": 1},
             {"target_type": "community", "target_id": 1}
@@ -698,9 +714,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id name category scheduledDatetime status userId } } }",
   "variables": {
     "input": {
-      "name": "测试活动",
+      "name": "社区活动",
       "category": "workout",
-      "scheduledDatetime": "2025-02-08T21:00:00.000Z" 
+      "scheduledDatetime": "2025-02-012T21:00:00.000Z" 
     }
   }
 }
@@ -1170,10 +1186,10 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: CreatePostInput!) { createPost(input: $input) { success post { id caption mediaUrl created_at author { id first_name last_name } post_targets { id target_type target_id } } errors { field message } } }",
   "variables": {
     "input": {
-      "activityId": 1,
-      "caption": "Feed test",
+      "activityId": 5,
+      "caption": " test2",
       "mediaUrl": "https://example.com/image.jpg",
-      "authorId": 1,
+      "authorId": 2,
       "post_targets": [
         {
           "target_type": "feed",
@@ -1195,3 +1211,12 @@ Authorization: Bearer {{authToken}}
 
 
 
+
+### 查询加入的社区帖子
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { joinedCommunityPosts(currentUserId: 1, skip: 0, take: 10) { success posts { id caption mediaUrl created_at expires_at author { id first_name last_name } post_targets { id target_type target_id } post_views { id user_id viewed_at } liked likeCount } errors { field message } } }"
+}

@@ -113,13 +113,15 @@ export class PostService {
       const HIGH_CONCURRENCY_THRESHOLD = 10;
 
       return await this.prisma.$transaction(async (tx) => {
+        
+
         // Create post with initial batch of targets
         const initialTargets = data.post_targets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
         const post = await tx.post.create({
           data: {
             caption: data.caption,
             mediaUrl: data.mediaUrl,
-            expires_at: data.expires_at,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
             author: { connect: { id: data.authorId } },
             post_targets: {
               createMany: {
@@ -644,4 +646,79 @@ export class PostService {
       likeCount: post._count.likes
     }));
   }
+
+  /**
+   * Find all posts from joined communities
+   * 
+   * @param options - Query options for filtering and pagination
+   * @returns Promise<Post[]> Array of posts from joined communities
+   */
+  async findJoinedCommunityPosts(options: {
+    currentUserId: number;
+    skip?: number;
+    take?: number;
+  }): Promise<Post[]> {
+    // 1. 获取用户加入的社区ID列表
+    const communityIds = await this.prisma.communityMember.findMany({
+      where: {
+        user_id: options.currentUserId,
+        status: 'ACCEPTED'
+      },
+      select: {
+        community_id: true
+      }
+    });
+
+    // 2. 查询这些社区的未过期帖子
+    const posts = await this.prisma.post.findMany({
+      where: {
+        AND: [
+          {
+            post_targets: {
+              some: {
+                target_type: 'community',
+                target_id: {
+                  in: communityIds.map(c => c.community_id)
+                }
+              }
+            }
+          },
+          {
+            OR: [
+              { expires_at: null },  // 永不过期的帖子
+              { expires_at: { gt: new Date() } }  // 未过期的帖子
+            ]
+          }
+        ]
+      },
+      skip: options.skip,
+      take: options.take,
+      include: {
+        author: {
+          include: {point: true}
+        },
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true
+          }
+        },
+        likes: {
+          where: { user_id: options.currentUserId },
+          select: { id: true }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    return posts.map((post) => ({
+      ...post,
+      liked: post.likes.length > 0,
+      likeCount: post._count.likes
+    }));
+  }
 }
+
+

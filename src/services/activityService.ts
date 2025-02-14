@@ -327,4 +327,57 @@ export class ActivitiesService {
       }
     });
   }
+
+  /**
+   * Find activities by date and user ID, matching only the date part of scheduledDatetime
+   * 
+   * @param date - The date to search for (YYYY-MM-DD format)
+   * @param userId - ID of the user whose activities to fetch
+   * @param options - Additional query options for filtering and pagination
+   * @param options.skip - Number of records to skip
+   * @param options.take - Number of records to take
+   * @param options.category - Filter activities by category
+   * @param options.status - Filter activities by status
+   * @returns Promise<Activity[]> Array of activities scheduled for the specified date and user
+   */
+  async findByDate(
+    date: string,
+    userId: number,
+    options?: {
+      skip?: number;
+      take?: number;
+      category?: string;
+      status?: string;
+    }
+  ): Promise<Activity[]> {
+    // Parse the input date
+    const searchDate = new Date(date);
+    // Create the next day date for range comparison
+    const nextDate = new Date(searchDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    return await this.prisma.activity.findMany({
+      skip: options?.skip,
+      take: options?.take,
+      where: {
+        userId,
+        scheduledDatetime: {
+          gte: searchDate,
+          lt: nextDate,
+        },
+        ...(options?.category ? { category: options.category } : {}),
+        ...(options?.status ? { status: options.status } : {})
+      },
+      include: {
+        post: {
+          include: {
+            author: {
+              include: {point: true}
+            },
+            post_targets: true
+          }
+        }
+      }
+    });
+  }
 } 

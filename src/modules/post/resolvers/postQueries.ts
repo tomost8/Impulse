@@ -321,5 +321,83 @@ export class PostQueries {
     }
   }
 
+  /**
+   * Query to fetch all posts from joined communities
+   * 
+   * This query retrieves all posts from communities that the user has joined,
+   * with optional pagination support.
+   * 
+   * @param currentUserId - ID of the current user
+   * @param skip - Number of records to skip (pagination)
+   * @param take - Number of records to take (pagination)
+   * @returns PostsResponse containing posts from joined communities or error details
+   * @throws {ValidationError} If currentUserId is invalid
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   joinedCommunityPosts(
+   *     currentUserId: 1
+   *     skip: 0
+   *     take: 10
+   *   ) {
+   *     success
+   *     posts {
+   *       id
+   *       caption
+   *       mediaUrl
+   *       created_at
+   *       expires_at
+   *       author {
+   *         id
+   *         first_name
+   *         last_name
+   *       }
+   *       post_targets {
+   *         id
+   *         target_type
+   *         target_id
+   *       }
+   *       post_views {
+   *         id
+   *         user_id
+   *         viewed_at
+   *       }
+   *       liked
+   *       likeCount
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => PostsResponse)
+  async joinedCommunityPosts(
+    @Arg('currentUserId', () => Int) currentUserId: number,
+    @Arg('skip', () => Int, { nullable: true }) skip?: number,
+    @Arg('take', () => Int, { nullable: true }) take?: number
+  ): Promise<PostsResponse> {
+    try {
+      const posts = await this.postService.findJoinedCommunityPosts({
+        currentUserId,
+        skip,
+        take
+      });
+      
+      return {
+        success: true,
+        posts
+      };
+    } catch (error) {
+      logger.error('Failed to fetch joined community posts:', error);
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch community posts'
+        }]
+      };
+    }
+  }
+
 } 
 

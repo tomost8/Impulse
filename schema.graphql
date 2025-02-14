@@ -491,6 +491,7 @@ type PostsResponse {
 
 type Query {
   activities(category: String, skip: Int, status: String, take: Int): ActivitiesResponse!
+  activitiesByDate(category: String, date: String!, skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
   friendsFeedPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
@@ -511,6 +512,7 @@ type Query {
   getRewards: RewardsResponse!
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
+  joinedCommunityPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
   me: UserResponse!
   post(id: Int!): PostResponse!
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
