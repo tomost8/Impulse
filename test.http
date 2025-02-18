@@ -182,9 +182,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
   "variables": {
     "input": {
-      "first_name": "003",
+      "first_name": "002",
       "last_name": "tester",
-      "username": "test003",
+      "username": "test002",
       "gender": "male",
       "dob": "2024-01-02",
       "timezone": "America/New_York",
@@ -311,7 +311,7 @@ Content-Type: application/json
   "query": "mutation ($input: CreateCommunityInput!) { createCommunity(input: $input) { success community { id name description thumbnail influencer { first_name last_name email } influencer_id } errors { field message } } }",
   "variables": {
     "input": {
-      "name": "community name",
+      "name": "community name3",
       "influencer_id": 1
     }
   }
@@ -469,7 +469,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "category": "workout",
-      "scheduledDatetime": "2025-02-13T09:00:00Z",
+      "scheduledDatetime": "2025-02-18T09:00:00Z",
       "duration": 60
     }
   }
@@ -608,10 +608,12 @@ Content-Type: application/json
     "input": {
       "caption": "Both user and community",
       "authorId": 1,
-      "activityId": 7,
+      "activityId": 2,
       "post_targets": [
-            {"target_type": "user", "target_id": 1},
-            {"target_type": "community", "target_id": 1}
+            {"target_type": "user", "target_id": 2},
+            {"target_type": "community", "target_id": 1},
+            {"target_type": "community", "target_id": 2}
+
       ],
       "mediaUrl":"https://www.google.com"
     }
@@ -1096,7 +1098,20 @@ Authorization: Bearer {{authToken}}
 # - Canceled reminders will still appear in queries but with is_active = false
 
 
+### 测试评论功能
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
+{
+  "query": "mutation($input: CreateCommentInput!) { createComment(input: $input) { success comment { id content post_id user_id parent_comment_id created_at updated_at } errors { field message } } }",
+  "variables": {
+    "input": {
+      "content": "This is a test comment reply!",
+      "post_id": 1
+    }
+  }
+}
 
 ### 测试评论功能
 POST {{baseUrl}}/graphql
@@ -1109,7 +1124,7 @@ Authorization: Bearer {{authToken}}
     "input": {
       "content": "This is a test comment reply's reply!",
       "post_id": 1,
-      "parent_comment_id": 2
+      "parent_comment_id": 1
     }
   }
 }
@@ -1151,7 +1166,7 @@ Authorization: Bearer {{authToken}}
 {
   "query": "mutation($postId: Int!) { likePost(postId: $postId) { success  errors { field message }  } }",
   "variables": {
-    "postId": 1
+    "postId": 2
   }
 }
 

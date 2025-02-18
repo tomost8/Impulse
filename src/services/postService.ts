@@ -86,12 +86,12 @@ export class PostService {
    * Create a new post with associated targets and activity tracking
    * 
    * @param data - Post creation data containing required information
-   * @returns Promise<Post> The newly created post
+   * @returns Promise<Post[]> The newly created posts
    * @throws {ValidationError} If validation fails or prerequisites are not met
    * @throws {PrismaError} If database operations fail
    * @remarks This method handles high concurrency by processing targets in batches
    */
-  async create(data: CreatePostInput): Promise<Post> {
+  async create(data: CreatePostInput): Promise<Post[]> {
     try {
       // Check if the user has an unexpired activity of the same category
       const hasValidActivity = await this.prisma.activity.findFirst({
@@ -113,69 +113,105 @@ export class PostService {
       const HIGH_CONCURRENCY_THRESHOLD = 10;
 
       return await this.prisma.$transaction(async (tx) => {
-        
+        const posts: any[] = [];
+        // 分离社区目标和其他目标
+        const communityTargets = data.post_targets.filter(target => 
+          target.target_type === 'community'
+        );
+        const otherTargets = data.post_targets.filter(target => 
+          target.target_type !== 'community'
+        );
 
-        // Create post with initial batch of targets
-        const initialTargets = data.post_targets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
-        const post = await tx.post.create({
-          data: {
-            caption: data.caption,
-            mediaUrl: data.mediaUrl,
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            author: { connect: { id: data.authorId } },
-            post_targets: {
-              createMany: {
-                data: initialTargets.map(target => ({
-                  target_type: target.target_type,
-                  target_id: target.target_id
-                }))
-              }
-            }
-          },
-          include: {
-            author: {
-              include: {point: true}
-            },
-            post_targets: true,
-            _count: {
-              select: {
-                likes: true
-              }
-            }
-          }
-        });
-
-        // Update corresponding activity status and cancel expiration
-        await tx.activity.update({
-          where: { id: data.activityId },
-          data: { postId: post.id, status: "completed" }
-        });
-
-        // Cancel the activity expiration task
-        await this.activityExpirationService.cancelActivityExpiration(data.activityId);
-
-        // Queue remaining targets for async processing if any
-        if (data.post_targets.length > HIGH_CONCURRENCY_THRESHOLD) {
-          const remainingTargets = data.post_targets.slice(HIGH_CONCURRENCY_THRESHOLD);
-          const BATCH_SIZE = 100;
-          const chunks = this.chunkArray(remainingTargets, BATCH_SIZE);
-          
-          for (const chunk of chunks) {
-            await this.addToQueue('create_post_targets', {
-              postId: post.id,
-              targets: chunk
-            });
-          }
+        // 为每个社区创建独立帖子
+        if (communityTargets.length > 0) {
+          const communityPosts = await Promise.all(
+            communityTargets.map(target => 
+              tx.post.create({
+                data: {
+                  caption: data.caption,
+                  mediaUrl: data.mediaUrl,
+                  category: data.category,
+                  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                  author: { connect: { id: data.authorId } },
+                  post_targets: {
+                    create: {
+                      target_type: target.target_type,
+                      target_id: target.target_id
+                    }
+                  }
+                },
+                include: {
+                  author: { include: { point: true } },
+                  post_targets: true,
+                  _count: { select: { likes: true } }
+                }
+              })
+            )
+          );
+          posts.push(...communityPosts);
         }
 
-        return {
-          ...post,
-          likeCount: post._count.likes
-        };
+        // 为其他目标创建一个帖子，保持原有的高并发处理逻辑
+        if (otherTargets.length > 0) {
+          const initialTargets = otherTargets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
+          const otherPost = await tx.post.create({
+            data: {
+              caption: data.caption,
+              mediaUrl: data.mediaUrl,
+              category: data.category,
+              expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+              author: { connect: { id: data.authorId } },
+              post_targets: {
+                createMany: {
+                  data: initialTargets.map(target => ({
+                    target_type: target.target_type,
+                    target_id: target.target_id
+                  }))
+                }
+              }
+            },
+            include: {
+              author: { include: { point: true } },
+              post_targets: true,
+              _count: { select: { likes: true } }
+            }
+          });
 
-      }, {
-        timeout: 10000,
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted
+          // 处理剩余的其他目标
+          if (otherTargets.length > HIGH_CONCURRENCY_THRESHOLD) {
+            const remainingTargets = otherTargets.slice(HIGH_CONCURRENCY_THRESHOLD);
+            const BATCH_SIZE = 100;
+            const chunks = this.chunkArray(remainingTargets, BATCH_SIZE);
+            
+            for (const chunk of chunks) {
+              await this.addToQueue('create_post_targets', {
+                postId: otherPost.id,
+                targets: chunk
+              });
+            }
+          }
+
+          posts.push(otherPost);
+        }
+
+        // 更新活动状态
+        if (posts.length > 0) {
+          await tx.activity.update({
+            where: { id: data.activityId },
+            data: { 
+              postId: posts[0].id,
+              status: "completed" 
+            }
+          });
+
+          await this.activityExpirationService.cancelActivityExpiration(data.activityId);
+        }
+
+        return posts.map(post => ({
+          ...post,
+          likeCount: post._count.likes,
+          liked: false
+        }));
       });
     } catch (error: any) {
       if (error.code === 'P2003') {
