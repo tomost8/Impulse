@@ -434,6 +434,7 @@ type Post {
   author_id: Int!
   caption: String
   category: String
+  commentCount: Int
   comments: [Comment!]
   created_at: DateTimeISO!
   expires_at: DateTimeISO

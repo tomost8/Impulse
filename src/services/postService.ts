@@ -663,7 +663,8 @@ export class PostService {
         post_targets: true,
         _count: {
           select: {
-            likes: true
+            likes: true,
+            comments: true
           }
         },
         likes: {
@@ -679,7 +680,8 @@ export class PostService {
     return posts.map((post) => ({
       ...post,
       liked: post.likes.length > 0,
-      likeCount: post._count.likes
+      likeCount: post._count.likes,
+      commentCount: post._count.comments
     }));
   }
 
@@ -736,7 +738,8 @@ export class PostService {
         post_targets: true,
         _count: {
           select: {
-            likes: true
+            likes: true,
+            comments: true
           }
         },
         likes: {
@@ -752,7 +755,8 @@ export class PostService {
     return posts.map((post) => ({
       ...post,
       liked: post.likes.length > 0,
-      likeCount: post._count.likes
+      likeCount: post._count.likes,
+      commentCount: post._count.comments
     }));
   }
 }
