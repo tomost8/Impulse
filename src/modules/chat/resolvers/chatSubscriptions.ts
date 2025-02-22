@@ -49,12 +49,16 @@ export class ChatSubscriptions {
 
     return false;
   }
-
+  
   @Subscription(() => Message, {
     topics: CHAT_MESSAGE_SENT,
-    filter: async ({ payload }: { payload: SubscriptionPayload }) => {
-      const userId = payload.messageSent.sender_id;
+    filter: async ({ payload, context }: { payload: SubscriptionPayload, context: Context }) => {
+      const userId = context.user.id;
+      console.log('userId', userId);
+      const senderId = payload.messageSent.sender_id;
+      console.log('senderId', senderId);
       const chatId = payload.messageSent.chat_id;
+      console.log('chatId', chatId);
       
       const prisma = new PrismaClient();
       const isChatMember = await prisma.chatMember.findUnique({
