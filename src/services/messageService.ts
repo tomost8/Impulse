@@ -2,6 +2,7 @@ import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
 import { Message } from '../modules/chat/schema/chatTypes';
 import { CreateMessageInput } from '../modules/chat/schema/chatInputs';
+import { pubsub, CHAT_MESSAGE_SENT } from '../config/pubsub';
 /**
  * Service handling message-related business logic
  * 
@@ -59,7 +60,7 @@ export class MessagesService {
    */
   async create(input: CreateMessageInput): Promise<Message> {
     try {
-        return await this.prisma.message.create({
+        const message = await this.prisma.message.create({
             data: input,
             include: {
               chat: {
@@ -83,6 +84,13 @@ export class MessagesService {
               }
             }
         });
+
+        // 发布消息事件
+        await pubsub.publish(CHAT_MESSAGE_SENT, {
+          messageSent: message
+        });
+
+        return message;
     } catch (error: any) {
       throw error;
     }

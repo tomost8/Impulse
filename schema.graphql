@@ -585,6 +585,9 @@ enum Role {
 type Subscription {
   currentTime: CurrentTime!
 
+  """Subscribe to messages in chats where user is a member or recipient"""
+  messageSent: Message!
+
   """Subscribe to user creation events"""
   userCreated: User!
 }

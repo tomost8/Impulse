@@ -8,6 +8,7 @@ import { ActivityQueries, ActivityMutations } from '../modules/activity';
 import { PostQueries, PostMutations } from '../modules/post';
 import { TimeSubscriptions } from '../modules/common/resolvers/timeSubscriptions';
 import { UserSubscriptions } from '../modules/user/resolvers/userSubscriptions';
+import { ChatSubscriptions } from '../modules/chat/resolvers/chatSubscriptions';
 import { pubsub } from './pubsub';
 import { PointQueries, PointMutations, RewardQueries, RewardMutations, RedeemQueries, RedeemMutations } from '../modules/point';
 import { NotificationMutations } from '../modules/notification/resolvers/NotificationMutations';
@@ -34,6 +35,7 @@ export const createSchema = async () => {
       ChatMemberMutations,
       MessageQueries,
       MessageMutations,
+      ChatSubscriptions,
       ActivityQueries,
       ActivityMutations,
       PostQueries,

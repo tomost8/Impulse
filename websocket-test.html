@@ -16,6 +16,18 @@
             padding: 10px;
             background-color: #e6f3ff;
         }
+        #messageContainer {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
     </style>
 </head>
 <body>
@@ -34,6 +46,18 @@
         <button id="subscribeUserBtn" onclick="toggleUserSubscription()">Subscribe to Users</button>
     </div>
 
+    <div class="subscription-container">
+        <h3>Chat Messages</h3>
+        <div id="messageContainer">No messages yet</div>
+        <button id="subscribeChatBtn" onclick="toggleChatSubscription()">Subscribe to Messages</button>
+        <div style="margin-top: 10px;">
+            <input type="number" id="senderId" placeholder="Enter sender ID" value="1">
+            <input type="number" id="chatId" placeholder="Enter chat ID">
+            <input type="text" id="messageContent" placeholder="Enter message">
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+    </div>
+
     <div id="log" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0;"></div>
     <button onclick="connect()">Connect</button>
     <button onclick="disconnect()">Disconnect</button>
@@ -42,6 +66,7 @@
         let ws;
         let timeSubscriptionId;
         let userSubscriptionId;
+        let chatSubscriptionId;
         
         function generateSubscriptionId() {
             return Math.random().toString(36).substring(2, 15);
@@ -55,7 +80,8 @@
 
         function updateSubscribeButton(buttonId, isSubscribed) {
             const btn = document.getElementById(buttonId);
-            const type = buttonId === 'subscribeTimeBtn' ? 'Time' : 'Users';
+            const type = buttonId === 'subscribeTimeBtn' ? 'Time' : 
+                        buttonId === 'subscribeUserBtn' ? 'Users' : 'Messages';
             btn.textContent = isSubscribed ? `Unsubscribe from ${type}` : `Subscribe to ${type}`;
             if (isSubscribed) {
                 btn.classList.add('subscribed');
@@ -75,7 +101,13 @@
                     
                     const initMessage = {
                         type: 'connection_init',
-                        payload: {}
+                        payload: {
+                            context: {
+                                user: {
+                                    id: 1  // 假设当前用户ID是1
+                                }
+                            }
+                        }
                     };
                     log('Sending init message: ' + JSON.stringify(initMessage));
                     ws.send(JSON.stringify(initMessage));
@@ -86,10 +118,13 @@
                     document.getElementById('status').textContent = 'Status: Disconnected';
                     document.getElementById('currentTime').textContent = 'Current Time: --:--:--';
                     document.getElementById('userInfo').textContent = 'No new users yet';
+                    document.getElementById('messageContainer').textContent = 'No messages yet';
                     timeSubscriptionId = null;
                     userSubscriptionId = null;
+                    chatSubscriptionId = null;
                     updateSubscribeButton('subscribeTimeBtn', false);
                     updateSubscribeButton('subscribeUserBtn', false);
+                    updateSubscribeButton('subscribeChatBtn', false);
                 };
                 
                 ws.onerror = (error) => {
@@ -116,6 +151,20 @@
                                 Name: ${user.first_name || ''} ${user.last_name || ''}<br>
                                 Created At: ${new Date(user.created_at).toLocaleString()}`;
                         }
+                        if (data.payload?.data?.messageSent) {
+                            const message = data.payload.data.messageSent;
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'message';
+                            messageDiv.innerHTML = `
+                                Message ID: ${message.id}<br>
+                                Chat ID: ${message.chat_id}<br>
+                                Sender ID: ${message.sender_id}<br>
+                                Content: ${message.content || 'No content'}<br>
+                                Time: ${new Date(message.created_at).toLocaleString()}
+                            `;
+                            const container = document.getElementById('messageContainer');
+                            container.insertBefore(messageDiv, container.firstChild);
+                        }
                     }
                 };
             } catch (error) {
@@ -128,6 +177,7 @@
                 log('Disconnecting...');
                 unsubscribeTime();
                 unsubscribeUser();
+                unsubscribeChat();
                 ws.close();
             }
         }
@@ -155,6 +205,19 @@
                 ws.send(JSON.stringify(completeMessage));
                 userSubscriptionId = null;
                 updateSubscribeButton('subscribeUserBtn', false);
+            }
+        }
+
+        function unsubscribeChat() {
+            if (chatSubscriptionId) {
+                const completeMessage = {
+                    id: chatSubscriptionId,
+                    type: 'complete'
+                };
+                log('Sending chat complete message: ' + JSON.stringify(completeMessage));
+                ws.send(JSON.stringify(completeMessage));
+                chatSubscriptionId = null;
+                updateSubscribeButton('subscribeChatBtn', false);
             }
         }
 
@@ -210,6 +273,81 @@
             updateSubscribeButton('subscribeUserBtn', true);
         }
 
+        function subscribeToChat() {
+            chatSubscriptionId = generateSubscriptionId();
+            const subscribeMessage = {
+                id: chatSubscriptionId,
+                type: 'subscribe',
+                payload: {
+                    query: `
+                        subscription {
+                            messageSent {
+                                id
+                                chat_id
+                                sender_id
+                                content
+                                created_at
+                            }
+                        }
+                    `
+                }
+            };
+
+            log('Subscribing to chat messages...');
+            log('Sending subscribe message: ' + JSON.stringify(subscribeMessage));
+            ws.send(JSON.stringify(subscribeMessage));
+            updateSubscribeButton('subscribeChatBtn', true);
+        }
+
+        function sendMessage() {
+            const senderId = document.getElementById('senderId').value;
+            const chatId = document.getElementById('chatId').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (!senderId || !chatId || !content) {
+                alert('Please enter sender ID, chat ID and message content');
+                return;
+            }
+
+            const mutation = {
+                query: `
+                    mutation CreateMessage($input: CreateMessageInput!) {
+                        createMessage(input: $input) {
+                            success
+                        }
+                    }
+                `,
+                variables: {
+                    input: {
+                        chat_id: parseInt(chatId),
+                        content: content,
+                        sender_id: parseInt(senderId)
+                    }
+                }
+            };
+
+            fetch('http://localhost:3000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(mutation)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.errors) {
+                    log('Error sending message: ' + JSON.stringify(data.errors));
+                } else {
+                    log('Message sent successfully');
+                }
+            })
+            .catch(error => {
+                log('Error sending message: ' + error);
+            });
+
+            document.getElementById('messageContent').value = '';
+        }
+
         function toggleTimeSubscription() {
             if (!ws || ws.readyState !== WebSocket.OPEN) {
                 log('WebSocket is not connected');
@@ -233,6 +371,19 @@
                 unsubscribeUser();
             } else {
                 subscribeToUser();
+            }
+        }
+
+        function toggleChatSubscription() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('WebSocket is not connected');
+                return;
+            }
+
+            if (chatSubscriptionId) {
+                unsubscribeChat();
+            } else {
+                subscribeToChat();
             }
         }
     </script>
