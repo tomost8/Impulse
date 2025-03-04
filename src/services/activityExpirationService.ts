@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import Queue from 'bull';
 import { startOfDay, addDays } from 'date-fns';
 import logger from '../config/logger';
+import { toZonedTime } from 'date-fns-tz';
 
 /**
  * Interface defining the structure of an activity expiration job
@@ -111,13 +112,16 @@ export class ActivityExpirationService {
     scheduledDatetime: Date
   ) {
     try {
-      // Calculate next day's start in UTC
-      const expirationTime = startOfDay(addDays(scheduledDatetime, 1));
+      const userLocalTime = toZonedTime(scheduledDatetime, timezone);
+      const nextDayMidnight = startOfDay(addDays(userLocalTime, 1));
 
-      console.log('expirationTime', expirationTime);
+      // 3. 将用户时区的下一天凌晨转换为 UTC 时间戳
+      const utcExpirationTime = new Date(
+        nextDayMidnight.toLocaleString('en-US', { timeZone: 'UTC' })
+      );
+      const delay = utcExpirationTime.getTime() - Date.now();
 
       // Calculate delay in milliseconds
-      const delay = expirationTime.getTime() - Date.now();
       console.log('delay', delay);
 
       // Add to delayed queue
@@ -138,8 +142,11 @@ export class ActivityExpirationService {
         userId,
         timezone,
         scheduledDatetime: scheduledDatetime.toISOString(),
-        expirationTime: expirationTime.toISOString(),
+        userLocalTime: userLocalTime.toISOString(),
+        nextDayMidnight: nextDayMidnight.toISOString(),
+        utcExpirationTime: utcExpirationTime.toISOString(),
         delayMs: delay,
+        currentUtc: new Date().toISOString()
       });
     } catch (error) {
       logger.error('Failed to schedule activity expiration:', {
