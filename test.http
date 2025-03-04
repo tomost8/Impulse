@@ -469,8 +469,25 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "category": "workout",
-      "scheduledDatetime": "2025-03-04T01:33:00Z",
-      "duration": 60
+      "scheduledDatetime": "2025-03-04T03:54:59.936Z",
+      "duration": null
+    }
+  }
+}
+
+
+### Mutation - Create Activity
+POST http://18.191.234.29:3000/graphql
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImRjNjI2MmYzZTk3NzIzOWMwMDUzY2ViODY0Yjc3NDBmZjMxZmNkY2MiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVpemRlbW92MSIsImF1ZCI6InF1aXpkZW1vdjEiLCJhdXRoX3RpbWUiOjE3NDEwNjgwMDEsInVzZXJfaWQiOiJ5SWFQTDZFY0hUWW1Bbkc4U3N4SGtuUEJCdUoyIiwic3ViIjoieUlhUEw2RWNIVFltQW5HOFNzeEhrblBCQnVKMiIsImlhdCI6MTc0MTA2ODAwMSwiZXhwIjoxNzQxMDcxNjAxLCJlbWFpbCI6IndpbGxpYW13YW5nQGZpbmR5b3VyaW1wdWxzZS5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsid2lsbGlhbXdhbmdAZmluZHlvdXJpbXB1bHNlLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.i49KEn1yR8YfPNeQmnOHCaz5qgD2BBb8CdtwfU0wwkCd9fFwrZsNG5t9Lb38tXS5bKArLVH2SJDCovBizQiQdSzPmOUeRSTPGJUwVmnkddum2hXK5KOTEmRhLK-Gzlgs-6WP0QhBRQwlpGi_o9cbTLENkzN_cI5bgdxi5djJmKO6CzKY79DVxiNkAa45a4h9QJc3yG1_s4wtWMgvSOapshaAvt0XliSZvPxfr4AXT9WqLKAJBKXFmtX7Ui7lxlGDF7zdRCVEDLH6HJTGn0y1huHDU29IAXXg16ItF4rM_8O-WVWPWSPoJlIWiZ55Oeg7a8sRhVnZ_wXZzQsp8IWrsQ
+
+{
+  "query": "mutation($input: CreateActivityInput!) { createActivity(input: $input) { success activity { id category scheduledDatetime duration status post { id author { id first_name last_name } } } errors { field message } } }",
+  "variables": {
+    "input": {
+      "category": "workout",
+      "scheduledDatetime": "2025-03-04T03:54:59.936Z",
+      "duration": null
     }
   }
 }

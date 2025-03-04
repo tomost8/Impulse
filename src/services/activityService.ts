@@ -7,6 +7,7 @@ import { ActivityExpirationService } from './activityExpirationService';
 import logger from '../config/logger';
 import { parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import moment from 'moment';
 
 /**
  * Service handling activity-related business logic and database operations
@@ -350,11 +351,24 @@ export class ActivitiesService {
       status?: string;
     }
   ): Promise<Activity[]> {
-    // Parse the input date
-    const searchDate = new Date(date);
-    // Create the next day date for range comparison
-    const nextDate = new Date(searchDate);
-    nextDate.setDate(nextDate.getDate() + 1);
+
+
+    // 1. 获取用户时区
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true }
+    });
+
+    if (!user?.timezone) {
+      throw new ValidationError('User timezone is not set');
+    }
+
+    // 2. 使用 moment-timezone 转换时间范围
+    const startOfDay = moment.tz(`${date} 00:00`, 'YYYY-MM-DD HH:mm', user.timezone).utc().toDate();
+    const endOfDay = moment.tz(`${date} 00:00`, 'YYYY-MM-DD HH:mm', user.timezone).add(1, 'day').utc().toDate();
+
+    console.log('startOfDay', startOfDay);
+    console.log('endOfDay', endOfDay);
 
     return await this.prisma.activity.findMany({
       skip: options?.skip,
@@ -362,8 +376,8 @@ export class ActivitiesService {
       where: {
         userId,
         scheduledDatetime: {
-          gte: searchDate,
-          lt: nextDate,
+          gte: startOfDay,
+          lt: endOfDay,
         },
         ...(options?.category ? { category: options.category } : {}),
         ...(options?.status ? { status: options.status } : {})
