@@ -4,6 +4,7 @@ import { Activity } from '../modules/activity/schema/activityTypes';
 import { CreateActivityInput, UpdateActivityInput } from '../modules/activity/schema/activityInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import { ActivityExpirationService } from './activityExpirationService';
+import { PointsService } from './pointService';
 import logger from '../config/logger';
 import { parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
@@ -17,6 +18,7 @@ import moment from 'moment';
  * - Activity scheduling and expiration handling
  * - Timezone-aware datetime processing
  * - Integration with posts and user management
+ * - Adding points when activity is completed
  * 
  * @remarks
  * Uses Prisma as the ORM and integrates with ActivityExpirationService for scheduling
@@ -25,7 +27,8 @@ import moment from 'moment';
 export class ActivitiesService {
   constructor(
     private prisma: PrismaClient,
-    private activityExpirationService: ActivityExpirationService
+    private activityExpirationService: ActivityExpirationService,
+    private pointsService: PointsService
   ) {}
 
   /**
@@ -192,6 +195,21 @@ export class ActivitiesService {
    */
   async update(id: number, data: UpdateActivityInput): Promise<Activity> {
     try {
+      // 获取当前活动信息，用于确定状态是否变为completed以及获取用户ID
+      const currentActivity = await this.prisma.activity.findUnique({
+        where: { id },
+        select: { 
+          userId: true,
+          status: true,
+          category: true,
+          duration: true
+        }
+      });
+
+      if (!currentActivity) {
+        throw new NotFoundError(`Activity with id ${id} not found`);
+      }
+
       // Handle scheduledDatetime updates with timezone conversion and task rescheduling
       let utcScheduledDatetime = data.scheduledDatetime;
       if (data.scheduledDatetime) {
@@ -222,13 +240,16 @@ export class ActivitiesService {
         }
       }
 
+      // 判断活动是否从非完成状态变为已完成状态
+      const isCompletingActivity = currentActivity.status !== 'completed' && data.status === 'completed';
+
       // Cancel expiration task if status changes to completed
       if (data.status === 'completed') {
         await this.activityExpirationService.cancelActivityExpiration(id);
       }
 
       // Update the activity
-      return await this.prisma.activity.update({
+      const updatedActivity = await this.prisma.activity.update({
         where: { id },
         data: {
           ...data,
@@ -245,6 +266,59 @@ export class ActivitiesService {
           }
         }
       });
+
+      // 如果活动状态变更为已完成，为用户增加积分
+      if (isCompletingActivity) {
+        try {
+          // 获取用户的primary_goal和secondary_goal
+          const user = await this.prisma.user.findUnique({
+            where: { 
+              id: currentActivity.userId 
+            },
+            select: { 
+              primary_goal: true,
+              secondary_goal: true
+            }
+          });
+
+          if (!user) {
+            throw new Error(`User with id ${currentActivity.userId} not found`);
+          }
+          
+          // 根据活动类别与用户目标的匹配情况来确定积分
+          let pointsToAdd = 45; // 默认为额外目标的积分
+          
+          if (user.primary_goal && currentActivity.category === user.primary_goal) {
+            // 主要目标匹配，获得100积分
+            pointsToAdd = 100;
+            logger.info(`Activity category ${currentActivity.category} matches user's primary goal`);
+          } else if (user.secondary_goal && currentActivity.category === user.secondary_goal) {
+            // 次要目标匹配，获得75积分
+            pointsToAdd = 75;
+            logger.info(`Activity category ${currentActivity.category} matches user's secondary goal`);
+          } else {
+            // 既不是主要目标也不是次要目标，获得45积分
+            logger.info(`Activity category ${currentActivity.category} is an additional goal`);
+          }
+          
+          // 更新用户积分
+          await this.pointsService.update(currentActivity.userId, {
+            points_added: pointsToAdd
+          });
+          
+          logger.info(`Added ${pointsToAdd} points to user ${currentActivity.userId} for completing activity ${id} (category: ${currentActivity.category})`);
+        } catch (error) {
+          // 即使积分添加失败，我们也不希望影响活动状态更新
+          logger.error('Failed to add points for completed activity:', { 
+            error, 
+            activityId: id, 
+            userId: currentActivity.userId,
+            category: currentActivity.category 
+          });
+        }
+      }
+
+      return updatedActivity;
     } catch (error: any) {
       if (error.code === 'P2025') {
         throw new NotFoundError(`Activity with id ${id} not found`);

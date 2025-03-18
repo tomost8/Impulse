@@ -5,6 +5,8 @@ import { CreatePostInput, UpdatePostInput } from '../modules/post/schema/postInp
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import Queue from 'bull';
 import { ActivityExpirationService } from './activityExpirationService';
+import { PointsService } from './pointService';
+import logger from '../config/logger';
 
 /**
  * Service handling post-related business logic and database operations
@@ -14,6 +16,7 @@ import { ActivityExpirationService } from './activityExpirationService';
  * - Asynchronous processing of post targets using Bull queue
  * - Activity status tracking and expiration management
  * - Post view tracking and analytics
+ * - Adding points when activity is completed through post creation
  * 
  * @remarks
  * Uses Prisma as the ORM and Bull for job queue management
@@ -24,7 +27,8 @@ export class PostService {
 
   constructor(
     private prisma: PrismaClient,
-    private activityExpirationService: ActivityExpirationService
+    private activityExpirationService: ActivityExpirationService,
+    private pointsService: PointsService
   ) {
     // Initialize the Bull queue for post targets processing
     this.postTargetsQueue = new Queue('post-targets', {
@@ -196,6 +200,20 @@ export class PostService {
 
         // 更新活动状态
         if (posts.length > 0) {
+          // 获取活动的当前信息，用于确定活动类别
+          const activity = await tx.activity.findUnique({
+            where: { id: data.activityId },
+            select: { 
+              userId: true,
+              category: true
+            }
+          });
+
+          if (!activity) {
+            throw new NotFoundError(`Activity with id ${data.activityId} not found`);
+          }
+
+          // 更新活动为完成状态
           await tx.activity.update({
             where: { id: data.activityId },
             data: { 
@@ -205,6 +223,55 @@ export class PostService {
           });
 
           await this.activityExpirationService.cancelActivityExpiration(data.activityId);
+
+          // 为用户添加积分
+          try {
+            // 获取用户的primary_goal和secondary_goal
+            const user = await tx.user.findUnique({
+              where: { 
+                id: activity.userId 
+              },
+              select: { 
+                primary_goal: true,
+                secondary_goal: true
+              }
+            });
+
+            if (!user) {
+              throw new Error(`User with id ${activity.userId} not found`);
+            }
+            
+            // 根据活动类别与用户目标的匹配情况来确定积分
+            let pointsToAdd = 45; // 默认为额外目标的积分
+            
+            if (user.primary_goal && activity.category === user.primary_goal) {
+              // 主要目标匹配，获得100积分
+              pointsToAdd = 100;
+              logger.info(`Activity category ${activity.category} matches user's primary goal`);
+            } else if (user.secondary_goal && activity.category === user.secondary_goal) {
+              // 次要目标匹配，获得75积分
+              pointsToAdd = 75;
+              logger.info(`Activity category ${activity.category} matches user's secondary goal`);
+            } else {
+              // 既不是主要目标也不是次要目标，获得45积分
+              logger.info(`Activity category ${activity.category} is an additional goal`);
+            }
+            
+            // 更新用户积分
+            await this.pointsService.update(activity.userId, {
+              points_added: pointsToAdd
+            });
+            
+            logger.info(`Added ${pointsToAdd} points to user ${activity.userId} for completing activity ${data.activityId} through post creation (category: ${activity.category})`);
+          } catch (error) {
+            // 即使积分添加失败，我们也不希望影响帖子创建过程
+            logger.error('Failed to add points for completed activity during post creation:', { 
+              error, 
+              activityId: data.activityId, 
+              userId: activity.userId,
+              category: activity.category 
+            });
+          }
         }
 
         return posts.map(post => ({
