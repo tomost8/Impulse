@@ -134,10 +134,10 @@ export class PostMutations {
     @Arg('input') input: CreatePostInput
   ): Promise<PostResponse> {
     try {
-      const post = await this.postService.create(input);
+      const posts = await this.postService.create(input);
       return {
         success: true,
-        post
+        post: posts[0] // 返回第一个帖子，通常是主帖子或社区帖子
       };
     } catch (error) {
       logger.error('Failed to create post:', error);

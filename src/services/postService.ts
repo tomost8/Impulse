@@ -5,6 +5,8 @@ import { CreatePostInput, UpdatePostInput } from '../modules/post/schema/postInp
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import Queue from 'bull';
 import { ActivityExpirationService } from './activityExpirationService';
+import { PointsService } from './pointService';
+import logger from '../config/logger';
 
 /**
  * Service handling post-related business logic and database operations
@@ -14,6 +16,7 @@ import { ActivityExpirationService } from './activityExpirationService';
  * - Asynchronous processing of post targets using Bull queue
  * - Activity status tracking and expiration management
  * - Post view tracking and analytics
+ * - Adding points when activity is completed through post creation
  * 
  * @remarks
  * Uses Prisma as the ORM and Bull for job queue management
@@ -24,7 +27,8 @@ export class PostService {
 
   constructor(
     private prisma: PrismaClient,
-    private activityExpirationService: ActivityExpirationService
+    private activityExpirationService: ActivityExpirationService,
+    private pointsService: PointsService
   ) {
     // Initialize the Bull queue for post targets processing
     this.postTargetsQueue = new Queue('post-targets', {
@@ -86,12 +90,12 @@ export class PostService {
    * Create a new post with associated targets and activity tracking
    * 
    * @param data - Post creation data containing required information
-   * @returns Promise<Post> The newly created post
+   * @returns Promise<Post[]> The newly created posts
    * @throws {ValidationError} If validation fails or prerequisites are not met
    * @throws {PrismaError} If database operations fail
    * @remarks This method handles high concurrency by processing targets in batches
    */
-  async create(data: CreatePostInput): Promise<Post> {
+  async create(data: CreatePostInput): Promise<Post[]> {
     try {
       // Check if the user has an unexpired activity of the same category
       const hasValidActivity = await this.prisma.activity.findFirst({
@@ -113,69 +117,168 @@ export class PostService {
       const HIGH_CONCURRENCY_THRESHOLD = 10;
 
       return await this.prisma.$transaction(async (tx) => {
-        
+        const posts: any[] = [];
+        // 分离社区目标和其他目标
+        const communityTargets = data.post_targets.filter(target => 
+          target.target_type === 'community'
+        );
+        const otherTargets = data.post_targets.filter(target => 
+          target.target_type !== 'community'
+        );
 
-        // Create post with initial batch of targets
-        const initialTargets = data.post_targets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
-        const post = await tx.post.create({
-          data: {
-            caption: data.caption,
-            mediaUrl: data.mediaUrl,
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            author: { connect: { id: data.authorId } },
-            post_targets: {
-              createMany: {
-                data: initialTargets.map(target => ({
-                  target_type: target.target_type,
-                  target_id: target.target_id
-                }))
+        // 为每个社区创建独立帖子
+        if (communityTargets.length > 0) {
+          const communityPosts = await Promise.all(
+            communityTargets.map(target => 
+              tx.post.create({
+                data: {
+                  caption: data.caption,
+                  mediaUrl: data.mediaUrl,
+                  category: data.category,
+                  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                  author: { connect: { id: data.authorId } },
+                  post_targets: {
+                    create: {
+                      target_type: target.target_type,
+                      target_id: target.target_id
+                    }
+                  }
+                },
+                include: {
+                  author: { include: { point: true } },
+                  post_targets: true,
+                  _count: { select: { likes: true } }
+                }
+              })
+            )
+          );
+          posts.push(...communityPosts);
+        }
+
+        // 为其他目标创建一个帖子，保持原有的高并发处理逻辑
+        if (otherTargets.length > 0) {
+          const initialTargets = otherTargets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
+          const otherPost = await tx.post.create({
+            data: {
+              caption: data.caption,
+              mediaUrl: data.mediaUrl,
+              category: data.category,
+              expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+              author: { connect: { id: data.authorId } },
+              post_targets: {
+                createMany: {
+                  data: initialTargets.map(target => ({
+                    target_type: target.target_type,
+                    target_id: target.target_id
+                  }))
+                }
               }
-            }
-          },
-          include: {
-            author: {
-              include: {point: true}
             },
-            post_targets: true,
-            _count: {
-              select: {
-                likes: true
-              }
+            include: {
+              author: { include: { point: true } },
+              post_targets: true,
+              _count: { select: { likes: true } }
+            }
+          });
+
+          // 处理剩余的其他目标
+          if (otherTargets.length > HIGH_CONCURRENCY_THRESHOLD) {
+            const remainingTargets = otherTargets.slice(HIGH_CONCURRENCY_THRESHOLD);
+            const BATCH_SIZE = 100;
+            const chunks = this.chunkArray(remainingTargets, BATCH_SIZE);
+            
+            for (const chunk of chunks) {
+              await this.addToQueue('create_post_targets', {
+                postId: otherPost.id,
+                targets: chunk
+              });
             }
           }
-        });
 
-        // Update corresponding activity status and cancel expiration
-        await tx.activity.update({
-          where: { id: data.activityId },
-          data: { postId: post.id, status: "completed" }
-        });
+          posts.push(otherPost);
+        }
 
-        // Cancel the activity expiration task
-        await this.activityExpirationService.cancelActivityExpiration(data.activityId);
+        // 更新活动状态
+        if (posts.length > 0) {
+          // 获取活动的当前信息，用于确定活动类别
+          const activity = await tx.activity.findUnique({
+            where: { id: data.activityId },
+            select: { 
+              userId: true,
+              category: true
+            }
+          });
 
-        // Queue remaining targets for async processing if any
-        if (data.post_targets.length > HIGH_CONCURRENCY_THRESHOLD) {
-          const remainingTargets = data.post_targets.slice(HIGH_CONCURRENCY_THRESHOLD);
-          const BATCH_SIZE = 100;
-          const chunks = this.chunkArray(remainingTargets, BATCH_SIZE);
-          
-          for (const chunk of chunks) {
-            await this.addToQueue('create_post_targets', {
-              postId: post.id,
-              targets: chunk
+          if (!activity) {
+            throw new NotFoundError(`Activity with id ${data.activityId} not found`);
+          }
+
+          // 更新活动为完成状态
+          await tx.activity.update({
+            where: { id: data.activityId },
+            data: { 
+              postId: posts[0].id,
+              status: "completed" 
+            }
+          });
+
+          await this.activityExpirationService.cancelActivityExpiration(data.activityId);
+
+          // 为用户添加积分
+          try {
+            // 获取用户的primary_goal和secondary_goal
+            const user = await tx.user.findUnique({
+              where: { 
+                id: activity.userId 
+              },
+              select: { 
+                primary_goal: true,
+                secondary_goal: true
+              }
+            });
+
+            if (!user) {
+              throw new Error(`User with id ${activity.userId} not found`);
+            }
+            
+            // 根据活动类别与用户目标的匹配情况来确定积分
+            let pointsToAdd = 45; // 默认为额外目标的积分
+            
+            if (user.primary_goal && activity.category === user.primary_goal) {
+              // 主要目标匹配，获得100积分
+              pointsToAdd = 100;
+              logger.info(`Activity category ${activity.category} matches user's primary goal`);
+            } else if (user.secondary_goal && activity.category === user.secondary_goal) {
+              // 次要目标匹配，获得75积分
+              pointsToAdd = 75;
+              logger.info(`Activity category ${activity.category} matches user's secondary goal`);
+            } else {
+              // 既不是主要目标也不是次要目标，获得45积分
+              logger.info(`Activity category ${activity.category} is an additional goal`);
+            }
+            
+            // 更新用户积分
+            await this.pointsService.update(activity.userId, {
+              points_added: pointsToAdd
+            });
+            
+            logger.info(`Added ${pointsToAdd} points to user ${activity.userId} for completing activity ${data.activityId} through post creation (category: ${activity.category})`);
+          } catch (error) {
+            // 即使积分添加失败，我们也不希望影响帖子创建过程
+            logger.error('Failed to add points for completed activity during post creation:', { 
+              error, 
+              activityId: data.activityId, 
+              userId: activity.userId,
+              category: activity.category 
             });
           }
         }
 
-        return {
+        return posts.map(post => ({
           ...post,
-          likeCount: post._count.likes
-        };
-
-      }, {
-        timeout: 10000,
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted
+          likeCount: post._count.likes,
+          liked: false
+        }));
       });
     } catch (error: any) {
       if (error.code === 'P2003') {
@@ -627,7 +730,8 @@ export class PostService {
         post_targets: true,
         _count: {
           select: {
-            likes: true
+            likes: true,
+            comments: true
           }
         },
         likes: {
@@ -643,7 +747,8 @@ export class PostService {
     return posts.map((post) => ({
       ...post,
       liked: post.likes.length > 0,
-      likeCount: post._count.likes
+      likeCount: post._count.likes,
+      commentCount: post._count.comments
     }));
   }
 
@@ -700,7 +805,8 @@ export class PostService {
         post_targets: true,
         _count: {
           select: {
-            likes: true
+            likes: true,
+            comments: true
           }
         },
         likes: {
@@ -716,7 +822,8 @@ export class PostService {
     return posts.map((post) => ({
       ...post,
       liked: post.likes.length > 0,
-      likeCount: post._count.likes
+      likeCount: post._count.likes,
+      commentCount: post._count.comments
     }));
   }
 }

@@ -2,6 +2,14 @@ import { useServer} from 'graphql-ws/lib/use/ws';
 import { WebSocketServer } from 'ws';
 import { GraphQLSchema } from 'graphql';
 
+interface User {
+  id: number;
+}
+
+interface ConnectionParams {
+  user?: User;
+}
+
 /**
  * Configure WebSocket server for GraphQL subscriptions
  * 
@@ -36,14 +44,28 @@ export function configureWebSocket(httpServer: any, schema: GraphQLSchema) {
   useServer(
     {
       schema,
+      context: (ctx: { connectionParams?: ConnectionParams }) => {
+        // 从连接初始化消息中获取用户信息
+        const connectionParams = ctx.connectionParams;
+        console.log('WebSocket connection params:', connectionParams);
+        
+        return {
+          user: connectionParams?.user
+        };
+      },
       /**
        * Handler for client connection events
        * 
-       * @param context - Connection context containing client information
+       * @param ctx - Connection context containing client information
        * @remarks Useful for setting up client-specific state or authentication
        */
-      onConnect: (context) => {
-        console.log('Client connected');
+      onConnect: (ctx: { connectionParams?: ConnectionParams }) => {
+        const user = ctx.connectionParams?.user;
+        console.log('Client connected with user:', user);
+        if (!user?.id) {
+          throw new Error('No user ID provided');
+        }
+        return true;
       },
       /**
        * Handler for client disconnection events
@@ -51,7 +73,7 @@ export function configureWebSocket(httpServer: any, schema: GraphQLSchema) {
        * @param context - Connection context containing client information
        * @remarks Useful for cleanup of client-specific resources
        */
-      onDisconnect: (context) => {
+      onDisconnect: (ctx) => {
         console.log('Client disconnected');
       },
     },

@@ -308,8 +308,8 @@ Content-Type: application/json
   "query": "mutation ($input: CreateChatMemberInput!) { createChatMember(input: $input) { success chat_member { chat { id type title creator { id first_name last_name email } } user { id first_name last_name email } role status } errors { field message } } }",
   "variables": {
     "input": {
-      "chat_id": 6,
-      "user_id": 3,
+      "chat_id": 2,
+      "user_id": 4,
       "status": "ACCEPTED"
     }
   }

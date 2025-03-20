@@ -28,7 +28,7 @@ export const authMiddleware = async ({ context }: { context: any }, next: () => 
       throw new AuthenticationError('No token provided');
     }
 
-    // 在开发环境中使用静态 token
+    // // 在开发环境中使用静态 token
     // if (process.env.NODE_ENV === 'development' && token === DEV_TOKEN) {
     //   context.user = DEV_USER;
     //   return next();
