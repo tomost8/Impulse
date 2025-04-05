@@ -102,9 +102,14 @@ export class CommunitiesService {
    */
   async update(id: number, input: UpdateCommunityInput): Promise<Community> {
     try {
+      // Transform the input to match Prisma's expected format
+      const updateData = {
+        ...(input.name && { name: input.name }),
+      };
+
       return await this.prisma.community.update({
         where: { id },
-        data: input,
+        data: updateData,
         include: { 
           influencer: {
             include: {point: true}

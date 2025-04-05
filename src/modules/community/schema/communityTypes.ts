@@ -37,6 +37,10 @@ export class Community {
   @Field(() => String)
   name!: string;
 
+  /** Unique community code */
+  @Field(() => String, { nullable: true })
+  code!: string | null;
+
   /** Community description */
   @Field(() => String, { nullable: true })
   description!: string | null;
