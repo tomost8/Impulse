@@ -117,7 +117,7 @@ model UserLoginStreak {
   last_login_date DateTime
   streak_count    Int      @default(0)
   max_streak_count Int     @default(0)
-  weekly_logins   Json     @default("[false,false,false,false,false,false,false]")
+  weekly_logins   Json     @default("[]")
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
