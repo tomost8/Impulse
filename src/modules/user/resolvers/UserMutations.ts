@@ -1,6 +1,6 @@
 import { Resolver, Mutation, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
-import { User, UserResponse } from '../schema/userTypes';
+import { User, UserResponse, UserWithStreak, UserWithStreakResponse } from '../schema/userTypes';
 import { CreateUserInput, UpdateUserInput } from '../schema/userInputs';
 import { UsersService } from '../../../services/userService';
 import { ValidationError } from '../../common/errors/graphql.error';
@@ -186,9 +186,9 @@ export class UserMutations {
    * }
    * ```
    */
-  @Mutation(() => UserResponse)
+  @Mutation(() => UserWithStreakResponse)
   @UseMiddleware(authMiddleware)
-  async firebaseAuth(@Ctx() context: any): Promise<UserResponse> {
+  async firebaseAuth(@Ctx() context: any): Promise<UserWithStreakResponse> {
     try {
       const { uid, email } = context.user;
       
@@ -205,7 +205,7 @@ export class UserMutations {
 
       return {
         success: true,
-        user
+        user: user as UserWithStreak
       };
     } catch (error) {
       return {

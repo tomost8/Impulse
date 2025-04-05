@@ -322,6 +322,12 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://
 """
 scalar JSON
 
+type LoginStreak {
+  max_streak_count: Int!
+  streak_count: Int!
+  weekly_logins: JSON!
+}
+
 type Message {
   chat: Chat!
   chat_id: Int!
@@ -373,7 +379,7 @@ type Mutation {
   deleteRedeem(id: Int!): RedeemResponse!
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
-  firebaseAuth: UserResponse!
+  firebaseAuth: UserWithStreakResponse!
   likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
@@ -703,6 +709,38 @@ enum UserSortType {
   POINTS_ALL
   POINTS_MONTHLY
   POINTS_WEEKLY
+}
+
+type UserWithStreak {
+  age: Int
+  bio: String
+  created_at: DateTimeISO!
+  dob: Date
+  email: String!
+  fcm_token: String
+  firebase_uid: String
+  first_name: String
+  gender: String
+  id: Int!
+  last_login_at: DateTimeISO
+  last_name: String
+  login_streak: LoginStreak
+  point: Point
+  primary_goal: Category
+  profile_picture: String
+  role: String!
+  searchable: Boolean!
+  secondary_goal: Category
+  status: String!
+  timezone: String
+  updated_at: DateTimeISO!
+  username: String
+}
+
+type UserWithStreakResponse {
+  errors: [FieldError!]
+  success: Boolean!
+  user: UserWithStreak
 }
 
 type UsersResponse {

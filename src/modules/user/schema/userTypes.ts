@@ -4,6 +4,22 @@ import { FieldError } from '../../common/types/errorTypes';
 import { DateScalar } from '../../common/scalars/dateScalar';
 import { Category } from '../../common/types/enumTypes';
 import { Point } from '../../point';
+import { GraphQLJSON } from 'graphql-type-json';
+
+@ObjectType()
+export class LoginStreak {
+  /** Current streak count */
+  @Field(() => Int)
+  streak_count!: number;
+
+  /** Maximum streak count */
+  @Field(() => Int)
+  max_streak_count!: number;
+
+  /** Weekly login status */
+  @Field(() => GraphQLJSON)
+  weekly_logins!: any;
+}
 
 /**
  * User entity representing a user in the system
@@ -118,12 +134,31 @@ export class User {
 }
 
 @ObjectType()
+export class UserWithStreak extends User {
+  /** User's login streak information */
+  @Field(() => LoginStreak, { nullable: true })
+  login_streak!: LoginStreak | null;
+}
+
+@ObjectType()
 export class UserResponse {
   @Field(() => Boolean)
   success!: boolean;
 
   @Field(() => User, { nullable: true })
   user?: User;
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+@ObjectType()
+export class UserWithStreakResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => UserWithStreak, { nullable: true })
+  user?: UserWithStreak;
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
@@ -145,4 +180,4 @@ export class UsersResponse {
 export class UserCreatedPayload {
   @Field(() => User)
   user!: User;
-} 
+}

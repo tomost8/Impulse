@@ -171,7 +171,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "mutation { firebaseAuth { success user { id email firebase_uid first_name last_name role status } errors { field message } } }"
+  "query": "mutation { firebaseAuth { success user { id email firebase_uid first_name last_name role status login_streak { streak_count max_streak_count weekly_logins } } errors { field message } } }"
 }
 
 
