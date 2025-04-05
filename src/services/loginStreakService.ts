@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { differenceInDays, startOfDay, endOfDay, getDay } from 'date-fns';
+import { differenceInDays, startOfDay, getDay } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import logger from '../config/logger';
 
 /**
@@ -40,42 +41,45 @@ export class LoginStreakService {
         where: { user_id: userId }
       });
 
-      const now = new Date();
-      const today = startOfDay(now);
-      const dayNumber = this.getDayNumber(now);
+      // 使用用户的时区
+      const nowInUserTz = toZonedTime(new Date(), timezone);
+      const todayInUserTz = startOfDay(nowInUserTz);
+      const dayNumber = this.getDayNumber(nowInUserTz);
 
       // 如果是新用户，创建登录记录
       if (!loginStreak) {
         await this.prisma.userLoginStreak.create({
           data: {
             user_id: userId,
-            last_login_date: today,
+            last_login_date: todayInUserTz,
             streak_count: 1,
-            max_streak_count: 1,
-            weekly_logins: [dayNumber] // 数组中只包含今天的登录日
+            weekly_logins: [dayNumber]
           }
         });
         return;
       }
 
-      // 计算与上次登录的日期差
-      const daysSinceLastLogin = differenceInDays(today, loginStreak.last_login_date);
-      const lastLoginDay = new Date(loginStreak.last_login_date);
+      // 将上次登录时间转换为用户时区
+      const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, timezone);
+      const lastLoginDayStart = startOfDay(lastLoginInUserTz);
+      
+      // 计算与上次登录的日期差（基于用户时区）
+      const daysSinceLastLogin = differenceInDays(todayInUserTz, lastLoginDayStart);
 
-      // 如果是新的一周，重置记录
-      if (differenceInDays(today, startOfDay(lastLoginDay)) >= 7) {
+      // 如果中断了连续登录，重置记录
+      if (daysSinceLastLogin > 1 || daysSinceLastLogin < 0) {
         await this.prisma.userLoginStreak.update({
           where: { user_id: userId },
           data: {
-            last_login_date: today,
+            last_login_date: todayInUserTz,
             streak_count: 1,
-            weekly_logins: [dayNumber] // 新的一周只包含今天
+            weekly_logins: [dayNumber]
           }
         });
         return;
       }
 
-      // 获取当前的连续登录记录
+      // 获取当前的登录记录
       let weeklyLogins = Array.isArray(loginStreak.weekly_logins) 
         ? loginStreak.weekly_logins as number[]
         : [];
@@ -83,16 +87,13 @@ export class LoginStreakService {
       // 如果今天还没有记录，添加到数组中
       if (!weeklyLogins.includes(dayNumber)) {
         weeklyLogins.push(dayNumber);
-        // 按照日期排序
         weeklyLogins.sort((a, b) => a - b);
       }
 
+      // 更新连续登录记录
       const updatedStreak = {
-        last_login_date: today,
+        last_login_date: todayInUserTz,
         streak_count: daysSinceLastLogin === 1 ? loginStreak.streak_count + 1 : 1,
-        max_streak_count: daysSinceLastLogin === 1 
-          ? Math.max(loginStreak.streak_count + 1, loginStreak.max_streak_count)
-          : Math.max(1, loginStreak.max_streak_count),
         weekly_logins: weeklyLogins
       };
 
@@ -105,8 +106,8 @@ export class LoginStreakService {
       logger.info('Login streak updated', {
         userId,
         streakCount: updatedStreak.streak_count,
-        maxStreakCount: updatedStreak.max_streak_count,
-        weeklyLogins
+        weeklyLogins,
+        timezone
       });
     } catch (error) {
       logger.error('Failed to update login streak', {
