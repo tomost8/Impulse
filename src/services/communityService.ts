@@ -155,6 +155,30 @@ export class CommunitiesService {
 @Service()
 export class CommunityMembersService {
   constructor(private prisma: PrismaClient) {}
+
+  /**
+   * Retrieve all community members across all communities
+   * 
+   * @returns Promise resolving to an array of all community members
+   * @throws {PrismaError} If database query fails
+   */
+  async findAll(): Promise<CommunityMember[]> {
+    return await this.prisma.communityMember.findMany({
+      include: {
+        community: {
+          include: {
+            influencer: {
+              include: {point: true}
+            }
+          }
+        },
+        user: {
+          include: {point: true}
+        }
+      }
+    });
+  }
+
   /**
    * Find all members of a community given community ID
    * 

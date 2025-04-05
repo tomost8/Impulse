@@ -113,6 +113,38 @@ export class CommunityMemberQueries {
   constructor(private communityMembersService: CommunityMembersService) {}
 
   /**
+   * Query to fetch all community members across all communities
+   * 
+   * @returns Response containing array of all community members in the system
+   * 
+   * @example
+   * ```graphql
+   * query { getAllCommunityMembers 
+   * { success community_members { 
+   * user { id first_name last_name } community { id name } role status
+   * } errors { field message } } }
+   * ```
+   */
+  @Query(() => CommunityMembersResponse)
+  async getAllCommunityMembers(): Promise<CommunityMembersResponse> {
+    try {
+      const community_members = await this.communityMembersService.findAll();
+      return {
+        success: true,
+        community_members
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch community members'
+        }]
+      };
+    }
+  }
+
+  /**
    * Query to fetch all members for a community
    * 
    * @param id - The ID of the community

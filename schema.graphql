@@ -505,6 +505,7 @@ type Query {
   getAllCategories: CommunityCategoriesResponse!
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
+  getAllCommunityMembers: CommunityMembersResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
   getChat(id: Int!): ChatResponse!
   getChatMembers(id: Int!, sort_by: UserSortType): ChatMembersResponse!
