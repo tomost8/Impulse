@@ -26,6 +26,13 @@ export class CreateCommunityInput {
   @Length(1, 255, { message: 'Commuity name must between 1 and 255 characters' })
   name!: string;
 
+  /** Optional unique community code */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Community code must be a string' })
+  @Length(1, 50, { message: 'Community code must be between 1 and 50 characters' })
+  code?: string | null;
+
   /** Optional community description */
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -62,11 +69,18 @@ export class CreateCommunityInput {
 @InputType()
 export class UpdateCommunityInput {
   /** Community name */
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString({ message: 'Community name must be a string' })
   @Length(1, 255, { message: 'Commuity name must between 1 and 255 characters' })
-  name?: string;
+  name?: string | null;
+
+  /** Optional unique community code */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Community code must be a string' })
+  @Length(1, 50, { message: 'Community code must be between 1 and 50 characters' })
+  code?: string | null;
 
   /** Optional community description */
   @Field(() => String, { nullable: true })

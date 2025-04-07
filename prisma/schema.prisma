@@ -74,7 +74,7 @@ model User {
   last_name       String?
   username        String?
   dob             DateTime? @db.Date
-  age             Int?  
+  age             Int?
   gender          String?
   profile_picture String?
   bio             String?
@@ -147,6 +147,7 @@ model Friendship {
 model Community {
   id            Int      @id @default(autoincrement()) @map("community_id")
   name          String
+  code          String?  @unique
   description   String?
   thumbnail     String?
   influencer    User     @relation(fields: [influencer_id], references: [id])

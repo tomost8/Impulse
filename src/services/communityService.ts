@@ -102,9 +102,14 @@ export class CommunitiesService {
    */
   async update(id: number, input: UpdateCommunityInput): Promise<Community> {
     try {
+      // Transform the input to match Prisma's expected format
+      const updateData = {
+        ...(input.name && { name: input.name }),
+      };
+
       return await this.prisma.community.update({
         where: { id },
-        data: input,
+        data: updateData,
         include: { 
           influencer: {
             include: {point: true}
@@ -155,6 +160,30 @@ export class CommunitiesService {
 @Service()
 export class CommunityMembersService {
   constructor(private prisma: PrismaClient) {}
+
+  /**
+   * Retrieve all community members across all communities
+   * 
+   * @returns Promise resolving to an array of all community members
+   * @throws {PrismaError} If database query fails
+   */
+  async findAll(): Promise<CommunityMember[]> {
+    return await this.prisma.communityMember.findMany({
+      include: {
+        community: {
+          include: {
+            influencer: {
+              include: {point: true}
+            }
+          }
+        },
+        user: {
+          include: {point: true}
+        }
+      }
+    });
+  }
+
   /**
    * Find all members of a community given community ID
    * 
@@ -363,6 +392,23 @@ export class CommunityMembersService {
 @Service()
 export class CommunityCategoriesService {
   constructor(private prisma: PrismaClient) {}
+  /**
+   * Return all community categories
+   */
+  async findAll(): Promise<CommunityCategory[] | null> {
+    return await this.prisma.communityCategory.findMany({
+      include: {
+        community: {
+          include: {
+            influencer: {
+              include: {point: true}
+            }
+          }
+        }
+      }
+  });
+  }
+
   /**
    * Find all categories of a community given community ID
    * 

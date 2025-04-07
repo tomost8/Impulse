@@ -124,6 +124,7 @@ type CommunitiesResponse {
 }
 
 type Community {
+  code: String
   created_at: DateTimeISO!
   description: String
   id: Int!
@@ -217,6 +218,7 @@ input CreateCommunityCategoryInput {
 }
 
 input CreateCommunityInput {
+  code: String
   description: String
   influencer_id: Int!
   name: String!
@@ -503,8 +505,10 @@ type Query {
   activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
   friendsFeedPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
+  getAllCategories: CommunityCategoriesResponse!
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
+  getAllCommunityMembers: CommunityMembersResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
   getChat(id: Int!): ChatResponse!
   getChatMembers(id: Int!, sort_by: UserSortType): ChatMembersResponse!
@@ -623,8 +627,9 @@ input UpdateChatMemberInput {
 }
 
 input UpdateCommunityInput {
+  code: String
   description: String
-  name: String!
+  name: String
   thumbnail: String
 }
 
