@@ -522,12 +522,12 @@ type Query {
   joinedCommunityPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
   loginStreak(id: Int!): UserLoginStreakResponse!
   me: UserResponse!
-  myLoginStreak: UserLoginStreakResponse!
+  myLoginStreak(timezone: String!): UserLoginStreakResponse!
   post(id: Int!): PostResponse!
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
-  user(firebase_uid: String, id: Int): UserResponse!
+  user(firebase_uid: String, id: Int): UserWithStreakResponse!
   users(sort_by: UserSortType): UsersResponse!
 }
 

@@ -1,12 +1,13 @@
 import { Resolver, Query, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
-import { User, UserResponse, UsersResponse, UserLoginStreakResponse } from '../schema/userTypes';
+import { User, UserResponse, UsersResponse, UserLoginStreakResponse, UserWithStreakResponse, UserWithStreak } from '../schema/userTypes';
 import { UsersService } from '../../../services/userService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
-import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
-import logger from '../../../config/logger';
+import { ValidationError } from '../../common/errors/graphql.error';
 import { UserSortType } from '../../common/types/enumTypes';
+import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
 import { LoginStreakService } from '../../../services/loginStreakService';
+import logger from '../../../config/logger';
 
 /**
  * GraphQL query resolvers for User-related operations
@@ -168,10 +169,11 @@ export class UserQueries {
    * 
    * This query allows looking up a user using either their database ID
    * or their Firebase UID. At least one identifier must be provided.
+   * The login streak will be calculated based on the user's stored timezone.
    * 
    * @param id - Optional database ID of the user
    * @param firebase_uid - Optional Firebase UID of the user
-   * @returns UserResponse containing the found user or error details
+   * @returns UserWithStreakResponse containing the found user or error details
    * @throws {ValidationError} If neither ID nor Firebase UID is provided
    * @throws {NotFoundError} If user is not found
    * 
@@ -183,6 +185,11 @@ export class UserQueries {
    *     user {
    *       email
    *       name
+   *       timezone
+   *       login_streak {
+   *         streak_count
+   *         weekly_logins
+   *       }
    *     }
    *     errors {
    *       field
@@ -192,11 +199,11 @@ export class UserQueries {
    * }
    * ```
    */
-  @Query(() => UserResponse)
+  @Query(() => UserWithStreakResponse)
   async user(
     @Arg('id', () => Int, { nullable: true }) id?: number,
     @Arg('firebase_uid', () => String, { nullable: true }) firebase_uid?: string
-  ): Promise<UserResponse> {
+  ): Promise<UserWithStreakResponse> {
     try {
       let user;
       
@@ -226,7 +233,25 @@ export class UserQueries {
         };
       }
 
-      return { success: true, user };
+      // Convert to UserWithStreak type
+      const userWithStreak: UserWithStreak = {
+        ...user,
+        login_streak: null
+      };
+
+      // Get login streak data using the user's stored timezone
+      const userTimezone = user.timezone || 'UTC';
+      logger.info('Fetching login streak with user\'s timezone', {
+        userId: user.id,
+        timezone: userTimezone
+      });
+      
+      const streakData = await this.loginStreakService.getLoginStreak(user.id, userTimezone);
+      if (streakData) {
+        userWithStreak.login_streak = streakData;
+      }
+
+      return { success: true, user: userWithStreak };
     } catch (error: any) {
       logger.error('Failed to fetch user', {
         userId: id,
@@ -320,13 +345,14 @@ export class UserQueries {
    * identify the user.
    * 
    * @param ctx - Authentication context containing user information
+   * @param timezone - Required timezone parameter (e.g. "America/Los_Angeles") 
    * @returns UserLoginStreakResponse with the current user's login streak or error details
    * @throws {ValidationError} If the user is not found in the database
    * 
    * @example
    * ```graphql
    * query {
-   *   myLoginStreak {
+   *   myLoginStreak(timezone: "America/Los_Angeles") {
    *     success
    *     login_streak {
    *       streak_count
@@ -342,7 +368,10 @@ export class UserQueries {
    */
   @Query(() => UserLoginStreakResponse)
   @UseMiddleware(authMiddleware)
-  async myLoginStreak(@Ctx() ctx: AuthContext): Promise<UserLoginStreakResponse> {
+  async myLoginStreak(
+    @Ctx() ctx: AuthContext,
+    @Arg('timezone', () => String) timezone: string
+  ): Promise<UserLoginStreakResponse> {
     try {
       const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
       
@@ -359,7 +388,12 @@ export class UserQueries {
         };
       }
 
-      const streakData = await this.loginStreakService.getLoginStreak(user.id);
+      logger.info('Fetching login streak with timezone', {
+        userId: user.id,
+        timezone
+      });
+
+      const streakData = await this.loginStreakService.getLoginStreak(user.id, timezone);
       
       if (!streakData) {
         return {
@@ -382,7 +416,8 @@ export class UserQueries {
     } catch (error: any) {
       logger.error('Failed to fetch current user login streak', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
+        timezone
       });
 
       return {

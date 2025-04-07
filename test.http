@@ -221,7 +221,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($id: Int!) { user(id: $id) { success user { id email firebase_uid first_name last_name username gender profile_picture role status timezone searchable last_login_at } errors { field message } } }",
+  "query": "query($id: Int!) { user(id: $id) { success user { id email firebase_uid first_name last_name username age gender bio primary_goal secondary_goal profile_picture role status timezone searchable last_login_at point { points spending_points weekly_points monthly_points } login_streak { streak_count weekly_logins last_login_date } } errors { field message } } }",
   "variables": {
     "id": 3
   }
@@ -234,7 +234,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($firebase_uid: String!) { user(firebase_uid: $firebase_uid) { success user { id email firebase_uid first_name last_name username gender profile_picture role status timezone searchable last_login_at } errors { field message } } }",
+  "query": "query($firebase_uid: String!) { user(firebase_uid: $firebase_uid) { success user { id email firebase_uid first_name last_name username age gender bio primary_goal secondary_goal profile_picture role status timezone searchable last_login_at point { points spending_points weekly_points monthly_points } login_streak { streak_count weekly_logins last_login_date } } errors { field message } } }",
   "variables": {
     "firebase_uid": "dev-test-001"
   }
@@ -649,7 +649,7 @@ Content-Type: application/json
     "input": {
       "caption": "Both user and community",
       "authorId": 2,
-      "activityId": 4,
+      "activityId": 8,
       "post_targets": [
             {"target_type": "user", "target_id": 1}
 
@@ -1288,7 +1288,7 @@ Authorization: Bearer {{authToken}}
   }
 }
 
-# 查询特定用户的登录连续记录
+### 查询特定用户的登录连续记录
 POST {{baseUrl}}/graphql
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
@@ -1305,5 +1305,5 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { myLoginStreak { success login_streak { streak_count weekly_logins last_login_date } errors { field message } } }"
+  "query": "query { myLoginStreak(timezone: \"America/Los_Angeles\") { success login_streak { streak_count weekly_logins last_login_date } errors { field message } } }"
 }
