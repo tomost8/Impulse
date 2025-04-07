@@ -317,6 +317,7 @@ export class UserQueries {
         login_streak: {
           streak_count: streakData.streak_count,
           weekly_logins: streakData.weekly_logins,
+          formatted_weekly_logins: streakData.formatted_weekly_logins,
           last_login_date: streakData.last_login_date
         }
       };
@@ -345,18 +346,21 @@ export class UserQueries {
    * identify the user.
    * 
    * @param ctx - Authentication context containing user information
-   * @param timezone - Required timezone parameter (e.g. "America/Los_Angeles") 
    * @returns UserLoginStreakResponse with the current user's login streak or error details
    * @throws {ValidationError} If the user is not found in the database
    * 
    * @example
    * ```graphql
    * query {
-   *   myLoginStreak(timezone: "America/Los_Angeles") {
+   *   myLoginStreak {
    *     success
    *     login_streak {
    *       streak_count
    *       weekly_logins
+   *       formatted_weekly_logins {
+   *         label
+   *         completed
+   *       }
    *     }
    *     errors {
    *       field
@@ -369,8 +373,7 @@ export class UserQueries {
   @Query(() => UserLoginStreakResponse)
   @UseMiddleware(authMiddleware)
   async myLoginStreak(
-    @Ctx() ctx: AuthContext,
-    @Arg('timezone', () => String) timezone: string
+    @Ctx() ctx: AuthContext
   ): Promise<UserLoginStreakResponse> {
     try {
       const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
@@ -388,12 +391,14 @@ export class UserQueries {
         };
       }
 
-      logger.info('Fetching login streak with timezone', {
+      // 使用用户自己的时区
+      const userTimezone = user.timezone || 'UTC';
+      logger.info('Fetching login streak with user timezone', {
         userId: user.id,
-        timezone
+        timezone: userTimezone
       });
 
-      const streakData = await this.loginStreakService.getLoginStreak(user.id, timezone);
+      const streakData = await this.loginStreakService.getLoginStreak(user.id, userTimezone);
       
       if (!streakData) {
         return {
@@ -410,14 +415,14 @@ export class UserQueries {
         login_streak: {
           streak_count: streakData.streak_count,
           weekly_logins: streakData.weekly_logins,
+          formatted_weekly_logins: streakData.formatted_weekly_logins,
           last_login_date: streakData.last_login_date
         }
       };
     } catch (error: any) {
       logger.error('Failed to fetch current user login streak', {
         error: error.message,
-        stack: error.stack,
-        timezone
+        stack: error.stack
       });
 
       return {

@@ -7,6 +7,17 @@ import { Point } from '../../point';
 import { GraphQLJSON } from 'graphql-type-json';
 
 @ObjectType()
+export class WeeklyLoginStatus {
+  /** Day label (S, M, T, W, TH, F, S) */
+  @Field(() => String)
+  label!: string;
+
+  /** Whether the user has logged in on this day */
+  @Field(() => Boolean)
+  completed!: boolean;
+}
+
+@ObjectType()
 export class LoginStreak {
   /** Current streak count */
   @Field(() => Int)
@@ -15,6 +26,10 @@ export class LoginStreak {
   /** Weekly login status - dates mapped to login counts */
   @Field(() => GraphQLJSON)
   weekly_logins!: Record<string, number>;
+
+  /** Formatted weekly login status for frontend display */
+  @Field(() => [WeeklyLoginStatus])
+  formatted_weekly_logins!: WeeklyLoginStatus[];
 
   /** Last login date */
   @Field(() => Date, { nullable: true })

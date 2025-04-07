@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { differenceInDays, startOfDay, format, getDay, isMonday } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import logger from '../config/logger';
+import { WeeklyLoginStatus } from '../modules/user/schema/userTypes';
 
 type WeeklyLogins = Record<string, number>;
 
@@ -19,6 +20,41 @@ type WeeklyLogins = Record<string, number>;
 @Service()
 export class LoginStreakService {
   constructor(private prisma: PrismaClient) {}
+
+  /**
+   * Format weekly logins into a frontend-friendly format
+   * 
+   * @param weeklyLogins - Raw weekly logins object
+   * @param timezone - User's timezone for day calculation
+   * @returns Array of formatted day objects for frontend
+   */
+  private formatWeeklyLoginsForFrontend(weeklyLogins: WeeklyLogins, timezone: string): WeeklyLoginStatus[] {
+    const dayLabels = ['S', 'M', 'T', 'W', 'TH', 'F', 'S'];
+    const nowInUserTz = toZonedTime(new Date(), timezone);
+    const currentDayIndex = getDay(nowInUserTz); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Convert weekly_logins object to a boolean array for each day of the week
+    const result: WeeklyLoginStatus[] = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(nowInUserTz);
+      // Calculate the date for this day of the week
+      // First find how many days to go back to get to this day
+      const daysToSubtract = (currentDayIndex - i + 7) % 7;
+      dayDate.setDate(dayDate.getDate() - daysToSubtract);
+      
+      const dayKey = format(toZonedTime(dayDate, timezone), 'yyyy-MM-dd');
+      // Ensure hasLoggedIn is a boolean value
+      const hasLoggedIn = !!(weeklyLogins[dayKey] && weeklyLogins[dayKey] > 0);
+      
+      result.push({
+        label: dayLabels[i],
+        completed: hasLoggedIn
+      });
+    }
+    
+    return result;
+  }
 
   /**
    * Check if we need to reset weekly logins (resets every Monday)
@@ -189,6 +225,7 @@ export class LoginStreakService {
   async getLoginStreak(userId: number, timezone?: string): Promise<{
     streak_count: number;
     weekly_logins: Record<string, number>;
+    formatted_weekly_logins: WeeklyLoginStatus[];
     last_login_date?: Date;
   } | null> {
     try {
@@ -205,11 +242,14 @@ export class LoginStreakService {
         ? loginStreak.weekly_logins as Record<string, number>
         : {};
       
+      // Use user's timezone or default to UTC
+      const userTimezone = timezone || 'UTC';
+      
       // If timezone provided, check if we need to update streak status
-      if (timezone) {
-        const nowInUserTz = toZonedTime(new Date(), timezone);
+      if (userTimezone) {
+        const nowInUserTz = toZonedTime(new Date(), userTimezone);
         const todayInUserTz = startOfDay(nowInUserTz);
-        const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, timezone);
+        const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, userTimezone);
         const lastLoginDayStart = startOfDay(lastLoginInUserTz);
         
         // Calculate days since last login
@@ -245,14 +285,22 @@ export class LoginStreakService {
           return {
             streak_count: newStreakCount,
             weekly_logins: weeklyLogins,
+            formatted_weekly_logins: this.formatWeeklyLoginsForFrontend(weeklyLogins, userTimezone),
             last_login_date: loginStreak.last_login_date
           };
         }
       }
 
+      // Generate formatted weekly logins for frontend
+      const formattedWeeklyLogins = this.formatWeeklyLoginsForFrontend(
+        weeklyLogins, 
+        userTimezone
+      );
+
       return {
         streak_count: loginStreak.streak_count,
         weekly_logins: weeklyLogins,
+        formatted_weekly_logins: formattedWeeklyLogins,
         last_login_date: loginStreak.last_login_date
       };
     } catch (error) {

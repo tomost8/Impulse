@@ -221,9 +221,9 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($id: Int!) { user(id: $id) { success user { id email firebase_uid first_name last_name username age gender bio primary_goal secondary_goal profile_picture role status timezone searchable last_login_at point { points spending_points weekly_points monthly_points } login_streak { streak_count weekly_logins last_login_date } } errors { field message } } }",
+  "query": "query($id: Int!) { user(id: $id) { success user { id email firebase_uid first_name last_name username age gender bio primary_goal secondary_goal profile_picture role status timezone searchable last_login_at point { points spending_points weekly_points monthly_points } login_streak { streak_count weekly_logins formatted_weekly_logins { label completed } last_login_date } } errors { field message } } }",
   "variables": {
-    "id": 3
+    "id": 1
   }
 }
 
@@ -234,7 +234,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query($firebase_uid: String!) { user(firebase_uid: $firebase_uid) { success user { id email firebase_uid first_name last_name username age gender bio primary_goal secondary_goal profile_picture role status timezone searchable last_login_at point { points spending_points weekly_points monthly_points } login_streak { streak_count weekly_logins last_login_date } } errors { field message } } }",
+  "query": "query($firebase_uid: String!) { user(firebase_uid: $firebase_uid) { success user { id email firebase_uid first_name last_name username age gender bio primary_goal secondary_goal profile_picture role status timezone searchable last_login_at point { points spending_points weekly_points monthly_points } login_streak { streak_count weekly_logins formatted_weekly_logins { label completed } last_login_date } } errors { field message } } }",
   "variables": {
     "firebase_uid": "dev-test-001"
   }
@@ -493,7 +493,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "category": "WELLNESS",
-      "scheduledDatetime": "2025-04-07T05:40:59.936Z",
+      "scheduledDatetime": "2025-04-07T11:40:59.936Z",
       "duration": null
     }
   }
@@ -648,10 +648,10 @@ Content-Type: application/json
   "variables": {
     "input": {
       "caption": "Both user and community",
-      "authorId": 2,
-      "activityId": 8,
+      "authorId": 1,
+      "activityId": 9,
       "post_targets": [
-            {"target_type": "user", "target_id": 1}
+            {"target_type": "user", "target_id": 2}
 
       ],
       "mediaUrl":"https://www.google.com"
@@ -1294,7 +1294,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { loginStreak(id: 1) { success login_streak { streak_count weekly_logins last_login_date } errors { field message } } }"
+  "query": "query { loginStreak(id: 1) { success login_streak { streak_count weekly_logins formatted_weekly_logins { label completed } last_login_date } errors { field message } } }"
 }
 
 ###
@@ -1305,5 +1305,5 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "query": "query { myLoginStreak(timezone: \"America/Los_Angeles\") { success login_streak { streak_count weekly_logins last_login_date } errors { field message } } }"
+  "query": "query { myLoginStreak { success login_streak { streak_count weekly_logins formatted_weekly_logins { label completed } last_login_date } errors { field message } } }"
 }
