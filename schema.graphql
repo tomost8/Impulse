@@ -323,7 +323,7 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://
 scalar JSON
 
 type LoginStreak {
-  max_streak_count: Int!
+  last_login_date: DateTimeISO
   streak_count: Int!
   weekly_logins: JSON!
 }
@@ -520,7 +520,9 @@ type Query {
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
   joinedCommunityPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
+  loginStreak(id: Int!): UserLoginStreakResponse!
   me: UserResponse!
+  myLoginStreak: UserLoginStreakResponse!
   post(id: Int!): PostResponse!
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
@@ -697,6 +699,12 @@ type User {
   timezone: String
   updated_at: DateTimeISO!
   username: String
+}
+
+type UserLoginStreakResponse {
+  errors: [FieldError!]
+  login_streak: LoginStreak
+  success: Boolean!
 }
 
 type UserResponse {

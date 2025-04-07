@@ -174,6 +174,16 @@ Authorization: Bearer {{authToken}}
   "query": "mutation { firebaseAuth { success user { id email firebase_uid first_name last_name role status login_streak { streak_count weekly_logins } } errors { field message } } }"
 }
 
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "mutation { firebaseAuth { success user { id email firebase_uid first_name last_name role status login_streak { streak_count weekly_logins } } errors { field message } } }"
+}
+
+
+
 
 ### Mutation - update User Profile
 POST {{baseUrl}}/graphql
@@ -184,9 +194,9 @@ Authorization: Bearer {{authToken}}
   "query": "mutation($input: UpdateUserInput!) { updateUser(input: $input) { success user { id first_name last_name username gender dob status } errors { field message } } }",
   "variables": {
     "input": {
-      "first_name": "002",
+      "first_name": "003",
       "last_name": "tester",
-      "username": "test002",
+      "username": "test003",
       "gender": "male",
       "dob": "2024-01-02",
       "timezone": "America/New_York",
@@ -483,7 +493,7 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "input": {
       "category": "WELLNESS",
-      "scheduledDatetime": "2025-03-18T04:54:59.936Z",
+      "scheduledDatetime": "2025-04-07T05:40:59.936Z",
       "duration": null
     }
   }
@@ -638,10 +648,10 @@ Content-Type: application/json
   "variables": {
     "input": {
       "caption": "Both user and community",
-      "authorId": 1,
-      "activityId": 10,
+      "authorId": 2,
+      "activityId": 4,
       "post_targets": [
-            {"target_type": "user", "target_id": 2}
+            {"target_type": "user", "target_id": 1}
 
       ],
       "mediaUrl":"https://www.google.com"
@@ -1276,4 +1286,24 @@ Authorization: Bearer {{authToken}}
   "variables": {
     "id": 11
   }
+}
+
+# 查询特定用户的登录连续记录
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { loginStreak(id: 1) { success login_streak { streak_count weekly_logins last_login_date } errors { field message } } }"
+}
+
+###
+
+# 查询当前用户的登录连续记录
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query { myLoginStreak { success login_streak { streak_count weekly_logins last_login_date } errors { field message } } }"
 }

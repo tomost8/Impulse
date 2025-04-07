@@ -1,11 +1,12 @@
 import { Resolver, Query, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
-import { User, UserResponse, UsersResponse } from '../schema/userTypes';
+import { User, UserResponse, UsersResponse, UserLoginStreakResponse } from '../schema/userTypes';
 import { UsersService } from '../../../services/userService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
 import logger from '../../../config/logger';
 import { UserSortType } from '../../common/types/enumTypes';
+import { LoginStreakService } from '../../../services/loginStreakService';
 
 /**
  * GraphQL query resolvers for User-related operations
@@ -14,11 +15,12 @@ import { UserSortType } from '../../common/types/enumTypes';
  * - Current authenticated user details
  * - List of all users in the system
  * - Single user lookup by ID or Firebase UID
+ * - User login streak information
  * 
  * @remarks
- * All queries return either UserResponse or UsersResponse types that include:
+ * All queries return response types that include:
  * - success: boolean indicating operation success
- * - user/users: the requested user data
+ * - user/users/login_streak: the requested data
  * - errors: array of validation or operation errors
  * 
  * @example
@@ -43,7 +45,10 @@ import { UserSortType } from '../../common/types/enumTypes';
 @Resolver(User)
 @UseMiddleware(LogOperationMiddleware)
 export class UserQueries {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private loginStreakService: LoginStreakService
+  ) {}
 
   /**
    * Query to get the current authenticated user's information
@@ -237,6 +242,154 @@ export class UserQueries {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to fetch user'
+        }]
+      };
+    }
+  }
+
+  /**
+   * Query to get user login streak information
+   * 
+   * This query retrieves the login streak information for a user.
+   * 
+   * @param id - Database ID of the user
+   * @returns UserLoginStreakResponse containing the login streak information or error details
+   * @throws {ValidationError} If the user is not found
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   loginStreak(id: 1) {
+   *     success
+   *     loginStreak
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => UserLoginStreakResponse)
+  async loginStreak(
+    @Arg('id', () => Int) id: number
+  ): Promise<UserLoginStreakResponse> {
+    try {
+      const streakData = await this.loginStreakService.getLoginStreak(id);
+      
+      if (!streakData) {
+        return {
+          success: false,
+          errors: [{
+            field: 'id',
+            message: `Login streak for user with ID ${id} not found`
+          }]
+        };
+      }
+      
+      return {
+        success: true,
+        login_streak: {
+          streak_count: streakData.streak_count,
+          weekly_logins: streakData.weekly_logins,
+          last_login_date: streakData.last_login_date
+        }
+      };
+    } catch (error: any) {
+      logger.error('Failed to fetch login streak', {
+        userId: id,
+        error: error.message,
+        stack: error.stack
+      });
+
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch login streak'
+        }]
+      };
+    }
+  }
+
+  /**
+   * Query to get the current authenticated user's login streak information
+   * 
+   * This query requires authentication and returns the login streak of the currently
+   * logged-in user. It uses the Firebase UID from the authentication context to
+   * identify the user.
+   * 
+   * @param ctx - Authentication context containing user information
+   * @returns UserLoginStreakResponse with the current user's login streak or error details
+   * @throws {ValidationError} If the user is not found in the database
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   myLoginStreak {
+   *     success
+   *     login_streak {
+   *       streak_count
+   *       weekly_logins
+   *     }
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => UserLoginStreakResponse)
+  @UseMiddleware(authMiddleware)
+  async myLoginStreak(@Ctx() ctx: AuthContext): Promise<UserLoginStreakResponse> {
+    try {
+      const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+      
+      if (!user) {
+        logger.warn('Current user not found in database', { 
+          firebaseUid: ctx.user.uid 
+        });
+        return {
+          success: false,
+          errors: [{
+            field: 'auth',
+            message: 'Current user not found'
+          }]
+        };
+      }
+
+      const streakData = await this.loginStreakService.getLoginStreak(user.id);
+      
+      if (!streakData) {
+        return {
+          success: false,
+          errors: [{
+            field: 'login_streak',
+            message: 'Login streak not found for current user'
+          }]
+        };
+      }
+      
+      return {
+        success: true,
+        login_streak: {
+          streak_count: streakData.streak_count,
+          weekly_logins: streakData.weekly_logins,
+          last_login_date: streakData.last_login_date
+        }
+      };
+    } catch (error: any) {
+      logger.error('Failed to fetch current user login streak', {
+        error: error.message,
+        stack: error.stack
+      });
+
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch login streak'
         }]
       };
     }
