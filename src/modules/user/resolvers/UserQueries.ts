@@ -1,11 +1,13 @@
 import { Resolver, Query, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
-import { User, UserResponse, UsersResponse } from '../schema/userTypes';
+import { User, UserResponse, UsersResponse, UserLoginStreakResponse, UserWithStreakResponse, UserWithStreak } from '../schema/userTypes';
 import { UsersService } from '../../../services/userService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
-import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
-import logger from '../../../config/logger';
+import { ValidationError } from '../../common/errors/graphql.error';
 import { UserSortType } from '../../common/types/enumTypes';
+import { authMiddleware, AuthContext } from '../../../middleware/authMiddleware';
+import { LoginStreakService } from '../../../services/loginStreakService';
+import logger from '../../../config/logger';
 
 /**
  * GraphQL query resolvers for User-related operations
@@ -14,11 +16,12 @@ import { UserSortType } from '../../common/types/enumTypes';
  * - Current authenticated user details
  * - List of all users in the system
  * - Single user lookup by ID or Firebase UID
+ * - User login streak information
  * 
  * @remarks
- * All queries return either UserResponse or UsersResponse types that include:
+ * All queries return response types that include:
  * - success: boolean indicating operation success
- * - user/users: the requested user data
+ * - user/users/login_streak: the requested data
  * - errors: array of validation or operation errors
  * 
  * @example
@@ -43,7 +46,10 @@ import { UserSortType } from '../../common/types/enumTypes';
 @Resolver(User)
 @UseMiddleware(LogOperationMiddleware)
 export class UserQueries {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private loginStreakService: LoginStreakService
+  ) {}
 
   /**
    * Query to get the current authenticated user's information
@@ -163,10 +169,11 @@ export class UserQueries {
    * 
    * This query allows looking up a user using either their database ID
    * or their Firebase UID. At least one identifier must be provided.
+   * The login streak will be calculated based on the user's stored timezone.
    * 
    * @param id - Optional database ID of the user
    * @param firebase_uid - Optional Firebase UID of the user
-   * @returns UserResponse containing the found user or error details
+   * @returns UserWithStreakResponse containing the found user or error details
    * @throws {ValidationError} If neither ID nor Firebase UID is provided
    * @throws {NotFoundError} If user is not found
    * 
@@ -178,6 +185,11 @@ export class UserQueries {
    *     user {
    *       email
    *       name
+   *       timezone
+   *       login_streak {
+   *         streak_count
+   *         weekly_logins
+   *       }
    *     }
    *     errors {
    *       field
@@ -187,11 +199,11 @@ export class UserQueries {
    * }
    * ```
    */
-  @Query(() => UserResponse)
+  @Query(() => UserWithStreakResponse)
   async user(
     @Arg('id', () => Int, { nullable: true }) id?: number,
     @Arg('firebase_uid', () => String, { nullable: true }) firebase_uid?: string
-  ): Promise<UserResponse> {
+  ): Promise<UserWithStreakResponse> {
     try {
       let user;
       
@@ -221,7 +233,25 @@ export class UserQueries {
         };
       }
 
-      return { success: true, user };
+      // Convert to UserWithStreak type
+      const userWithStreak: UserWithStreak = {
+        ...user,
+        login_streak: null
+      };
+
+      // Get login streak data using the user's stored timezone
+      const userTimezone = user.timezone || 'UTC';
+      logger.info('Fetching login streak with user\'s timezone', {
+        userId: user.id,
+        timezone: userTimezone
+      });
+      
+      const streakData = await this.loginStreakService.getLoginStreak(user.id, userTimezone);
+      if (streakData) {
+        userWithStreak.login_streak = streakData;
+      }
+
+      return { success: true, user: userWithStreak };
     } catch (error: any) {
       logger.error('Failed to fetch user', {
         userId: id,
@@ -237,6 +267,169 @@ export class UserQueries {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to fetch user'
+        }]
+      };
+    }
+  }
+
+  /**
+   * Query to get user login streak information
+   * 
+   * This query retrieves the login streak information for a user.
+   * 
+   * @param id - Database ID of the user
+   * @returns UserLoginStreakResponse containing the login streak information or error details
+   * @throws {ValidationError} If the user is not found
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   loginStreak(id: 1) {
+   *     success
+   *     loginStreak
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => UserLoginStreakResponse)
+  async loginStreak(
+    @Arg('id', () => Int) id: number
+  ): Promise<UserLoginStreakResponse> {
+    try {
+      const streakData = await this.loginStreakService.getLoginStreak(id);
+      
+      if (!streakData) {
+        return {
+          success: false,
+          errors: [{
+            field: 'id',
+            message: `Login streak for user with ID ${id} not found`
+          }]
+        };
+      }
+      
+      return {
+        success: true,
+        login_streak: {
+          streak_count: streakData.streak_count,
+          weekly_logins: streakData.weekly_logins,
+          formatted_weekly_logins: streakData.formatted_weekly_logins,
+          last_login_date: streakData.last_login_date
+        }
+      };
+    } catch (error: any) {
+      logger.error('Failed to fetch login streak', {
+        userId: id,
+        error: error.message,
+        stack: error.stack
+      });
+
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch login streak'
+        }]
+      };
+    }
+  }
+
+  /**
+   * Query to get the current authenticated user's login streak information
+   * 
+   * This query requires authentication and returns the login streak of the currently
+   * logged-in user. It uses the Firebase UID from the authentication context to
+   * identify the user.
+   * 
+   * @param ctx - Authentication context containing user information
+   * @returns UserLoginStreakResponse with the current user's login streak or error details
+   * @throws {ValidationError} If the user is not found in the database
+   * 
+   * @example
+   * ```graphql
+   * query {
+   *   myLoginStreak {
+   *     success
+   *     login_streak {
+   *       streak_count
+   *       weekly_logins
+   *       formatted_weekly_logins {
+   *         label
+   *         completed
+   *       }
+   *     }
+   *     errors {
+   *       field
+   *       message
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  @Query(() => UserLoginStreakResponse)
+  @UseMiddleware(authMiddleware)
+  async myLoginStreak(
+    @Ctx() ctx: AuthContext
+  ): Promise<UserLoginStreakResponse> {
+    try {
+      const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+      
+      if (!user) {
+        logger.warn('Current user not found in database', { 
+          firebaseUid: ctx.user.uid 
+        });
+        return {
+          success: false,
+          errors: [{
+            field: 'auth',
+            message: 'Current user not found'
+          }]
+        };
+      }
+
+      // 使用用户自己的时区
+      const userTimezone = user.timezone || 'UTC';
+      logger.info('Fetching login streak with user timezone', {
+        userId: user.id,
+        timezone: userTimezone
+      });
+
+      const streakData = await this.loginStreakService.getLoginStreak(user.id, userTimezone);
+      
+      if (!streakData) {
+        return {
+          success: false,
+          errors: [{
+            field: 'login_streak',
+            message: 'Login streak not found for current user'
+          }]
+        };
+      }
+      
+      return {
+        success: true,
+        login_streak: {
+          streak_count: streakData.streak_count,
+          weekly_logins: streakData.weekly_logins,
+          formatted_weekly_logins: streakData.formatted_weekly_logins,
+          last_login_date: streakData.last_login_date
+        }
+      };
+    } catch (error: any) {
+      logger.error('Failed to fetch current user login streak', {
+        error: error.message,
+        stack: error.stack
+      });
+
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch login streak'
         }]
       };
     }

@@ -6,6 +6,7 @@ import { NotFoundError, ValidationError } from '../modules/common/errors/graphql
 import Queue from 'bull';
 import { ActivityExpirationService } from './activityExpirationService';
 import { PointsService } from './pointService';
+import { LoginStreakService } from './loginStreakService';
 import logger from '../config/logger';
 
 /**
@@ -28,7 +29,8 @@ export class PostService {
   constructor(
     private prisma: PrismaClient,
     private activityExpirationService: ActivityExpirationService,
-    private pointsService: PointsService
+    private pointsService: PointsService,
+    private loginStreakService: LoginStreakService
   ) {
     // Initialize the Bull queue for post targets processing
     this.postTargetsQueue = new Queue('post-targets', {
@@ -233,7 +235,8 @@ export class PostService {
               },
               select: { 
                 primary_goal: true,
-                secondary_goal: true
+                secondary_goal: true,
+                timezone: true
               }
             });
 
@@ -263,6 +266,19 @@ export class PostService {
             });
             
             logger.info(`Added ${pointsToAdd} points to user ${activity.userId} for completing activity ${data.activityId} through post creation (category: ${activity.category})`);
+            
+            // 更新用户的登录连续计数
+            try {
+              const userTimezone = user.timezone || 'UTC';
+              await this.loginStreakService.updateLoginStreak(activity.userId, userTimezone);
+              logger.info(`Updated login streak for user ${activity.userId} after completing activity`);
+            } catch (streakError) {
+              logger.error('Failed to update login streak during post creation:', { 
+                error: streakError, 
+                userId: activity.userId,
+                timezone: user.timezone || 'UTC'
+              });
+            }
           } catch (error) {
             // 即使积分添加失败，我们也不希望影响帖子创建过程
             logger.error('Failed to add points for completed activity during post creation:', { 

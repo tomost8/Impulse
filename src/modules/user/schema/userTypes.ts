@@ -7,18 +7,33 @@ import { Point } from '../../point';
 import { GraphQLJSON } from 'graphql-type-json';
 
 @ObjectType()
+export class WeeklyLoginStatus {
+  /** Day label (S, M, T, W, TH, F, S) */
+  @Field(() => String)
+  label!: string;
+
+  /** Whether the user has logged in on this day */
+  @Field(() => Boolean)
+  completed!: boolean;
+}
+
+@ObjectType()
 export class LoginStreak {
   /** Current streak count */
   @Field(() => Int)
   streak_count!: number;
 
-  /** Maximum streak count */
-  @Field(() => Int)
-  max_streak_count!: number;
-
-  /** Weekly login status */
+  /** Weekly login status - dates mapped to login counts */
   @Field(() => GraphQLJSON)
-  weekly_logins!: any;
+  weekly_logins!: Record<string, number>;
+
+  /** Formatted weekly login status for frontend display */
+  @Field(() => [WeeklyLoginStatus])
+  formatted_weekly_logins!: WeeklyLoginStatus[];
+
+  /** Last login date */
+  @Field(() => Date, { nullable: true })
+  last_login_date?: Date;
 }
 
 /**
@@ -180,4 +195,16 @@ export class UsersResponse {
 export class UserCreatedPayload {
   @Field(() => User)
   user!: User;
+}
+
+@ObjectType()
+export class UserLoginStreakResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => LoginStreak, { nullable: true })
+  login_streak?: LoginStreak;
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
 }

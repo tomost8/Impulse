@@ -325,7 +325,8 @@ The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://
 scalar JSON
 
 type LoginStreak {
-  max_streak_count: Int!
+  formatted_weekly_logins: [WeeklyLoginStatus!]!
+  last_login_date: DateTimeISO
   streak_count: Int!
   weekly_logins: JSON!
 }
@@ -524,12 +525,14 @@ type Query {
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
   joinedCommunityPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
+  loginStreak(id: Int!): UserLoginStreakResponse!
   me: UserResponse!
+  myLoginStreak: UserLoginStreakResponse!
   post(id: Int!): PostResponse!
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(skip: Int, take: Int, userId: Int!): PostsResponse!
-  user(firebase_uid: String, id: Int): UserResponse!
+  user(firebase_uid: String, id: Int): UserWithStreakResponse!
   users(sort_by: UserSortType): UsersResponse!
 }
 
@@ -704,6 +707,12 @@ type User {
   username: String
 }
 
+type UserLoginStreakResponse {
+  errors: [FieldError!]
+  login_streak: LoginStreak
+  success: Boolean!
+}
+
 type UserResponse {
   errors: [FieldError!]
   success: Boolean!
@@ -752,4 +761,9 @@ type UsersResponse {
   errors: [FieldError!]
   success: Boolean!
   users: [User!]
+}
+
+type WeeklyLoginStatus {
+  completed: Boolean!
+  label: String!
 }

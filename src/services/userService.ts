@@ -79,11 +79,6 @@ export class UsersService {
       }
     });
 
-    if (user) {
-      // 更新连续登录记录
-      await this.loginStreakService.updateLoginStreak(user.id, user.timezone || 'UTC');
-    }
-
     return user;
   }
 
