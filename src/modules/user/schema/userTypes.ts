@@ -127,6 +127,10 @@ export class User {
   @Field(() => Boolean)
   searchable!: boolean;
 
+  /** Whether user has double camera enabled */
+  @Field(() => Boolean)
+  is_double_cam!: boolean;
+
   /** User's FCM token */
   @Field(() => String, { nullable: true })
   fcm_token!: string | null;

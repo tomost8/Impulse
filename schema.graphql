@@ -260,7 +260,7 @@ input CreatePostInput {
   caption: String!
   category: String
   expires_at: DateTimeISO
-  mediaUrl: String
+  mediaUrls: [String!]
   post_targets: [PostTargetInput!]!
 }
 
@@ -451,7 +451,7 @@ type Post {
   is_deleted: Boolean!
   likeCount: Int
   liked: Boolean
-  mediaUrl: String
+  mediaUrls: [String!]
   messages: [Message!]
   post_targets: [PostTarget!]!
   post_views: [PostView!]
@@ -650,7 +650,7 @@ input UpdatePostInput {
   caption: String
   category: String
   expires_at: DateTimeISO
-  mediaUrl: String
+  mediaUrls: [String!]
 }
 
 input UpdateRedeemInput {
@@ -671,6 +671,7 @@ input UpdateUserInput {
   fcm_token: String
   first_name: String
   gender: String
+  is_double_cam: Boolean
   last_name: String
   primary_goal: Category
   profile_picture: String
@@ -693,6 +694,7 @@ type User {
   first_name: String
   gender: String
   id: Int!
+  is_double_cam: Boolean!
   last_login_at: DateTimeISO
   last_name: String
   point: Point
@@ -736,6 +738,7 @@ type UserWithStreak {
   first_name: String
   gender: String
   id: Int!
+  is_double_cam: Boolean!
   last_login_at: DateTimeISO
   last_name: String
   login_streak: LoginStreak

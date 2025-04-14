@@ -92,6 +92,9 @@ export async function createApp() {
   const postService = Container.get(PostService);
   const reminderService = Container.get(ReminderService);
   
+  // 初始化每日活跃检查提醒
+  await reminderService.setupDailyActiveUserCheck();
+  
   const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
     queues: [
       new BullAdapter(postService.postTargetsQueue),

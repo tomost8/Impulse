@@ -47,6 +47,20 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
+CREATE TABLE "user_login_streaks" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "last_login_date" TIMESTAMP(3) NOT NULL,
+    "streak_count" INTEGER NOT NULL DEFAULT 0,
+    "max_streak_count" INTEGER NOT NULL DEFAULT 0,
+    "weekly_logins" JSONB NOT NULL DEFAULT '[]',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "user_login_streaks_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "friendships" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
@@ -64,6 +78,7 @@ CREATE TABLE "friendships" (
 CREATE TABLE "communities" (
     "community_id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "code" TEXT,
     "description" TEXT,
     "thumbnail" TEXT,
     "influencer_id" INTEGER NOT NULL,
@@ -155,7 +170,7 @@ CREATE TABLE "posts" (
     "id" SERIAL NOT NULL,
     "author_id" INTEGER NOT NULL,
     "caption" TEXT,
-    "media_url" TEXT,
+    "media_urls" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "is_deleted" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -297,7 +312,13 @@ CREATE UNIQUE INDEX "users_firebase_uid_key" ON "users"("firebase_uid");
 CREATE INDEX "users_username_idx" ON "users"("username");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "user_login_streaks_user_id_key" ON "user_login_streaks"("user_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "friendships_user_id_friend_id_key" ON "friendships"("user_id", "friend_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "communities_code_key" ON "communities"("code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "community_categories_community_id_category_key" ON "community_categories"("community_id", "category");
@@ -325,6 +346,9 @@ CREATE INDEX "posts_author_id_created_at_idx" ON "posts"("author_id", "created_a
 
 -- CreateIndex
 CREATE INDEX "posts_expires_at_is_deleted_idx" ON "posts"("expires_at", "is_deleted");
+
+-- CreateIndex
+CREATE INDEX "posts_created_at_expires_at_idx" ON "posts"("created_at", "expires_at");
 
 -- CreateIndex
 CREATE INDEX "post_targets_target_type_target_id_idx" ON "post_targets"("target_type", "target_id");
@@ -376,6 +400,9 @@ CREATE INDEX "comments_post_id_created_at_idx" ON "comments"("post_id", "created
 
 -- CreateIndex
 CREATE INDEX "comments_user_id_idx" ON "comments"("user_id");
+
+-- AddForeignKey
+ALTER TABLE "user_login_streaks" ADD CONSTRAINT "user_login_streaks_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "friendships" ADD CONSTRAINT "friendships_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;

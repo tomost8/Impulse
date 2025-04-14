@@ -27,8 +27,8 @@ export class CreatePostInput {
   @Field(() => [PostTargetInput])
   post_targets: PostTargetInput[];
 
-  @Field(() => String, { nullable: true })
-  mediaUrl?: string;
+  @Field(() => [String], { nullable: true })
+  mediaUrls?: string[];
 
   @Field(() => Date, { nullable: true })
   expires_at?: Date;
@@ -42,8 +42,8 @@ export class UpdatePostInput {
   @Field(() => String, { nullable: true })
   category?: string | null;
 
-  @Field(() => String, { nullable: true })
-  mediaUrl?: string;
+  @Field(() => [String], { nullable: true })
+  mediaUrls?: string[];
 
   @Field(() => Date, { nullable: true })
   expires_at?: Date;

@@ -19,8 +19,8 @@ export class Post {
   @Field(() => String, { nullable: true })
   caption: string | null;
 
-  @Field(() => String, { nullable: true })
-  mediaUrl: string | null;
+  @Field(() => [String], { nullable: true })
+  mediaUrls: string[] | null;
 
   @Field(() => Boolean)
   is_deleted: boolean;

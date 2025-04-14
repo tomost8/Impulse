@@ -178,6 +178,11 @@ export class UpdateUserInput {
   @IsOptional()
   searchable?: boolean;
 
+  /** Whether user has double camera enabled */
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  is_double_cam?: boolean;
+
   /** FCM token */
   @Field(() => String, { nullable: true })
   @IsOptional()

@@ -100,8 +100,8 @@ Content-Type: application/json
   "query": "mutation ($input: CreateFriendshipInput!) { createFriendship(input: $input) { success friendship { user {id first_name last_name } friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
     "input": {
-      "sender_id": 2,
-      "receiver_id": 3
+      "sender_id": 1,
+      "receiver_id": 2
     }
   }
 }
@@ -113,8 +113,8 @@ Content-Type: application/json
 {
   "query": "mutation ($userId: Int!, $friendId: Int!, $input: UpdateFriendshipInput!) { updateFriendship(user_id: $userId, friend_id: $friendId, input: $input) { success friendship { user {id first_name last_name } friend {id first_name last_name } status } errors { field message } } }",
   "variables": {
-    "userId": 3,
-    "friendId": 2,
+    "userId": 2,
+    "friendId": 1,
     "input": {
       "status": "ACCEPTED"
     }
@@ -174,7 +174,7 @@ Content-Type: application/json
 {
   "query": "mutation($id: Int!) { deleteCommunity(id: $id) { success errors { field message } } }",
   "variables": {
-    "id": 2
+    "id": 6
   }
 }
 
@@ -201,7 +201,7 @@ Content-Type: application/json
 {
   "query": "mutation($community_id: Int!, $category: Category!) { deleteCommunityCategory(community_id: $community_id, category: $category) { success errors { field message } } }",
   "variables": {
-    "community_id": 3,
+    "community_id": 1,
     "category": "FOOD"
   }
 }

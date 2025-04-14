@@ -23,6 +23,10 @@ export class ReminderService {
 
     // Process reminder jobs
     this.reminderQueue.process(async (job) => {
+      if (job.data.type === 'DAILY_ACTIVE_CHECK') {
+        await this.processDailyActiveUserCheck();
+        return;
+      }
       await this.processReminder(job.data);
     });
 
@@ -246,6 +250,78 @@ export class ReminderService {
       return true;
     } catch (error) {
       logger.error('Error canceling reminder:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Setup daily active user check reminder
+   */
+  async setupDailyActiveUserCheck(): Promise<void> {
+    const jobOptions: Queue.JobOptions = {
+      repeat: {
+        cron: '0 * * * *' // Every hour
+      }
+    };
+
+    await this.reminderQueue.add(
+      {
+        type: 'DAILY_ACTIVE_CHECK',
+        schedule_type: NotificationScheduleType.DAILY
+      },
+      jobOptions
+    );
+
+    logger.info('Daily active user check reminder setup completed');
+  }
+
+  /**
+   * Process daily active user check
+   */
+  private async processDailyActiveUserCheck(): Promise<void> {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          status: 'active',
+          timezone: { not: null },
+          fcm_token: { not: null }
+        },
+        select: {
+          id: true,
+          timezone: true,
+          fcm_token: true
+        }
+      });
+
+      const now = new Date();
+      const usersAt9AM = users.filter(user => {
+        const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: user.timezone! }));
+        return userLocalTime.getHours() === 16;
+      });
+
+      for (const user of usersAt9AM) {
+        try {
+          await firebaseAdmin.messaging().send({
+            token: user.fcm_token!,
+            notification: {
+              title: '每日打卡提醒',
+              body: '记得今天打卡哦！'
+            },
+            data: {
+              type: 'DAILY_ACTIVE_CHECK'
+            }
+          });
+
+          logger.info('Daily active check notification sent', { user_id: user.id });
+        } catch (error) {
+          logger.error('Failed to send daily active check notification:', {
+            user_id: user.id,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('Error processing daily active user check:', error);
       throw error;
     }
   }

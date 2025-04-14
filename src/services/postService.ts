@@ -135,7 +135,7 @@ export class PostService {
               tx.post.create({
                 data: {
                   caption: data.caption,
-                  mediaUrl: data.mediaUrl,
+                  mediaUrls: data.mediaUrls,
                   category: data.category,
                   expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
                   author: { connect: { id: data.authorId } },
@@ -163,7 +163,7 @@ export class PostService {
           const otherPost = await tx.post.create({
             data: {
               caption: data.caption,
-              mediaUrl: data.mediaUrl,
+              mediaUrls: data.mediaUrls,
               category: data.category,
               expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
               author: { connect: { id: data.authorId } },

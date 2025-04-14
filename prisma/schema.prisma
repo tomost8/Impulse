@@ -84,6 +84,7 @@ model User {
   secondary_goal  Category?
   timezone        String?
   searchable      Boolean   @default(true)
+  is_double_cam   Boolean   @default(false)
   fcm_token       String?
   created_at      DateTime  @default(now())
   updated_at      DateTime  @default(now()) @updatedAt
@@ -259,7 +260,7 @@ model Post {
   author       User         @relation(fields: [author_id], references: [id])
   author_id    Int
   caption      String?
-  mediaUrl     String?      @map("media_url")
+  mediaUrls    String[]    @default([]) @map("media_urls")
   is_deleted   Boolean      @default(false)
   activity     Activity?
   created_at   DateTime     @default(now())
