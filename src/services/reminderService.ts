@@ -5,6 +5,7 @@ import { firebaseAdmin } from '../config/firebase';
 import { CreateNotificationInput } from '../modules/notification/schema/notificationInputs';
 import logger from '../config/logger';
 import { ValidationError } from '../modules/common/errors/graphql.error';
+import { dailyMessages } from '../config/messageTemplates';
 
 @Service()
 export class ReminderService {
@@ -276,6 +277,46 @@ export class ReminderService {
   }
 
   /**
+   * Get the current week number (1-5) and day of week (1-7) for a specific timezone
+   */
+  private getCurrentWeekAndDay(timezone: string): { week: number; day: number } {
+    const now = new Date();
+    const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    
+    // Get days since epoch (January 1, 1970)
+    const daysSinceEpoch = Math.floor(userLocalTime.getTime() / (24 * 60 * 60 * 1000));
+    
+    // Calculate week number (1-5) by taking weeks since epoch modulo 5
+    // We add 1 to make it 1-based instead of 0-based
+    const weekNumber = (Math.floor(daysSinceEpoch / 7) % 5) + 1;
+    
+    // Get day of week (1-7, where 1 is Monday and 7 is Sunday)
+    const dayOfWeek = userLocalTime.getDay() || 7; // Convert Sunday (0) to 7
+    
+    return {
+      week: weekNumber,
+      day: dayOfWeek
+    };
+  }
+
+  /**
+   * Get daily message based on current week and day for a specific timezone
+   */
+  private getDailyMessage(timezone: string, isAfternoon: boolean): { title: string; body: string } {
+    const { week, day } = this.getCurrentWeekAndDay(timezone);
+    const message = dailyMessages.find(m => 
+      m.week === week && 
+      m.day === day && 
+      m.type === (isAfternoon ? 'afternoon' : 'morning')
+    );
+    
+    return {
+      title: isAfternoon ? "Afternoon Reminder" : "Daily Goal Reminder",
+      body: message?.message || "Keep pushing toward your goals!"
+    };
+  }
+
+  /**
    * Process daily active user check
    */
   private async processDailyActiveUserCheck(): Promise<void> {
@@ -294,25 +335,38 @@ export class ReminderService {
       });
 
       const now = new Date();
-      const usersAt9AM = users.filter(user => {
+      const usersForNotification = users.filter(user => {
         const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: user.timezone! }));
-        return userLocalTime.getHours() === 9;
+        const hour = userLocalTime.getHours();
+        // Send notifications at 9 AM and 3 PM (15:00)
+        return hour === 9 || hour === 15;
       });
 
-      for (const user of usersAt9AM) {
+      for (const user of usersForNotification) {
         try {
+          const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: user.timezone! }));
+          const isAfternoon = userLocalTime.getHours() === 15;
+          // const isAfternoon = false;
+          const { title, body } = this.getDailyMessage(user.timezone!, isAfternoon);
+
           await firebaseAdmin.messaging().send({
             token: user.fcm_token!,
             notification: {
-              title: '',
-              body: ''
+              title,
+              body
             },
             data: {
-              type: 'DAILY_ACTIVE_CHECK'
+              type: 'DAILY_ACTIVE_CHECK',
+              time_of_day: isAfternoon ? 'afternoon' : 'morning'
             }
           });
 
-          logger.info('Daily active check notification sent', { user_id: user.id });
+          logger.info('Daily active check notification sent', { 
+            user_id: user.id,
+            message: body,
+            timezone: user.timezone,
+            time_of_day: isAfternoon ? 'afternoon' : 'morning'
+          });
         } catch (error) {
           logger.error('Failed to send daily active check notification:', {
             user_id: user.id,
