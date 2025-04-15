@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { differenceInDays, startOfDay, format, getDay, isMonday } from 'date-fns';
+import { differenceInDays, startOfDay, format, getDay, isMonday, startOfWeek, isSameDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import logger from '../config/logger';
 import { WeeklyLoginStatus } from '../modules/user/schema/userTypes';
@@ -66,20 +66,14 @@ export class LoginStreakService {
    */
   private shouldResetWeeklyLogins(today: Date, lastLoginDate: Date): boolean {
     // Reset if today is Monday and last login was before today
-    if (isMonday(today) && differenceInDays(today, lastLoginDate) >= 1) {
-      return true;
-    }
-    
-    // Also reset if last login was from a previous week (crossed a Monday)
-    const todayDay = getDay(today); // 0 = Sunday, 1 = Monday, etc.
-    const daysSinceLastLogin = differenceInDays(today, lastLoginDate);
-    
-    // If we've crossed a Monday boundary since last login
-    if (daysSinceLastLogin > todayDay || (todayDay === 0 && daysSinceLastLogin >= 1)) {
-      return true;
-    }
-    
-    return false;
+    logger.info('shouldResetWeeklyLogins: today', { today });
+    const thisWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+    logger.info('shouldResetWeeklyLogins: thisWeekStart', { thisWeekStart });
+    const lastLoginWeekStart = startOfWeek(lastLoginDate, { weekStartsOn: 1 });
+    logger.info('shouldResetWeeklyLogins: lastLoginWeekStart', { lastLoginWeekStart });
+    logger.info('shouldResetWeeklyLogins: isSameDay', { isSameDay: isSameDay(thisWeekStart, lastLoginWeekStart) });
+    // 如果这两个日期不是同一周，就需要重置
+    return !isSameDay(thisWeekStart, lastLoginWeekStart);
   }
 
   /**
@@ -97,14 +91,17 @@ export class LoginStreakService {
       const nowInUserTz = toZonedTime(new Date(), timezone || 'UTC');
       const todayInUserTz = startOfDay(nowInUserTz);
       const todayKey = format(todayInUserTz, 'yyyy-MM-dd');
+      logger.info('updateLoginStreak: Start', { userId, timezone, todayKey, todayInUserTz });
       
       // Find existing streak record
       const loginStreak = await this.prisma.userLoginStreak.findUnique({
         where: { user_id: userId }
       });
+      logger.info('updateLoginStreak: Found existing streak record', { userId, loginStreak: !!loginStreak });
 
       // If new user with no streak record yet
       if (!loginStreak) {
+        logger.info('updateLoginStreak: New user, creating initial record', { userId });
         const initialWeeklyLogins: WeeklyLogins = {};
         initialWeeklyLogins[todayKey] = 1;
         
@@ -126,29 +123,40 @@ export class LoginStreakService {
       }
 
       // Handle existing user with streak record
+      logger.info('updateLoginStreak: Existing user', { userId });
       let weeklyLogins = (typeof loginStreak.weekly_logins === 'object' && loginStreak.weekly_logins !== null)
         ? loginStreak.weekly_logins as WeeklyLogins
         : {};
+      logger.info('updateLoginStreak: Initial weeklyLogins', { userId, weeklyLogins });
       
       // Convert last login date to user timezone for comparison
       const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, timezone || 'UTC');
       const lastLoginDayStart = startOfDay(lastLoginInUserTz);
+      logger.info('updateLoginStreak: Calculated last login date in user timezone', { userId, lastLoginDayStart });
+      
       
       // Calculate days since last active post
       const daysSinceLastLogin = differenceInDays(todayInUserTz, lastLoginDayStart);
+      logger.info('updateLoginStreak: Days since last login', { userId, daysSinceLastLogin });
       
       // Check if we need to reset weekly logins (new week started)
-      if (this.shouldResetWeeklyLogins(todayInUserTz, lastLoginDayStart)) {
+      const needsWeeklyReset = this.shouldResetWeeklyLogins(todayInUserTz, lastLoginDayStart);
+      logger.info('updateLoginStreak: Check weekly reset needed', { userId, needsWeeklyReset });
+      if (needsWeeklyReset) {
         logger.info('Resetting weekly logins for new week', {
           userId,
           isMonday: isMonday(todayInUserTz),
           daysSinceLastLogin
         });
         weeklyLogins = {};
+        // Add today's login immediately after reset
+        weeklyLogins[todayKey] = 1;
+        logger.info('updateLoginStreak: weeklyLogins after reset', { userId, weeklyLogins });
       }
       
       // Check if already posted today (increment post count but don't change streak)
       if (daysSinceLastLogin === 0) {
+        logger.info('updateLoginStreak: Same day login/post', { userId });
         weeklyLogins[todayKey] = (weeklyLogins[todayKey] || 0) + 1;
         
         await this.prisma.userLoginStreak.update({
@@ -168,24 +176,27 @@ export class LoginStreakService {
       
       // New day, check if consecutive
       if (daysSinceLastLogin === 1) {
+        logger.info('updateLoginStreak: Consecutive day login/post', { userId });
         // Consecutive day, increment streak
         weeklyLogins[todayKey] = 1;
+        const newStreakCount = loginStreak.streak_count + 1;
         
         await this.prisma.userLoginStreak.update({
           where: { user_id: userId },
           data: {
             last_login_date: todayInUserTz,
-            streak_count: loginStreak.streak_count + 1,
+            streak_count: newStreakCount,
             weekly_logins: weeklyLogins
           }
         });
         
         logger.info('Incremented login streak', {
           userId,
-          newStreakCount: loginStreak.streak_count + 1,
+          newStreakCount,
           todayKey
         });
       } else {
+        logger.info('updateLoginStreak: Non-consecutive day login/post (streak broken)', { userId, daysSinceLastLogin });
         // Not consecutive, reset streak
         const resetWeeklyLogins: WeeklyLogins = {};
         resetWeeklyLogins[todayKey] = 1;
@@ -248,22 +259,45 @@ export class LoginStreakService {
       // If timezone provided, check if we need to update streak status
       if (userTimezone) {
         const nowInUserTz = toZonedTime(new Date(), userTimezone);
+
         const todayInUserTz = startOfDay(nowInUserTz);
+
         const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, userTimezone);
         const lastLoginDayStart = startOfDay(lastLoginInUserTz);
         
+        logger.info('userTimezone', { userTimezone });
+        logger.info('todayInUserTz', { todayInUserTz });
+        logger.info('lastLoginDayStart', { lastLoginDayStart });    
+        logger.info('lastLoginInUserTz', { lastLoginInUserTz });
+        logger.info('nowInUserTz', { nowInUserTz });    
+
         // Calculate days since last login
         const daysSinceLastLogin = differenceInDays(todayInUserTz, lastLoginDayStart);
+        logger.info('daysSinceLastLogin', { daysSinceLastLogin });
         
         let updateNeeded = false;
         let newStreakCount = loginStreak.streak_count;
         
         // Check if we need to reset weekly logins (new week started)
-        if (this.shouldResetWeeklyLogins(todayInUserTz, lastLoginDayStart)) {
-          weeklyLogins = {};
-          updateNeeded = true;
-          logger.info('Reset weekly logins during query', { userId });
-        }
+    // 在 getLoginStreak 函数中
+    if (this.shouldResetWeeklyLogins(todayInUserTz, lastLoginDayStart)) {
+      const todayKey = format(todayInUserTz, 'yyyy-MM-dd');
+      const todayCount = weeklyLogins[todayKey];  // 获取今天的计数
+      
+      weeklyLogins = {};  // 清空旧的记录
+      
+      // 如果今天（周一）已经有记录，保留它
+      if (todayCount) {
+        weeklyLogins[todayKey] = todayCount;
+      }
+      
+      updateNeeded = true;
+      logger.info('Reset weekly logins during query', { 
+        userId,
+        weeklyLogins,  // 记录最终的状态
+        preservedTodayCount: todayCount  // 记录保留的今天的计数
+      });
+    }
         
         // If more than a day has passed without a login, reset streak
         if (daysSinceLastLogin > 1) {

@@ -296,7 +296,7 @@ export class ReminderService {
       const now = new Date();
       const usersAt9AM = users.filter(user => {
         const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: user.timezone! }));
-        return userLocalTime.getHours() === 16;
+        return userLocalTime.getHours() === 9;
       });
 
       for (const user of usersAt9AM) {
@@ -304,8 +304,8 @@ export class ReminderService {
           await firebaseAdmin.messaging().send({
             token: user.fcm_token!,
             notification: {
-              title: '每日打卡提醒',
-              body: '记得今天打卡哦！'
+              title: '',
+              body: ''
             },
             data: {
               type: 'DAILY_ACTIVE_CHECK'
