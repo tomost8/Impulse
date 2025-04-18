@@ -69,7 +69,7 @@ export class LoginStreakService {
     logger.info('shouldResetWeeklyLogins: today', { today });
     const thisWeekStart = startOfWeek(today, { weekStartsOn: 1 });
     logger.info('shouldResetWeeklyLogins: thisWeekStart', { thisWeekStart });
-    const lastLoginWeekStart = startOfWeek(lastLoginDate, { weekStartsOn: 1 });
+    const lastLoginWeekStart = startOfWeek(lastLoginDate, { weekStartsOn: 0 });
     logger.info('shouldResetWeeklyLogins: lastLoginWeekStart', { lastLoginWeekStart });
     logger.info('shouldResetWeeklyLogins: isSameDay', { isSameDay: isSameDay(thisWeekStart, lastLoginWeekStart) });
     // 如果这两个日期不是同一周，就需要重置
