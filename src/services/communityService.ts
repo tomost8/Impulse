@@ -105,6 +105,9 @@ export class CommunitiesService {
       // Transform the input to match Prisma's expected format
       const updateData = {
         ...(input.name && { name: input.name }),
+        ...(input.code && { code: input.code }),
+        ...(input.description && { description: input.description }),
+        ...(input.thumbnail && { thumbnail: input.thumbnail }),
       };
 
       return await this.prisma.community.update({
