@@ -31,7 +31,13 @@ export class LoginStreakService {
   private formatWeeklyLoginsForFrontend(weeklyLogins: WeeklyLogins, timezone: string): WeeklyLoginStatus[] {
     const dayLabels = ['S', 'M', 'T', 'W', 'TH', 'F', 'S'];
     const nowInUserTz = toZonedTime(new Date(), timezone);
+
+    logger.info('nowInUserTz', { nowInUserTz });
     const currentDayIndex = getDay(nowInUserTz); // 0 = Sunday, 1 = Monday, etc.
+    logger.info('currentDayIndex', { currentDayIndex });
+
+    logger.info('weeklyLogins', { weeklyLogins });
+
     
     // Convert weekly_logins object to a boolean array for each day of the week
     const result: WeeklyLoginStatus[] = [];
@@ -43,10 +49,19 @@ export class LoginStreakService {
       const daysToSubtract = (currentDayIndex - i + 7) % 7;
       dayDate.setDate(dayDate.getDate() - daysToSubtract);
       
-      const dayKey = format(toZonedTime(dayDate, timezone), 'yyyy-MM-dd');
+      const dayKey = format(dayDate, 'yyyy-MM-dd');
       // Ensure hasLoggedIn is a boolean value
       const hasLoggedIn = !!(weeklyLogins[dayKey] && weeklyLogins[dayKey] > 0);
       
+  // 添加这个日志
+  logger.info(`Day calculation for index ${i}`, {
+    dayLabel: dayLabels[i],
+    calculatedDate: dayDate.toISOString(),
+    dayKey,
+    hasLoggedIn,
+    hasMatchingEntry: dayKey in weeklyLogins,
+    entryValue: weeklyLogins[dayKey]
+  });
       result.push({
         label: dayLabels[i],
         completed: hasLoggedIn
@@ -67,7 +82,7 @@ export class LoginStreakService {
   private shouldResetWeeklyLogins(today: Date, lastLoginDate: Date): boolean {
     // Reset if today is Monday and last login was before today
     logger.info('shouldResetWeeklyLogins: today', { today });
-    const thisWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+    const thisWeekStart = startOfWeek(today, { weekStartsOn: 0 });
     logger.info('shouldResetWeeklyLogins: thisWeekStart', { thisWeekStart });
     const lastLoginWeekStart = startOfWeek(lastLoginDate, { weekStartsOn: 0 });
     logger.info('shouldResetWeeklyLogins: lastLoginWeekStart', { lastLoginWeekStart });
@@ -130,8 +145,8 @@ export class LoginStreakService {
       logger.info('updateLoginStreak: Initial weeklyLogins', { userId, weeklyLogins });
       
       // Convert last login date to user timezone for comparison
-      const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, timezone || 'UTC');
-      const lastLoginDayStart = startOfDay(lastLoginInUserTz);
+      // const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, timezone || 'UTC');
+      const lastLoginDayStart = startOfDay(loginStreak.last_login_date);
       logger.info('updateLoginStreak: Calculated last login date in user timezone', { userId, lastLoginDayStart });
       
       
@@ -216,6 +231,15 @@ export class LoginStreakService {
           todayKey
         });
       }
+
+      logger.info('Date comparison details', {
+        nowInUserTz: nowInUserTz.toISOString(),
+        todayInUserTz: todayInUserTz.toISOString(),
+        lastLoginInUserTz: loginStreak.last_login_date.toISOString(),
+        lastLoginDayStart: lastLoginDayStart.toISOString(),
+        daysSinceLastLogin,
+        lastLoginDate_from_db: loginStreak.last_login_date.toISOString()
+      });
     } catch (error) {
       logger.error('Failed to update login streak', {
         userId,
@@ -262,13 +286,12 @@ export class LoginStreakService {
 
         const todayInUserTz = startOfDay(nowInUserTz);
 
-        const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, userTimezone);
-        const lastLoginDayStart = startOfDay(lastLoginInUserTz);
+        // const lastLoginInUserTz = toZonedTime(loginStreak.last_login_date, userTimezone);
+        const lastLoginDayStart = startOfDay(loginStreak.last_login_date);
         
         logger.info('userTimezone', { userTimezone });
         logger.info('todayInUserTz', { todayInUserTz });
         logger.info('lastLoginDayStart', { lastLoginDayStart });    
-        logger.info('lastLoginInUserTz', { lastLoginInUserTz });
         logger.info('nowInUserTz', { nowInUserTz });    
 
         // Calculate days since last login
@@ -284,6 +307,8 @@ export class LoginStreakService {
       const todayKey = format(todayInUserTz, 'yyyy-MM-dd');
       const todayCount = weeklyLogins[todayKey];  // 获取今天的计数
       
+      logger.info('todayCount', { todayCount });
+
       weeklyLogins = {};  // 清空旧的记录
       
       // 如果今天（周一）已经有记录，保留它
