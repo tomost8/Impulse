@@ -150,6 +150,7 @@ export class CommentService {
               select: {
                 id: true,
                 username: true,
+                profile_picture: true,
               },
             },
           },
