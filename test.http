@@ -164,7 +164,7 @@ GET http://localhost:3000/api/v1/health/test-error?type=UNKNOWN
 # @baseUrl = http://localhost:3000
 # @authToken = dev-token-123
 
-@authToken = eyJhbGciOiJSUzI1NiIsImtpZCI6IjkwOTg1NzhjNDg4MWRjMDVlYmYxOWExNWJhMjJkOGZkMWFiMzRjOGEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVpemRlbW92MSIsImF1ZCI6InF1aXpkZW1vdjEiLCJhdXRoX3RpbWUiOjE3NDU1MjQzNzIsInVzZXJfaWQiOiJ5R25QOW1iQzFyTzBCQzNJcDR5Nnl5SmViMm0xIiwic3ViIjoieUduUDltYkMxck8wQkMzSXA0eTZ5eUplYjJtMSIsImlhdCI6MTc0NTUyNDM3MiwiZXhwIjoxNzQ1NTI3OTcyLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsidGVzdEB0ZXN0LmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.Le2MhaZJ5u7SLp5Ty7seLFAJ9erR_YTc0qjl9FPvY_aoVVj6rchBLycGS7zv3qqL1vid-RBddaps3qdw7RRKMYki6VYgs4Trd4UFc8cp9NZpxZ3GAtmS_RwWr5iVoq7UCT-o8WXmqaZBKn3VIGCDU2gPltjoq_1NVPUSQUsW_T1izPSiE8PVyT4YkW-zq8PoV40-XtSCLMfBTYQUMzKBQZAQ71-zeQSGr6WOLp79zTTa8Y9ARz9H0rwniXv8cOqqwEg20HsY0DDhfUvTFT5T-Bek8aie-UPHeQVHP1L_99EC1hGF0b8oRTz9xZ5eU1LNAZGeBt0XhllwU0WDji2z3w
+@authToken = eyJhbGciOiJSUzI1NiIsImtpZCI6IjkwOTg1NzhjNDg4MWRjMDVlYmYxOWExNWJhMjJkOGZkMWFiMzRjOGEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcXVpemRlbW92MSIsImF1ZCI6InF1aXpkZW1vdjEiLCJhdXRoX3RpbWUiOjE3NDU1MzU1NjUsInVzZXJfaWQiOiJ5R25QOW1iQzFyTzBCQzNJcDR5Nnl5SmViMm0xIiwic3ViIjoieUduUDltYkMxck8wQkMzSXA0eTZ5eUplYjJtMSIsImlhdCI6MTc0NTUzNTU2NSwiZXhwIjoxNzQ1NTM5MTY1LCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsidGVzdEB0ZXN0LmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.RPl_rjWObw-q8RzlUpV-5gLKNbQ3zQ5BOczmAI4hASpX4OTGxoxiEXsU-jPtWMy4QIOYSKkTfcLbF3kbZTLHSdabsAESmBGOWrNyf7ote-CO_zrUaNIa8q5Ooi2uLT-owqb-0YAW9N-Hb1Bl79ZsXnfdq3K8h0jy-bznw2Qcu6a_nsPrjkBUngFTquiHJ36UqSd09zYLJxoIQ8O0ZfIyfftVe1TFO_QutMPwt2sGBdvc9KFdKjHKLi4XDX_LOQER0yvtTi0SS-wuiGZS2cMYfvuHHVDyHtjKGz1PYrhAKFw_m8aTS6_KRYCVWh0ilUfHP_KMXmmoAIrik5KFnqeSkg
 ### Mutation - Firebase Authentication login/create
 POST {{baseUrl}}/graphql
 Content-Type: application/json
@@ -954,7 +954,36 @@ Authorization: Bearer {{authToken}}
   }
 }
 
+### Query - Get Community Notifications
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($communityId: Int!, $limit: Int, $offset: Int) { getCommunityNotifications(communityId: $communityId, limit: $limit, offset: $offset) { success totalCount notifications { id type title content created_at sender { id username profile_picture } recipients { status read_at } } errors { field message } } }",
+  "variables": {
+    "communityId": 1,
+    "limit": 10,
+    "offset": 0
+  }
+}
+
+### Query - Get Community Notifications (Page 2)
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "query": "query($communityId: Int!, $limit: Int, $offset: Int) { getCommunityNotifications(communityId: $communityId, limit: $limit, offset: $offset) { success totalCount notifications { id type title content created_at } errors { field message } } }",
+  "variables": {
+    "communityId": 1,
+    "limit": 10,
+    "offset": 10
+  }
+}
+
 ### Expected Responses:
+
 # 1. Broadcast Notification Response:
 # {
 #   "data": {
@@ -968,6 +997,47 @@ Authorization: Bearer {{authToken}}
 #     "sendCommunityNotification": true
 #   }
 # }
+
+# 3. Get Community Notifications Response:
+# {
+#   "data": {
+#     "getCommunityNotifications": {
+#       "success": true,
+#       "totalCount": 5,
+#       "notifications": [
+#         {
+#           "id": 1,
+#           "type": "COMMUNITY_NOTICE",
+#           "title": "Community Update",
+#           "content": "This is a test community notification",
+#           "created_at": "2024-04-20T14:30:00.000Z",
+#           "sender": {
+#             "id": 1,
+#             "username": "admin",
+#             "profile_picture": "https://example.com/avatar.jpg"
+#           },
+#           "recipients": [
+#             {
+#               "status": "SENT",
+#               "read_at": null
+#             }
+#           ]
+#         },
+#         // ... more notifications
+#       ],
+#       "errors": null
+#     }
+#   }
+# }
+
+# 4. Get Community Notifications (Page 2) Response:
+# Similar to above but with next set of notifications
+
+### Testing Steps:
+# 1. Send a community notification using the sendCommunityNotification mutation
+# 2. Get community notifications using the getCommunityNotifications query
+# 3. Test pagination by using offset parameter
+# 4. Verify the notification details in the response
 
 ### Reminder API Tests ###
 

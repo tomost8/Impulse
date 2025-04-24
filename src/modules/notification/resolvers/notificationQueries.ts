@@ -3,16 +3,19 @@ import { Service } from 'typedi';
 import { PrismaClient, NotificationType, Notification as PrismaNotification } from '@prisma/client';
 import { authMiddleware } from '../../../middleware/authMiddleware';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
-import { NotificationsResponse, Notification } from '../schema/notificationTypes';
+import { NotificationsResponse, Notification, CommunityNotificationsResponse } from '../schema/notificationTypes';
 import { ValidationError } from '../../common/errors/graphql.error';
 import { UsersService } from '../../../services/userService';
+import { NotificationService } from '../../../services/notificationService';
+
 
 @Service()
 @Resolver()
 export class NotificationQueries {
   constructor(
     private prisma: PrismaClient,
-    private usersService: UsersService
+    private usersService: UsersService,
+    private notificationService: NotificationService
   ) {}
 
   @Query(() => NotificationsResponse)
@@ -110,6 +113,47 @@ export class NotificationQueries {
         errors: [{
           field: 'general',
           message: error instanceof Error ? error.message : 'Failed to fetch reminder'
+        }]
+      };
+    }
+  }
+
+  @Query(() => CommunityNotificationsResponse)
+  @UseMiddleware(authMiddleware, LogOperationMiddleware)
+  async getCommunityNotifications(
+    @Arg('communityId', () => Int) communityId: number,
+    @Arg('limit', () => Int, { nullable: true, defaultValue: 10 }) limit: number,
+    @Arg('offset', () => Int, { nullable: true, defaultValue: 0 }) offset: number,
+    @Ctx() context: any,
+  ): Promise<CommunityNotificationsResponse> {
+    try {
+      const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
+      
+      if (!user) {
+        throw new ValidationError('User not found');
+      }
+
+      const { notifications, totalCount } = await this.notificationService.getCommunityNotifications(
+        communityId,
+        user.id,
+        limit,
+        offset
+      );
+
+      return {
+        success: true,
+        notifications: notifications as unknown as Notification[],
+        totalCount
+      };
+    } catch (error) {
+      return {
+        success: false,
+        notifications: [],
+        totalCount: 0,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch community notifications'
         }]
       };
     }

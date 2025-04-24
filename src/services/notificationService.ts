@@ -233,6 +233,81 @@ export class NotificationService {
     }
   }
 
+  /**
+   * 获取特定社区的通知列表
+   * @param communityId 社区ID
+   * @param userId 请求用户ID
+   * @param limit 限制返回的通知数量
+   * @param offset 分页偏移量
+   * @returns 通知列表及总数
+   */
+  async getCommunityNotifications(communityId: number, userId: number, limit: number = 10, offset: number = 0) {
+    try {
+      // 验证用户是否是社区成员
+      const isCommunityMember = await this.prisma.communityMember.findFirst({
+        where: {
+          community_id: communityId,
+          user_id: userId,
+          status: 'ACCEPTED'
+        }
+      });
 
+      if (!isCommunityMember) {
+        throw new ValidationError('User is not a member of this community');
+      }
 
+      // 获取社区通知总数
+      const totalCount = await this.prisma.notification.count({
+        where: {
+          type: NotificationType.COMMUNITY_NOTICE,
+          community_id: communityId,
+          is_active: true
+        }
+      });
+
+      // 获取社区通知列表
+      const notifications = await this.prisma.notification.findMany({
+        where: {
+          type: NotificationType.COMMUNITY_NOTICE,
+          community_id: communityId,
+          is_active: true
+        },
+        include: {
+          sender: true,
+          recipients: {
+            where: {
+              recipient_id: userId
+            },
+            include: {
+              recipient: true
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        },
+        take: limit,
+        skip: offset
+      });
+
+      logger.info('Community notifications fetched', {
+        community_id: communityId,
+        user_id: userId,
+        count: notifications.length,
+        total_count: totalCount
+      });
+
+      return {
+        notifications,
+        totalCount
+      };
+    } catch (error) {
+      logger.error('Error fetching community notifications', {
+        community_id: communityId,
+        user_id: userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
 }

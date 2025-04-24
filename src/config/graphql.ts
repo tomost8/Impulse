@@ -12,6 +12,7 @@ import { ChatSubscriptions } from '../modules/chat/resolvers/chatSubscriptions';
 import { pubsub } from './pubsub';
 import { PointQueries, PointMutations, RewardQueries, RewardMutations, RedeemQueries, RedeemMutations } from '../modules/point';
 import { NotificationMutations } from '../modules/notification/resolvers/NotificationMutations';
+import { NotificationQueries } from '../modules/notification/resolvers/notificationQueries';
 import './prisma'; // 确保 Prisma 客户端被初始化
 import { CommentMutations } from '../modules/comment/resolvers/commentMutations';
 import { CommentQueries } from '../modules/comment/resolvers/commentQueries';
@@ -49,6 +50,7 @@ export const createSchema = async () => {
       RedeemQueries, 
       RedeemMutations,
       NotificationMutations,
+      NotificationQueries,
       CommentMutations,
       CommentQueries
     ],

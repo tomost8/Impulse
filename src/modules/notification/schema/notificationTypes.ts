@@ -140,6 +140,24 @@ export class NotificationsResponse {
 }
 
 /**
+ * Response type for paginated community notifications
+ */
+@ObjectType()
+export class CommunityNotificationsResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [Notification])
+  notifications!: Notification[];
+  
+  @Field(() => Int)
+  totalCount!: number;
+  
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+/**
  * Response type for notification recipient operations
  */
 @ObjectType()
@@ -168,6 +186,7 @@ export class NotificationRecipientsResponse {
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
 }
+
 /**
  * Subscription payload for real-time notification updates
  */
