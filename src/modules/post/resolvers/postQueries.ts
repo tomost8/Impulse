@@ -126,21 +126,23 @@ export class PostQueries {
    * Query to fetch a single post by ID
    * 
    * This query retrieves detailed information about a specific post,
-   * including author information and target associations.
+   * including author information, target associations, and like status for the current user.
    * 
    * @param id - ID of the post to fetch
+   * @param currentUserId - ID of the current user to determine if post is liked (optional)
    * @returns PostResponse containing the post or error details
    * @throws {NotFoundError} If the post doesn't exist
    * 
    * @example
    * ```graphql
    * query {
-   *   post(id: 1) {
+   *   post(id: 1, currentUserId: 123) {
    *     success
    *     post {
    *       id
    *       caption
-   *       mediaUrl
+   *       liked
+   *       likeCount
    *       author {
    *         name
    *       }
@@ -150,9 +152,12 @@ export class PostQueries {
    * ```
    */
   @Query(() => PostResponse)
-  async post(@Arg('id', () => Int) id: number): Promise<PostResponse> {
+  async post(
+    @Arg('id', () => Int) id: number,
+    @Arg('currentUserId', () => Int, { nullable: true }) currentUserId?: number
+  ): Promise<PostResponse> {
     try {
-      const post = await this.postService.findById(id);
+      const post = await this.postService.findById(id, currentUserId);
       return {
         success: true,
         post
@@ -173,9 +178,10 @@ export class PostQueries {
    * Query to fetch all posts by a specific user
    * 
    * This query retrieves posts created by a particular user,
-   * with optional pagination support.
+   * with optional pagination support and like status for the current user.
    * 
    * @param userId - ID of the user whose posts to fetch
+   * @param currentUserId - ID of the current user to determine if posts are liked (optional)
    * @param skip - Number of records to skip (pagination)
    * @param take - Number of records to take (pagination)
    * @returns PostsResponse containing user's posts or error details
@@ -186,6 +192,7 @@ export class PostQueries {
    * query {
    *   postsByUserId(
    *     userId: 1
+   *     currentUserId: 123
    *     skip: 0
    *     take: 10
    *   ) {
@@ -193,6 +200,8 @@ export class PostQueries {
    *     posts {
    *       id
    *       caption
+   *       liked
+   *       likeCount
    *       created_at
    *     }
    *   }
@@ -202,11 +211,12 @@ export class PostQueries {
   @Query(() => PostsResponse)
   async postsByUserId(
     @Arg('userId', () => Int) userId: number,
+    @Arg('currentUserId', () => Int, { nullable: true }) currentUserId?: number,
     @Arg('skip', () => Int, { nullable: true }) skip?: number,
     @Arg('take', () => Int, { nullable: true }) take?: number
   ): Promise<PostsResponse> {
     try {
-      const posts = await this.postService.findByUserId(userId, { skip, take });
+      const posts = await this.postService.findByUserId(userId, { skip, take, currentUserId });
       return {
         success: true,
         posts
@@ -258,17 +268,19 @@ export class PostQueries {
   }
 
   /**
-   * Query to fetch all feed posts from friends
+   * Query to fetch feed posts from friends and user's own posts
    * 
    * This query retrieves all unexpired posts that:
-   * 1. Are marked as feed posts
+   * 1. Are marked as feed posts (public posts)
    * 2. Are created by the user's friends
-   * 3. Supports pagination
+   * 3. Are created by the current user
+   * 4. Target specific friends
+   * 5. Supports pagination
    * 
    * @param currentUserId - ID of the current user
    * @param skip - Number of records to skip (pagination)
    * @param take - Number of records to take (pagination)
-   * @returns PostsResponse containing feed posts from friends
+   * @returns PostsResponse containing feed posts from friends and user
    * 
    * @example
    * ```graphql

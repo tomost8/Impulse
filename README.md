@@ -1,118 +1,137 @@
-# Impulse 后端
+# Impulse Backend
 
-Impulse 是一个功能全面的社交网络后端系统，基于 Node.js、GraphQL、Prisma 和 PostgreSQL 构建。
+[English](README.md) | [中文](docs/cn/README.md)
 
-## 功能特性
+## Features
 
-- 用户管理与身份验证 (Firebase)
-- 社区和群组管理
-- 即时通讯 (WebSocket)
-- 活动跟踪与管理
-- 帖子和内容共享
-- 点数系统与奖励
-- 通知与提醒
-- 完整的 GraphQL API
+- User Management and Authentication (Firebase)
+- Community and Group Management
+- Instant Messaging (WebSocket)
+- Activity Tracking and Management
+- Posts and Content Sharing
+- Point System and Rewards
+- Notifications and Reminders
+- Complete GraphQL API
 
-## 技术栈
+## Tech Stack
 
-- **后端**: Node.js, TypeScript, Express
+- **Backend**: Node.js, TypeScript, Express
 - **API**: GraphQL, Apollo Server, Type-GraphQL
-- **数据库**: PostgreSQL, Prisma ORM
-- **实时通信**: GraphQL Subscriptions, WebSocket
-- **任务队列**: Bull, Redis
-- **认证**: Firebase Admin
-- **日志**: Winston
+- **Database**: PostgreSQL, Prisma ORM
+- **Real-time Communication**: GraphQL Subscriptions, WebSocket
+- **Task Queue**: Bull, Redis
+- **Authentication**: Firebase Admin
+- **Logging**: Winston
 
-## 快速开始
+## Setup
 
-### 前置条件
+### Prerequisites
 
-- Node.js v20+
-- PostgreSQL 14+
-- Redis 6+
-- Firebase 项目
+You'll need the following installed:
 
-### 安装
+- **Node.js** - JavaScript runtime (download from [nodejs.org](https://nodejs.org/))
+- **PostgreSQL** - Database server (download from [postgresql.org](https://www.postgresql.org/download/))
+- **Redis** - Cache and message broker
 
-1. 克隆项目
+### Setup Steps
 
+1. **Clone the repository**
 ```bash
 git clone <repository-url>
 cd Impulse
 ```
 
-2. 安装依赖
-
+2. **Install dependencies**
 ```bash
 npm install
 ```
 
-3. 配置环境变量
-
+3. **Environment variable configuration** - [Environment Configuration](#environment-configuration) details below
 ```bash
 cp .env.example .env
+# Edit .env with your configuration
 ```
 
-然后编辑 `.env` 文件，填写必要的配置信息。
-
-4. 设置数据库
-
+4. **Set up database**
 ```bash
 npx prisma migrate dev
 ```
 
-5. 启动开发服务器
+5. **Start Redis service**
+```bash
+redis-server
 
+# Check if Redis is running
+redis-cli ping
+```
+
+6. **Start development server** (in a separate terminal)
 ```bash
 npm run dev
 ```
 
-服务器将在 http://localhost:3000 运行，GraphQL Playground 可在 http://localhost:3000/graphql 访问。
+The GraphQL server will be available at http://localhost:3000/graphql by default.
 
-## 文档
+### Environment Configuration
 
-详细文档请参阅：
+Create a `.env` file in the project root and configure the following required environment variables:
 
-- [项目结构](docs/project-structure.md)
-- [API 文档](docs/api-documentation.md)
-- [开发指南](docs/development-guide.md)
+#### Required Environment Variables
 
-## 开发
+- `DATABASE_URL` (e.g., `postgresql://username:password@localhost:5432/impulse`)
+- `FIREBASE_PROJECT_ID` (e.g., `quizdemov1`)
+- `FIREBASE_CLIENT_EMAIL` (e.g., `firebase-adminsdk-xxxxx@quizdemov1.iam.gserviceaccount.com`)
+- `FIREBASE_PRIVATE_KEY` (e.g., `-----BEGIN PRIVATE KEY-----\nXXXXX...`)
 
-### 可用命令
+#### Setting Up Firebase Service Account
 
-- `npm run dev` - 启动开发服务器
-- `npm run build` - 编译 TypeScript
-- `npm start` - 启动生产服务器
-- `npm test` - 运行测试
-- `npm run docs` - 生成文档
+1. **Check Firebase access** - Verify access or reach out for permissions
+2. Go to [Firebase Service Accounts](https://console.firebase.google.com/project/quizdemov1/settings/serviceaccounts/adminsdk)
+3. Click **Generate new private key**
+4. Download the JSON file
+5. Copy the following values to your `.env` file:
+   - `project_id` → `FIREBASE_PROJECT_ID`
+   - `client_email` → `FIREBASE_CLIENT_EMAIL`
+   - `private_key` → `FIREBASE_PRIVATE_KEY`
 
-### 目录结构
+## Development
 
-```
-Impulse/
-├── prisma/                # Prisma ORM 配置
-├── src/                   # 源代码
-│   ├── modules/           # 功能模块
-│   ├── services/          # 业务逻辑服务
-│   ├── config/            # 配置文件
-│   └── middleware/        # 中间件
-├── docs/                  # 文档
-└── test/                  # 测试
-```
+### Available Commands
 
-## 贡献
+- `npm run dev` - Start development server
+- `npm run build` - Compile TypeScript
+- `npm start` - Start production server
+- `npm test` - Run tests
+- `npm run docs` - Generate documentation
 
-我们欢迎所有形式的贡献！请查看[开发指南](docs/development-guide.md)了解更多信息。
+### Documentation Guides
 
-### 贡献步骤
+> **Note:** These guides were written by a previous developer and may be slightly unorganized as they haven't been fully reviewed yet.
 
-1. Fork 项目仓库
-2. 创建您的特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 打开一个 Pull Request
+- **[Project Structure](docs/guides/project-structure.md)** - Architecture overview
+- **[Development Guide](docs/guides/development-guide.md)** - Development standards and best practices
+- **[Project Guide](docs/guides/project-guide.md)** - Project management and development workflow
+- **[Apollo Studio Guide](docs/guides/apollo-studio-guide.md)** - Apollo Studio integration and usage
+- **[API Documentation](docs/guides/api-documentation.md)** - Complete GraphQL API reference with examples
+- **[GraphQL Subscriptions](docs/guides/subscription-guide.md)** - Real-time communication with WebSocket and PubSub
+- **[AWS Guide](docs/guides/aws-guide.md)** - AWS deployment and API usage guide
+- **[Error Handling](docs/guides/error-handling-guide.md)** - Structured error handling and validation
+- **[Logger Guide](docs/guides/logger-guide.md)** - Winston logging configuration and best practices
+- **[TypeDoc Guide](docs/guides/typedoc-guide.md)** - Code documentation generation and standards
 
-## 许可证
+### API Reference
 
-本项目采用 [MIT 许可证](LICENSE)。
+- **[Auto-generated Docs](docs/api/)** - Complete TypeScript API documentation
+
+### Basic Contribution Workflow
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+

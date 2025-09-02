@@ -92,10 +92,10 @@ export class PostService {
    * Create a new post with associated targets and activity tracking
    * 
    * @param data - Post creation data containing required information
-   * @returns Promise<Post[]> The newly created posts
+   * @returns Promise<Post[]> The newly created post (array for backward compatibility)
    * @throws {ValidationError} If validation fails or prerequisites are not met
    * @throws {PrismaError} If database operations fail
-   * @remarks This method handles high concurrency by processing targets in batches
+   * @remarks This method creates a single post with multiple targets for efficiency
    */
   async create(data: CreatePostInput): Promise<Post[]> {
     try {
@@ -116,190 +116,118 @@ export class PostService {
         throw new ValidationError('Post must have at least one target.');
       }
 
-      const HIGH_CONCURRENCY_THRESHOLD = 10;
-
       return await this.prisma.$transaction(async (tx) => {
-        const posts: any[] = [];
-        // 分离社区目标和其他目标
-        const communityTargets = data.post_targets.filter(target => 
-          target.target_type === 'community'
-        );
-        const otherTargets = data.post_targets.filter(target => 
-          target.target_type !== 'community'
-        );
+        // Create ONE post with ALL targets
+        const post = await tx.post.create({
+          data: {
+            caption: data.caption,
+            mediaUrls: data.mediaUrls,
+            category: data.category,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            author: { connect: { id: data.authorId } },
+            post_targets: {
+              create: data.post_targets.map(target => ({
+                target_type: target.target_type,
+                target_id: target.target_id
+              }))
+            }
+          },
+          include: {
+            author: { include: { point: true } },
+            post_targets: true,
+            _count: { select: { likes: true } }
+          }
+        });
 
-        // 为每个社区创建独立帖子
-        if (communityTargets.length > 0) {
-          const communityPosts = await Promise.all(
-            communityTargets.map(target => 
-              tx.post.create({
-                data: {
-                  caption: data.caption,
-                  mediaUrls: data.mediaUrls,
-                  category: data.category,
-                  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                  author: { connect: { id: data.authorId } },
-                  post_targets: {
-                    create: {
-                      target_type: target.target_type,
-                      target_id: target.target_id
-                    }
-                  }
-                },
-                include: {
-                  author: { include: { point: true } },
-                  post_targets: true,
-                  _count: { select: { likes: true } }
-                }
-              })
-            )
-          );
-          posts.push(...communityPosts);
+        // Update activity status
+        const activity = await tx.activity.findUnique({
+          where: { id: data.activityId },
+          select: { 
+            userId: true,
+            category: true
+          }
+        });
+
+        if (!activity) {
+          throw new NotFoundError(`Activity with id ${data.activityId} not found`);
         }
 
-        // 为其他目标创建一个帖子，保持原有的高并发处理逻辑
-        if (otherTargets.length > 0) {
-          const initialTargets = otherTargets.slice(0, HIGH_CONCURRENCY_THRESHOLD);
-          const otherPost = await tx.post.create({
-            data: {
-              caption: data.caption,
-              mediaUrls: data.mediaUrls,
-              category: data.category,
-              expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-              author: { connect: { id: data.authorId } },
-              post_targets: {
-                createMany: {
-                  data: initialTargets.map(target => ({
-                    target_type: target.target_type,
-                    target_id: target.target_id
-                  }))
-                }
-              }
+        // Update activity as completed
+        await tx.activity.update({
+          where: { id: data.activityId },
+          data: { 
+            postId: post.id,
+            status: "completed" 
+          }
+        });
+
+        await this.activityExpirationService.cancelActivityExpiration(data.activityId);
+
+        // Add points to user
+        try {
+          // Get user's primary_goal and secondary_goal
+          const user = await tx.user.findUnique({
+            where: { 
+              id: activity.userId 
             },
-            include: {
-              author: { include: { point: true } },
-              post_targets: true,
-              _count: { select: { likes: true } }
-            }
-          });
-
-          // 处理剩余的其他目标
-          if (otherTargets.length > HIGH_CONCURRENCY_THRESHOLD) {
-            const remainingTargets = otherTargets.slice(HIGH_CONCURRENCY_THRESHOLD);
-            const BATCH_SIZE = 100;
-            const chunks = this.chunkArray(remainingTargets, BATCH_SIZE);
-            
-            for (const chunk of chunks) {
-              await this.addToQueue('create_post_targets', {
-                postId: otherPost.id,
-                targets: chunk
-              });
-            }
-          }
-
-          posts.push(otherPost);
-        }
-
-        // 更新活动状态
-        if (posts.length > 0) {
-          // 获取活动的当前信息，用于确定活动类别
-          const activity = await tx.activity.findUnique({
-            where: { id: data.activityId },
             select: { 
-              userId: true,
-              category: true
+              primary_goal: true,
+              secondary_goal: true,
+              timezone: true
             }
           });
 
-          if (!activity) {
-            throw new NotFoundError(`Activity with id ${data.activityId} not found`);
+          if (!user) {
+            throw new Error(`User with id ${activity.userId} not found`);
           }
-
-          // 更新活动为完成状态
-          await tx.activity.update({
-            where: { id: data.activityId },
-            data: { 
-              postId: posts[0].id,
-              status: "completed" 
-            }
+          
+          // Determine points based on goal alignment
+          let pointsToAdd = 45; // Default for additional goals
+          
+          if (user.primary_goal && activity.category === user.primary_goal) {
+            // Primary goal match, get 100 points
+            pointsToAdd = 100;
+            logger.info(`Activity category ${activity.category} matches user's primary goal`);
+          } else if (user.secondary_goal && activity.category === user.secondary_goal) {
+            // Secondary goal match, get 75 points
+            pointsToAdd = 75;
+            logger.info(`Activity category ${activity.category} matches user's secondary goal`);
+          } else {
+            // Neither primary nor secondary goal, get 45 points
+            logger.info(`Activity category ${activity.category} is an additional goal`);
+          }
+          
+          // Update user points
+          await this.pointsService.update(activity.userId, {
+            points_added: pointsToAdd
           });
-
-          await this.activityExpirationService.cancelActivityExpiration(data.activityId);
-
-          // 为用户添加积分
+          
+          logger.info(`Added ${pointsToAdd} points to user ${activity.userId} for completing activity ${data.activityId} through post creation (category: ${activity.category})`);
+          
+          // Update user's login streak
           try {
-            // 获取用户的primary_goal和secondary_goal
-            const user = await tx.user.findUnique({
-              where: { 
-                id: activity.userId 
-              },
-              select: { 
-                primary_goal: true,
-                secondary_goal: true,
-                timezone: true
-              }
-            });
-
-            if (!user) {
-              throw new Error(`User with id ${activity.userId} not found`);
-            }
-            
-            // 根据活动类别与用户目标的匹配情况来确定积分
-            let pointsToAdd = 45; // 默认为额外目标的积分
-            
-            if (user.primary_goal && activity.category === user.primary_goal) {
-              // 主要目标匹配，获得100积分
-              pointsToAdd = 100;
-              logger.info(`Activity category ${activity.category} matches user's primary goal`);
-            } else if (user.secondary_goal && activity.category === user.secondary_goal) {
-              // 次要目标匹配，获得75积分
-              pointsToAdd = 75;
-              logger.info(`Activity category ${activity.category} matches user's secondary goal`);
-            } else {
-              // 既不是主要目标也不是次要目标，获得45积分
-              logger.info(`Activity category ${activity.category} is an additional goal`);
-            }
-            
-            // 更新用户积分
-            await this.pointsService.update(activity.userId, {
-              points_added: pointsToAdd
-            });
-            
-            logger.info(`Added ${pointsToAdd} points to user ${activity.userId} for completing activity ${data.activityId} through post creation (category: ${activity.category})`);
-            
-            // 更新用户的登录连续计数
-            try {
-              const userTimezone = user.timezone || 'UTC';
-              await this.loginStreakService.updateLoginStreak(activity.userId, userTimezone);
-              logger.info(`Updated login streak for user ${activity.userId} after completing activity`);
-            } catch (streakError) {
-              logger.error('Failed to update login streak during post creation:', { 
-                error: streakError, 
-                userId: activity.userId,
-                timezone: user.timezone || 'UTC'
-              });
-            }
-          } catch (error) {
-            // 即使积分添加失败，我们也不希望影响帖子创建过程
-            logger.error('Failed to add points for completed activity during post creation:', { 
-              error, 
-              activityId: data.activityId, 
+            const userTimezone = user.timezone || 'UTC';
+            await this.loginStreakService.updateLoginStreak(activity.userId, userTimezone);
+            logger.info(`Updated login streak for user ${activity.userId} after completing activity`);
+          } catch (streakError) {
+            logger.error('Failed to update login streak during post creation:', { 
+              error: streakError, 
               userId: activity.userId,
-              category: activity.category 
+              timezone: user.timezone || 'UTC'
             });
           }
+        } catch (pointsError) {
+          logger.error('Failed to add points during post creation:', { 
+            error: pointsError, 
+            userId: activity.userId,
+            activityId: data.activityId 
+          });
         }
 
-        return posts.map(post => ({
-          ...post,
-          likeCount: post._count.likes,
-          liked: false
-        }));
+        return [post]; // Return single post in array for backward compatibility
       });
-    } catch (error: any) {
-      if (error.code === 'P2003') {
-        throw new ValidationError(`Invalid authorId: ${data.authorId}`);
-      }
+    } catch (error) {
+      logger.error('Failed to create post:', error);
       throw error;
     }
   }
@@ -455,10 +383,17 @@ export class PostService {
    * Find all posts by a specific user
    * 
    * @param userId - ID of the user to find posts for
-   * @param options - Pagination options
+   * @param options - Pagination options including currentUserId for like status
    * @returns Promise<Post[]> Array of posts by the user
    */
-  async findByUserId(userId: number, options?: { skip?: number; take?: number; }): Promise<Post[]> {
+  async findByUserId(
+    userId: number, 
+    options?: { 
+      skip?: number; 
+      take?: number; 
+      currentUserId?: number; 
+    }
+  ): Promise<Post[]> {
     const posts = await this.prisma.post.findMany({
       skip: options?.skip,
       take: options?.take,
@@ -472,15 +407,22 @@ export class PostService {
         post_targets: true,
         _count: {
           select: {
-            likes: true
+            likes: true,
+            comments: true
           }
-        }
+        },
+        likes: options?.currentUserId ? {
+          where: { user_id: options.currentUserId },
+          select: { id: true }
+        } : undefined
       }
     });
 
     return posts.map(post => ({
       ...post,
-      likeCount: post._count.likes
+      liked: options?.currentUserId ? post.likes.length > 0 : false,
+      likeCount: post._count.likes,
+      commentCount: post._count.comments
     }));
   }
 
@@ -488,10 +430,11 @@ export class PostService {
    * Find a specific post by its ID
    * 
    * @param id - ID of the post to find
+   * @param currentUserId - ID of the current user to determine if post is liked
    * @returns Promise<Post> The found post
    * @throws {NotFoundError} If the post doesn't exist
    */
-  async findById(id: number): Promise<Post> {
+  async findById(id: number, currentUserId?: number): Promise<Post> {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
@@ -501,9 +444,14 @@ export class PostService {
         post_targets: true,
         _count: {
           select: {
-            likes: true
+            likes: true,
+            comments: true
           }
-        }
+        },
+        likes: currentUserId ? {
+          where: { user_id: currentUserId },
+          select: { id: true }
+        } : undefined
       }
     });
 
@@ -513,7 +461,9 @@ export class PostService {
 
     return {
       ...post,
-      likeCount: post._count.likes
+      liked: currentUserId ? post.likes.length > 0 : false,
+      likeCount: post._count.likes,
+      commentCount: post._count.comments
     };
   }
 
@@ -684,17 +634,23 @@ export class PostService {
   }
 
   /**
-   * Find all feed posts from friends
+   * Find feed posts that are explicitly meant for friends or general feed
+   * 
+   * This method returns posts that are:
+   * - Public posts targeting 'feed'
+   * - Posts targeting specific friends
+   * - Posts from friends that target communities (friends sharing in communities)
+   * - User's own posts that target feed or friends
    * 
    * @param options - Query options for filtering and pagination
-   * @returns Promise<Post[]> Array of feed posts from friends
+   * @returns Promise<Post[]> Array of feed posts meant for friends/feed
    */
   async findFeedPosts(options: {
     currentUserId: number;
     skip?: number;
     take?: number;
   }): Promise<Post[]> {
-    // 获取当前用户的好友列表
+    // Get current user's friends
     const friendIds = await this.prisma.friendship.findMany({
       where: {
         OR: [
@@ -708,40 +664,92 @@ export class PostService {
       }
     });
 
-    // 构建好友ID列表
+    // Build friend user IDs list
     const friendUserIds = friendIds.map(f => 
       f.user_id === options.currentUserId ? f.friend_id : f.user_id
     );
 
-    // 查询好友的未过期 feed 帖子
+    // Add current user to the list to include their own posts
+    const allRelevantUserIds = [...friendUserIds, options.currentUserId];
+
+    // Query posts that are explicitly meant for friends or general feed
     const posts = await this.prisma.post.findMany({
       where: {
         AND: [
           {
-            post_targets: {
-              some: {
-                target_type: 'feed'
+            OR: [
+              // Posts targeting 'feed' (public posts)
+              {
+                post_targets: {
+                  some: {
+                    target_type: 'feed'
+                  }
+                }
+              },
+              // Posts targeting specific friends
+              {
+                post_targets: {
+                  some: {
+                    target_type: 'user',
+                    target_id: { in: friendUserIds }
+                  }
+                }
+              },
+              // Posts from friends that target communities (friends sharing in communities)
+              {
+                AND: [
+                  { author_id: { in: friendUserIds } },
+                  {
+                    post_targets: {
+                      some: {
+                        target_type: 'community'
+                      }
+                    }
+                  }
+                ]
+              },
+              // User's own posts that target feed or friends
+              {
+                AND: [
+                  { author_id: options.currentUserId },
+                  {
+                    OR: [
+                      {
+                        post_targets: {
+                          some: {
+                            target_type: 'feed'
+                          }
+                        }
+                      },
+                      {
+                        post_targets: {
+                          some: {
+                            target_type: 'user'
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
               }
-            }
+            ]
           },
-          {
-            author_id: {
-              in: friendUserIds
-            }
-          },
+          // Filter by expiration
           {
             OR: [
-              { expires_at: null },  // 永不过期的帖子
-              { expires_at: { gt: new Date() } }  // 未过期的帖子
+              { expires_at: null },  // Posts that never expire
+              { expires_at: { gt: new Date() } }  // Posts that haven't expired yet
             ]
-          }
+          },
+          // Only include non-deleted posts
+          { is_deleted: false }
         ]
       },
       skip: options.skip,
       take: options.take,
       include: {
         author: {
-          include: {point: true}
+          include: { point: true }
         },
         post_targets: true,
         _count: {
@@ -773,6 +781,7 @@ export class PostService {
    * 
    * @param options - Query options for filtering and pagination
    * @returns Promise<Post[]> Array of posts from joined communities
+   * @remarks This method finds posts that target communities the user has joined
    */
   async findJoinedCommunityPosts(options: {
     currentUserId: number;
@@ -809,7 +818,9 @@ export class PostService {
               { expires_at: null },  // 永不过期的帖子
               { expires_at: { gt: new Date() } }  // 未过期的帖子
             ]
-          }
+          },
+          // Only include non-deleted posts
+          { is_deleted: false }
         ]
       },
       skip: options.skip,

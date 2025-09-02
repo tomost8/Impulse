@@ -99,10 +99,11 @@ export class PostMutations {
   /**
    * Mutation to create a new post
    * 
-   * This mutation creates a new post with the provided data and handles:
+   * This mutation creates a single post with multiple targets and handles:
    * - Post metadata creation
-   * - Target audience assignment
+   * - Multiple target audience assignments (community, feed, user, etc.)
    * - Activity status updates
+   * - Points and login streak updates
    * 
    * @param input - Post creation data containing required information
    * @returns PostResponse with the newly created post or error details
@@ -116,7 +117,8 @@ export class PostMutations {
    *     mediaUrl: "https://example.com/image.jpg"
    *     authorId: 1
    *     post_targets: [
-   *       { target_type: "community", target_id: 1 }
+   *       { target_type: "community", target_id: 1 },
+   *       { target_type: "feed", target_id: 0 }
    *     ]
    *   }) {
    *     success
@@ -137,7 +139,7 @@ export class PostMutations {
       const posts = await this.postService.create(input);
       return {
         success: true,
-        post: posts[0] // 返回第一个帖子，通常是主帖子或社区帖子
+        post: posts[0] // Return the single created post
       };
     } catch (error) {
       logger.error('Failed to create post:', error);

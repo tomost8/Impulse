@@ -113,16 +113,16 @@ model User {
 }
 
 model UserLoginStreak {
-  id              Int      @id @default(autoincrement())
-  user_id         Int
-  last_login_date DateTime
-  streak_count    Int      @default(0)
-  max_streak_count Int     @default(0)
-  weekly_logins   Json     @default("[]")
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  last_login_date  DateTime
+  streak_count     Int      @default(0)
+  max_streak_count Int      @default(0)
+  weekly_logins    Json     @default("[]")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id])
   @@map("user_login_streaks")
@@ -260,7 +260,7 @@ model Post {
   author       User         @relation(fields: [author_id], references: [id])
   author_id    Int
   caption      String?
-  mediaUrls    String[]    @default([]) @map("media_urls")
+  mediaUrls    String[]     @default([]) @map("media_urls")
   is_deleted   Boolean      @default(false)
   activity     Activity?
   created_at   DateTime     @default(now())
@@ -276,9 +276,7 @@ model Post {
 
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
-  @@index([created_at, expires_at]) 
-
-
+  @@index([created_at, expires_at])
   @@map("posts")
 }
 

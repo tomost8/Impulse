@@ -1,41 +1,43 @@
-# Impulse GraphQL API 文档
+# Impulse GraphQL API Documentation
 
-本文档描述了 Impulse 后端系统的 GraphQL API，包括所有可用的查询、变更和订阅操作。
+[English](api-documentation-en.md) | [中文](api-documentation.md)
 
-## API 端点
+This document describes the GraphQL API of the Impulse backend system, including all available queries, mutations, and subscription operations.
 
-- **GraphQL 端点**: `http://localhost:3000/graphql`
-- **WebSocket 端点**: `ws://localhost:3000/graphql` (用于订阅)
+## API Endpoints
 
-## 认证
+- **GraphQL Endpoint**: `http://localhost:3000/graphql`
+- **WebSocket Endpoint**: `ws://localhost:3000/graphql` (for subscriptions)
 
-API 使用 Firebase 认证系统。客户端需要:
+## Authentication
 
-1. 通过 Firebase 获取认证令牌
-2. 在每个 GraphQL 请求的 HTTP 头部加入 `Authorization: Bearer <token>`
+The API uses Firebase authentication system. Clients need to:
 
-## 响应格式
+1. Obtain authentication tokens through Firebase
+2. Include `Authorization: Bearer <token>` in the HTTP headers of each GraphQL request
 
-所有 API 响应均遵循统一格式:
+## Response Format
+
+All API responses follow a unified format:
 
 ```typescript
 {
-  success: boolean;        // 操作是否成功
-  <data_field>?: object;   // 请求的数据对象（如 user, post 等）
+  success: boolean;        // Whether the operation was successful
+  <data_field>?: object;   // Requested data object (such as user, post, etc.)
   errors?: [
     {
-      field: string;       // 错误相关字段
-      message: string;     // 错误详细信息
+      field: string;       // Field related to the error
+      message: string;     // Detailed error message
     }
   ]
 }
 ```
 
-## 查询操作 (Queries)
+## Query Operations (Queries)
 
-### 用户查询
+### User Queries
 
-#### `me`: 获取当前认证用户信息
+#### `me`: Get current authenticated user information
 
 ```graphql
 query {
@@ -58,7 +60,7 @@ query {
 }
 ```
 
-#### `user`: 按 ID 或 Firebase UID 获取用户
+#### `user`: Get user by ID or Firebase UID
 
 ```graphql
 query {
@@ -85,7 +87,7 @@ query {
 }
 ```
 
-#### `users`: 获取用户列表
+#### `users`: Get user list
 
 ```graphql
 query {
@@ -104,9 +106,9 @@ query {
 }
 ```
 
-### 社区查询
+### Community Queries
 
-#### `communities`: 获取社区列表
+#### `communities`: Get community list
 
 ```graphql
 query {
@@ -130,7 +132,7 @@ query {
 }
 ```
 
-#### `community`: 获取单个社区详情
+#### `community`: Get single community details
 
 ```graphql
 query {
@@ -150,9 +152,9 @@ query {
 }
 ```
 
-### 活动查询
+### Activity Queries
 
-#### `activities`: 获取活动列表
+#### `activities`: Get activity list
 
 ```graphql
 query {
@@ -174,7 +176,7 @@ query {
 }
 ```
 
-#### `activity`: 获取单个活动详情
+#### `activity`: Get single activity details
 
 ```graphql
 query {
@@ -197,9 +199,9 @@ query {
 }
 ```
 
-### 聊天与消息查询
+### Chat and Message Queries
 
-#### `chats`: 获取用户的聊天列表
+#### `chats`: Get user's chat list
 
 ```graphql
 query {
@@ -220,7 +222,7 @@ query {
 }
 ```
 
-#### `messages`: 获取聊天的消息记录
+#### `messages`: Get chat message history
 
 ```graphql
 query {
@@ -249,9 +251,9 @@ query {
 }
 ```
 
-### 帖子查询
+### Post Queries
 
-#### `posts`: 获取帖子列表
+#### `posts`: Get post list
 
 ```graphql
 query {
@@ -281,7 +283,7 @@ query {
 }
 ```
 
-#### `post`: 获取单个帖子详情
+#### `post`: Get single post details
 
 ```graphql
 query {
@@ -315,11 +317,11 @@ query {
 }
 ```
 
-## 变更操作 (Mutations)
+## Mutation Operations (Mutations)
 
-### 用户变更
+### User Mutations
 
-#### `firebaseAuth`: Firebase 认证登录/注册
+#### `firebaseAuth`: Firebase authentication login/registration
 
 ```graphql
 mutation {
@@ -343,7 +345,7 @@ mutation {
 }
 ```
 
-#### `updateUser`: 更新用户信息
+#### `updateUser`: Update user information
 
 ```graphql
 mutation {
@@ -370,9 +372,9 @@ mutation {
 }
 ```
 
-### 活动变更
+### Activity Mutations
 
-#### `createActivity`: 创建新活动
+#### `createActivity`: Create new activity
 
 ```graphql
 mutation {
@@ -398,7 +400,7 @@ mutation {
 }
 ```
 
-#### `updateActivity`: 更新活动信息
+#### `updateActivity`: Update activity information
 
 ```graphql
 mutation {
@@ -420,9 +422,9 @@ mutation {
 }
 ```
 
-### 社区变更
+### Community Mutations
 
-#### `createCommunity`: 创建新社区
+#### `createCommunity`: Create new community
 
 ```graphql
 mutation {
@@ -447,7 +449,7 @@ mutation {
 }
 ```
 
-#### `createCommunityMember`: 添加社区成员
+#### `createCommunityMember`: Add community member
 
 ```graphql
 mutation {
@@ -472,9 +474,9 @@ mutation {
 }
 ```
 
-### 聊天与消息变更
+### Chat and Message Mutations
 
-#### `createChat`: 创建新聊天
+#### `createChat`: Create new chat
 
 ```graphql
 mutation {
@@ -498,7 +500,7 @@ mutation {
 }
 ```
 
-#### `createMessage`: 发送新消息
+#### `createMessage`: Send new message
 
 ```graphql
 mutation {
@@ -521,9 +523,9 @@ mutation {
 }
 ```
 
-### 帖子与互动变更
+### Post and Interaction Mutations
 
-#### `createPost`: 创建新帖子
+#### `createPost`: Create new post
 
 ```graphql
 mutation {
@@ -535,7 +537,7 @@ mutation {
     category: "WORKING_OUT"
     post_targets: [
       {
-        target_type: "community",
+        target_type: "community"
         target_id: 1
       }
     ]
@@ -554,7 +556,7 @@ mutation {
 }
 ```
 
-#### `createComment`: 添加评论
+#### `createComment`: Add comment
 
 ```graphql
 mutation {
@@ -576,7 +578,7 @@ mutation {
 }
 ```
 
-#### `likePost`: 点赞帖子
+#### `likePost`: Like post
 
 ```graphql
 mutation {
@@ -590,9 +592,9 @@ mutation {
 }
 ```
 
-### 通知变更
+### Notification Mutations
 
-#### `createReminder`: 创建提醒
+#### `createReminder`: Create reminder
 
 ```graphql
 mutation {
@@ -607,7 +609,7 @@ mutation {
 }
 ```
 
-#### `sendBroadcastNotification`: 发送广播通知
+#### `sendBroadcastNotification`: Send broadcast notification
 
 ```graphql
 mutation {
@@ -620,11 +622,11 @@ mutation {
 }
 ```
 
-## 订阅操作 (Subscriptions)
+## Subscription Operations (Subscriptions)
 
-### 消息订阅
+### Message Subscriptions
 
-#### `messageAdded`: 接收新消息通知
+#### `messageAdded`: Receive new message notifications
 
 ```graphql
 subscription {
@@ -641,9 +643,9 @@ subscription {
 }
 ```
 
-### 通知订阅
+### Notification Subscriptions
 
-#### `notificationReceived`: 接收新通知
+#### `notificationReceived`: Receive new notifications
 
 ```graphql
 subscription {
@@ -661,9 +663,9 @@ subscription {
 }
 ```
 
-### 活动订阅
+### Activity Subscriptions
 
-#### `activityStatusChanged`: 监听活动状态变更
+#### `activityStatusChanged`: Monitor activity status changes
 
 ```graphql
 subscription {
@@ -676,16 +678,16 @@ subscription {
 }
 ```
 
-## 错误处理
+## Error Handling
 
-API 错误分为以下几类:
+API errors are categorized into the following types:
 
-1. **验证错误**: 输入数据验证失败
-2. **认证错误**: 用户未认证或无权限
-3. **资源错误**: 请求的资源不存在
-4. **系统错误**: 服务器内部错误
+1. **Validation Errors**: Input data validation failures
+2. **Authentication Errors**: User not authenticated or lacks permissions
+3. **Resource Errors**: Requested resource does not exist
+4. **System Errors**: Internal server errors
 
-错误信息将通过标准错误格式返回:
+Error information is returned through the standard error format:
 
 ```json
 {
@@ -699,13 +701,13 @@ API 错误分为以下几类:
 }
 ```
 
-## 分页
+## Pagination
 
-支持分页的查询均接受以下参数:
+Queries that support pagination accept the following parameters:
 
-- `limit`: 返回结果数量上限 (默认: 10)
-- `offset`: 结果集起始位置 (默认: 0)
+- `limit`: Maximum number of results to return (default: 10)
+- `offset`: Starting position in the result set (default: 0)
 
-## 查询优化
+## Query Optimization
 
-为避免 N+1 查询问题，客户端应合理设计查询字段，只请求需要的数据。 
+To avoid N+1 query problems, clients should reasonably design query fields and only request the data they need.

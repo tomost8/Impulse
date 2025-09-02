@@ -38,6 +38,7 @@ CREATE TABLE "users" (
     "secondary_goal" "Category",
     "timezone" TEXT,
     "searchable" BOOLEAN NOT NULL DEFAULT true,
+    "is_double_cam" BOOLEAN NOT NULL DEFAULT false,
     "fcm_token" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
