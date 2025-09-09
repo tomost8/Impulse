@@ -8,6 +8,7 @@ import { ActivityExpirationService } from './activityExpirationService';
 import { PointsService } from './pointService';
 import { LoginStreakService } from './loginStreakService';
 import logger from '../config/logger';
+import { startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 /**
  * Service handling post-related business logic and database operations
@@ -853,6 +854,103 @@ export class PostService {
       commentCount: post._count.comments
     }));
   }
+
+  async findMyPostsByMonth(args: {
+    authorId: number;
+    year: number;
+    month: number; // 1..12
+    categories?: string[];
+    skip?: number;
+    take?: number;
+  }) {
+    const { authorId, year, month, categories, skip = 0, take = 30 } = args;
+    const monthStart = startOfMonth(new Date(Date.UTC(year, month - 1, 1)));
+    const monthEnd = endOfMonth(monthStart);
+
+    return this.prisma.post.findMany({
+      where: {
+        author_id: authorId,
+        is_deleted: false,
+        created_at: { gte: monthStart, lte: monthEnd },
+        ...(categories && categories.length ? { category: { in: categories } } : {}),
+      },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+      skip,
+      take,
+      include: {
+        comments: true,
+        likes: true,
+        // include other relations as your Post GraphQL type needs
+      },
+    });
+  }
+
+  async findMyMonthCalendar(args: {
+    authorId: number;
+    year: number;
+    month: number;
+    categories?: string[];
+  }) {
+    const { authorId, year, month, categories } = args;
+    const monthStart = startOfMonth(new Date(Date.UTC(year, month - 1, 1)));
+    const monthEnd = endOfMonth(monthStart);
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        author_id: authorId,
+        is_deleted: false,
+        created_at: { gte: monthStart, lte: monthEnd },
+        ...(categories && categories.length ? { category: { in: categories } } : {}),
+      },
+      orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
+    });
+
+    // Group by day UTC
+    const byDay = new Map<string, { date: Date; posts: any[] }>();
+    for (const p of posts) {
+      const dayStart = startOfDay(p.created_at);
+      const key = dayStart.toISOString();
+      if (!byDay.has(key)) byDay.set(key, { date: dayStart, posts: [] });
+      byDay.get(key)!.posts.push(p);
+    }
+
+    // Build full month day array (including empty days)
+    const days: { date: Date; firstPost: any | null; count: number }[] = [];
+    for (let d = new Date(monthStart); d <= monthEnd; d.setUTCDate(d.getUTCDate() + 1)) {
+      const key = startOfDay(d).toISOString();
+      const entry = byDay.get(key);
+      if (entry) {
+        days.push({ date: entry.date, firstPost: entry.posts[0] || null, count: entry.posts.length });
+      } else {
+        days.push({ date: new Date(d), firstPost: null, count: 0 });
+      }
+    }
+
+    return days;
+  }
+
+  async findMyPostsByDay(args: {
+    authorId: number;
+    date: string | Date;
+    categories?: string[];
+  }) {
+    const { authorId, date, categories } = args;
+    const day = typeof date === 'string' ? new Date(date) : date;
+    const sod = startOfDay(day);
+    const eod = endOfDay(day);
+
+    return this.prisma.post.findMany({
+      where: {
+        author_id: authorId,
+        is_deleted: false,
+        created_at: { gte: sod, lte: eod },
+        ...(categories && categories.length ? { category: { in: categories } } : {}),
+      },
+      orderBy: [{ created_at: 'asc' }, { id: 'asc' }], // chronological for Story
+      include: {
+        comments: true,
+        likes: true,
+      },
+    });
+  }
 }
-
-
