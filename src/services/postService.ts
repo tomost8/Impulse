@@ -8,6 +8,7 @@ import { ActivityExpirationService } from './activityExpirationService';
 import { PointsService } from './pointService';
 import { LoginStreakService } from './loginStreakService';
 import logger from '../config/logger';
+import { startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 /**
  * Service handling post-related business logic and database operations
@@ -853,6 +854,55 @@ export class PostService {
       commentCount: post._count.comments
     }));
   }
+
+  /**
+   * First finds a post by its ID to get its author and creation date,
+   * then finds all posts by that author on that same day.
+   *
+   * @param postId The ID of the initial post.
+   * @returns Promise<Post[]> An array of posts matching the criteria.
+   * @throws {NotFoundError} If the initial post with postId is not found.
+   */
+  async findPostsFromSameDayAsPost(postId: number): Promise<Post[]> {
+    // Step 1: Get the original post to find its author and creation date
+    const originalPost = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: {
+        author_id: true,
+        created_at: true,
+      },
+    });
+
+    if (!originalPost) {
+      throw new NotFoundError(`Post with id ${postId} not found`);
+    }
+
+    const { author_id, created_at } = originalPost;
+
+    // Step 2: Reuse the existing findMyPostsByDay logic to get all posts
+    // from that author on that specific day.
+    return this.prisma.post.findMany({
+      where: {
+        author_id,
+        is_deleted: false,
+        created_at: {
+          gte: startOfDay(created_at),
+          lte: endOfDay(created_at),
+        },
+      },
+      orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
+      include: {
+        author: {
+          include: {point: true}
+        },
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true,
+            comments: true
+          }
+        }
+      }
+    });
+  }
 }
-
-

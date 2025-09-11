@@ -4,6 +4,10 @@ import { Post, PostsResponse, PostResponse, PostTargetsProgress } from '../schem
 import { PostService } from '../../../services/postService';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { addMonths, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { AuthenticationError } from '../../common/errors/graphql.error';
+import { Prisma } from '@prisma/client';
+import { MonthFilterInput, MonthCalendarResponse } from '../schema/memoriesTypes';
 
 /**
  * GraphQL query resolvers for Post-related operations
@@ -411,5 +415,21 @@ export class PostQueries {
     }
   }
 
+  @Query(() => PostsResponse)
+  async postsFromSameDayAsPost(
+    @Arg('postId', () => Int) postId: number
+  ): Promise<PostsResponse> {
+    try {
+      const posts = await this.postService.findPostsFromSameDayAsPost(postId);
+      return { success: true, posts };
+    } catch (error) {
+      logger.error(`Failed to fetch posts from same day as post ${postId}:`, error);
+      const message = error instanceof Error ? error.message : 'An unknown error occurred';
+      return {
+        success: false,
+        errors: [{ field: 'postId', message }],
+      };
+    }
+  }
 } 
 
