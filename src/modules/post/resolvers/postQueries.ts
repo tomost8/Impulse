@@ -416,81 +416,19 @@ export class PostQueries {
   }
 
   @Query(() => PostsResponse)
-  async myPostsByMonth(
-    @Arg('currentUserId', () => Int) currentUserId: number,
-    @Arg('filter', () => MonthFilterInput) filter: MonthFilterInput,
-    @Arg('skip', () => Int, { nullable: true }) skip?: number,
-    @Arg('take', () => Int, { nullable: true }) take?: number
+  async postsFromSameDayAsPost(
+    @Arg('postId', () => Int) postId: number
   ): Promise<PostsResponse> {
     try {
-      const rawPosts = await this.postService.findMyPostsByMonth({
-        authorId: currentUserId,
-        year: filter.year,
-        month: filter.month,
-        categories: filter.categories,
-        skip,
-        take,
-      });
-
-      // Ensure all required Post fields are present
-      const posts: Post[] = rawPosts.map((post: any) => ({
-        ...post,
-        author: post.author ?? null,
-        post_targets: post.post_targets ?? [],
-        // Add other required fields with defaults if necessary
-      }));
-
+      const posts = await this.postService.findPostsFromSameDayAsPost(postId);
       return { success: true, posts };
     } catch (error) {
-      logger.error('myPostsByMonth error:', error);
-      return { success: false, errors: [{ field: 'general', message: 'Failed to fetch posts by month' }] };
-    }
-  }
-
-  @Query(() => MonthCalendarResponse)
-  async myMonthCalendar(
-    @Arg('currentUserId', () => Int) currentUserId: number,
-    @Arg('filter', () => MonthFilterInput) filter: MonthFilterInput
-  ): Promise<MonthCalendarResponse> {
-    try {
-      const days = await this.postService.findMyMonthCalendar({
-        authorId: currentUserId,
-        year: filter.year,
-        month: filter.month,
-        categories: filter.categories,
-      });
-
-      // days contains raw Post; type-graphql will map to Post type for firstPost
-      return { success: true, days };
-    } catch (error) {
-      logger.error('myMonthCalendar error:', error);
-      return { success: false, days: [], errors: [{ field: 'general', message: 'Failed to fetch month calendar' }] };
-    }
-  }
-
-  @Query(() => PostsResponse)
-  async myPostsByDay(
-    @Arg('currentUserId', () => Int) currentUserId: number,
-    @Arg('date') date: Date,
-    @Arg('categories', () => [String], { nullable: true }) categories?: string[],
-  ): Promise<PostsResponse> {
-    try {
-      const rawposts = await this.postService.findMyPostsByDay({
-        authorId: currentUserId,
-        date,
-        categories,
-      });
-      const posts: Post[] = rawposts.map((post: any) => ({
-        ...post,
-        author: post.author ?? null,
-        post_targets: post.post_targets ?? [],
-        // Add other required fields with defaults if necessary
-      }));
-
-      return { success: true, posts };
-    } catch (error) {
-      logger.error('myPostsByDay error:', error);
-      return { success: false, errors: [{ field: 'general', message: 'Failed to fetch day posts' }] };
+      logger.error(`Failed to fetch posts from same day as post ${postId}:`, error);
+      const message = error instanceof Error ? error.message : 'An unknown error occurred';
+      return {
+        success: false,
+        errors: [{ field: 'postId', message }],
+      };
     }
   }
 } 

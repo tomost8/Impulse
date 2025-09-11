@@ -855,102 +855,54 @@ export class PostService {
     }));
   }
 
-  async findMyPostsByMonth(args: {
-    authorId: number;
-    year: number;
-    month: number; // 1..12
-    categories?: string[];
-    skip?: number;
-    take?: number;
-  }) {
-    const { authorId, year, month, categories, skip = 0, take = 30 } = args;
-    const monthStart = startOfMonth(new Date(Date.UTC(year, month - 1, 1)));
-    const monthEnd = endOfMonth(monthStart);
-
-    return this.prisma.post.findMany({
-      where: {
-        author_id: authorId,
-        is_deleted: false,
-        created_at: { gte: monthStart, lte: monthEnd },
-        ...(categories && categories.length ? { category: { in: categories } } : {}),
-      },
-      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
-      skip,
-      take,
-      include: {
-        comments: true,
-        likes: true,
-        // include other relations as your Post GraphQL type needs
+  /**
+   * First finds a post by its ID to get its author and creation date,
+   * then finds all posts by that author on that same day.
+   *
+   * @param postId The ID of the initial post.
+   * @returns Promise<Post[]> An array of posts matching the criteria.
+   * @throws {NotFoundError} If the initial post with postId is not found.
+   */
+  async findPostsFromSameDayAsPost(postId: number): Promise<Post[]> {
+    // Step 1: Get the original post to find its author and creation date
+    const originalPost = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: {
+        author_id: true,
+        created_at: true,
       },
     });
-  }
 
-  async findMyMonthCalendar(args: {
-    authorId: number;
-    year: number;
-    month: number;
-    categories?: string[];
-  }) {
-    const { authorId, year, month, categories } = args;
-    const monthStart = startOfMonth(new Date(Date.UTC(year, month - 1, 1)));
-    const monthEnd = endOfMonth(monthStart);
+    if (!originalPost) {
+      throw new NotFoundError(`Post with id ${postId} not found`);
+    }
 
-    const posts = await this.prisma.post.findMany({
+    const { author_id, created_at } = originalPost;
+
+    // Step 2: Reuse the existing findMyPostsByDay logic to get all posts
+    // from that author on that specific day.
+    return this.prisma.post.findMany({
       where: {
-        author_id: authorId,
+        author_id,
         is_deleted: false,
-        created_at: { gte: monthStart, lte: monthEnd },
-        ...(categories && categories.length ? { category: { in: categories } } : {}),
+        created_at: {
+          gte: startOfDay(created_at),
+          lte: endOfDay(created_at),
+        },
       },
       orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
-    });
-
-    // Group by day UTC
-    const byDay = new Map<string, { date: Date; posts: any[] }>();
-    for (const p of posts) {
-      const dayStart = startOfDay(p.created_at);
-      const key = dayStart.toISOString();
-      if (!byDay.has(key)) byDay.set(key, { date: dayStart, posts: [] });
-      byDay.get(key)!.posts.push(p);
-    }
-
-    // Build full month day array (including empty days)
-    const days: { date: Date; firstPost: any | null; count: number }[] = [];
-    for (let d = new Date(monthStart); d <= monthEnd; d.setUTCDate(d.getUTCDate() + 1)) {
-      const key = startOfDay(d).toISOString();
-      const entry = byDay.get(key);
-      if (entry) {
-        days.push({ date: entry.date, firstPost: entry.posts[0] || null, count: entry.posts.length });
-      } else {
-        days.push({ date: new Date(d), firstPost: null, count: 0 });
-      }
-    }
-
-    return days;
-  }
-
-  async findMyPostsByDay(args: {
-    authorId: number;
-    date: string | Date;
-    categories?: string[];
-  }) {
-    const { authorId, date, categories } = args;
-    const day = typeof date === 'string' ? new Date(date) : date;
-    const sod = startOfDay(day);
-    const eod = endOfDay(day);
-
-    return this.prisma.post.findMany({
-      where: {
-        author_id: authorId,
-        is_deleted: false,
-        created_at: { gte: sod, lte: eod },
-        ...(categories && categories.length ? { category: { in: categories } } : {}),
-      },
-      orderBy: [{ created_at: 'asc' }, { id: 'asc' }], // chronological for Story
       include: {
-        comments: true,
-        likes: true,
-      },
+        author: {
+          include: {point: true}
+        },
+        post_targets: true,
+        _count: {
+          select: {
+            likes: true,
+            comments: true
+          }
+        }
+      }
     });
   }
 }
