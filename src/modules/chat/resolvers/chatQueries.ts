@@ -1,4 +1,4 @@
-import { Resolver, Query, Arg, Int, UseMiddleware } from 'type-graphql';
+import { Resolver, Query, Arg, Int, UseMiddleware, FieldResolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Chat, ChatResponse, ChatsResponse } from '../schema/chatTypes';
 import { ChatMember, ChatMemberResponse, ChatMembersResponse } from '../schema/chatTypes';
@@ -257,4 +257,20 @@ export class MessageQueries {
       };
     }
   }
+
+  @Query(() => MessagesResponse)
+  async getLatestMessagesForUser(
+    @Arg('userId', () => Int) userId: number
+  ): Promise<MessagesResponse> {
+    try {
+      const messages = await this.messagesService.getLatestMessagesForUser(userId);
+      return { success: true, messages };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{ field: 'general', message: error instanceof Error ? error.message : 'Failed to fetch messages' }]
+      };
+    }
+  }
+
 }
