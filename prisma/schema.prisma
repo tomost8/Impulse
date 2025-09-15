@@ -65,6 +65,19 @@ enum NotificationScheduleType {
   MONTHLY
 }
 
+enum ChallengeLength {
+  DAYS_7
+  DAYS_14
+  DAYS_21
+}
+
+enum BadgeLevel {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
 // 示例模型
 model User {
   id              Int       @id @default(autoincrement()) @map("user_id")
@@ -107,6 +120,8 @@ model User {
   comments              Comment[]
   likes                 Like[]
   login_streak          UserLoginStreak?
+  user_challenges       UserChallenge[]
+  badges                Badge[]
 
   @@index([username])
   @@map("users")
@@ -274,6 +289,8 @@ model Post {
   likes        Like[]
   like_count   Int          @default(0)
 
+  challenge_day_entries ChallengeDayEntry[]
+
   @@index([author_id, created_at])
   @@index([expires_at, is_deleted])
   @@index([created_at, expires_at])
@@ -429,4 +446,72 @@ model Comment {
   @@index([post_id, created_at]) // 根据Post和时间进行索引
   @@index([user_id]) // 根据User进行索引
   @@map("comments")
+}
+
+// Static Master List of All Possible Challenges
+model Challenge {
+  id             Int            @id @default(autoincrement())
+  category       Category
+  length         ChallengeLength    // 7, 14, or 21 days
+  title          String             // e.g. "7 Day Wellness Challenge"
+  description    String?
+  points_bronze  Int
+  points_silver  Int
+  points_gold    Int
+  points_diamond Int
+
+  // Relations
+  userChallenges UserChallenge[]
+  badges         Badge[]
+
+  @@unique([category, length])
+}
+
+// A user's attempt at a challenge (active or completed)
+model UserChallenge {
+  id             Int          @id @default(autoincrement())
+  user           User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id        Int
+  challenge      Challenge    @relation(fields: [challenge_id], references: [id])
+  challenge_id   Int
+  started_at     DateTime
+  ends_at        DateTime
+  completed_at   DateTime?
+  status         String       // "ACTIVE", "COMPLETED", "FAILED"
+  days_completed Int          // How many days they've completed so far
+  badge_level    BadgeLevel?  // Set at completion if earned, otherwise null
+
+  // Relations
+  challenge_day_entries ChallengeDayEntry[]
+  badges                Badge[]
+
+  @@unique([user_id, challenge_id, started_at]) // allow multiple attempts at same challenge, but not overlapping
+}
+
+// Each day the user can get credit for at most 1 pic/progress for this category+challenge
+model ChallengeDayEntry {
+  id                Int           @id @default(autoincrement())
+  user_challenge    UserChallenge @relation(fields: [user_challenge_id], references: [id], onDelete: Cascade)
+  user_challenge_id Int
+  day_number        Int           // 1-indexed, e.g. 1..7 for 7-day challenge
+  date              DateTime      // The date this day was credited (localtime)
+  post             Post?         @relation(fields: [post_id], references: [id])
+  post_id           Int?          // The POST (picture) that counts for this day, if stored
+  
+  @@unique([user_challenge_id, day_number])
+}
+
+// Record of actual badge(s) a user has earned (historical: can earn same badge multiple times )
+model Badge {
+  id                Int        @id @default(autoincrement())
+  user              User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id           Int
+  challenge         Challenge  @relation(fields: [challenge_id], references: [id])
+  challenge_id      Int
+  badge_level       BadgeLevel
+  earned_at         DateTime
+  days_completed    Int
+  user_challenge_id Int?
+
+  userChallenge    UserChallenge? @relation(fields: [user_challenge_id], references: [id])
 }
