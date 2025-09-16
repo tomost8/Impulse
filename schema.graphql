@@ -569,6 +569,7 @@ type Query {
   getCommunityNotifications(communityId: Int!, limit: Int = 10, offset: Int = 0): CommunityNotificationsResponse!
   getFriendRequests(id: Int!, role: String!): FriendshipsResponse!
   getFriendships(id: Int!, sort_by: UserSortType): FriendshipsResponse!
+  getLatestMessagesForUser(userId: Int!): MessagesResponse!
   getMessages(id: Int!): MessagesResponse!
   getPoint(id: Int!): PointResponse!
   getPostTargetsProgress(postId: Int!): PostTargetsProgress!
@@ -586,6 +587,7 @@ type Query {
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(currentUserId: Int, skip: Int, take: Int, userId: Int!): PostsResponse!
+  postsFromSameDayAsPost(postId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserWithStreakResponse!
   users(sort_by: UserSortType): UsersResponse!
 }

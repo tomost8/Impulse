@@ -78,6 +78,13 @@ enum BadgeLevel {
   DIAMOND
 }
 
+enum ChallengeStatus {
+  NOT_STARTED
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
 // 示例模型
 model User {
   id              Int       @id @default(autoincrement()) @map("user_id")
@@ -477,7 +484,7 @@ model UserChallenge {
   started_at     DateTime
   ends_at        DateTime
   completed_at   DateTime?
-  status         String       // "ACTIVE", "COMPLETED", "FAILED"
+  status         ChallengeStatus @default(NOT_STARTED)
   days_completed Int          // How many days they've completed so far
   badge_level    BadgeLevel?  // Set at completion if earned, otherwise null
 

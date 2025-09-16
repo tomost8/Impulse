@@ -4,6 +4,9 @@ CREATE TYPE "public"."ChallengeLength" AS ENUM ('DAYS_7', 'DAYS_14', 'DAYS_21');
 -- CreateEnum
 CREATE TYPE "public"."BadgeLevel" AS ENUM ('BRONZE', 'SILVER', 'GOLD', 'DIAMOND');
 
+-- CreateEnum
+CREATE TYPE "public"."ChallengeStatus" AS ENUM ('NOT_STARTED', 'ACTIVE', 'COMPLETED', 'FAILED');
+
 -- CreateTable
 CREATE TABLE "public"."Challenge" (
     "id" SERIAL NOT NULL,
@@ -27,7 +30,7 @@ CREATE TABLE "public"."UserChallenge" (
     "started_at" TIMESTAMP(3) NOT NULL,
     "ends_at" TIMESTAMP(3) NOT NULL,
     "completed_at" TIMESTAMP(3),
-    "status" TEXT NOT NULL,
+    "status" "public"."ChallengeStatus" NOT NULL DEFAULT 'NOT_STARTED',
     "days_completed" INTEGER NOT NULL,
     "badge_level" "public"."BadgeLevel",
 
