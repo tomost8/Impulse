@@ -1,0 +1,16 @@
+{
+  "name": "lambda-edge-redirect",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "package": "npm run build && zip -j function.zip dist/index.js"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.137",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "client-sqs": "github:aws-sdk/client-sqs"
+  }
+}

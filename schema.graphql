@@ -389,7 +389,8 @@ type Mutation {
   deleteRedeem(id: Int!): RedeemResponse!
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
-  firebaseAuth: UserWithStreakResponse!
+  firebaseAuth(referralCode: String): UserWithStreakResponse!
+  generateReferralLink: String!
   likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
@@ -756,6 +757,7 @@ type User {
   point: Point
   primary_goal: Category
   profile_picture: String
+  referral_code: String
   role: String!
   searchable: Boolean!
   secondary_goal: Category
@@ -801,6 +803,7 @@ type UserWithStreak {
   point: Point
   primary_goal: Category
   profile_picture: String
+  referral_code: String
   role: String!
   searchable: Boolean!
   secondary_goal: Category

@@ -188,19 +188,26 @@ export class UserMutations {
    */
   @Mutation(() => UserWithStreakResponse)
   @UseMiddleware(authMiddleware)
-  async firebaseAuth(@Ctx() context: any): Promise<UserWithStreakResponse> {
+  async firebaseAuth(
+    @Ctx() context: any,
+    @Arg('referralCode', () => String, { nullable: true }) referralCode?: string
+  ): Promise<UserWithStreakResponse> {
     try {
       const { uid, email } = context.user;
-      
-      // Find user by firebase uid
+
       let user = await this.usersService.findByFirebaseUid(uid);
-      
+
       if (!user) {
         // Create new user if not found
         user = await this.usersService.create({
-          email: email || 'test@example.com',  // Use email from token or default
+          email: email || 'test@example.com',
           firebase_uid: uid,
         });
+
+        if (referralCode) {
+          // This new method in your userService will handle creating the 'pending' referral record.
+          await this.usersService.processReferral(referralCode, user.id);
+        }
       }
 
       return {
@@ -217,4 +224,4 @@ export class UserMutations {
       };
     }
   }
-} 
+}

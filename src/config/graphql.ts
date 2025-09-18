@@ -16,6 +16,7 @@ import { NotificationQueries } from '../modules/notification/resolvers/notificat
 import './prisma'; // 确保 Prisma 客户端被初始化
 import { CommentMutations } from '../modules/comment/resolvers/commentMutations';
 import { CommentQueries } from '../modules/comment/resolvers/commentQueries';
+import { ReferralMutations } from '../modules/referral/resolvers/referralMutations';
 
 export const createSchema = async () => {
   const schema = await buildSchema({
@@ -52,7 +53,8 @@ export const createSchema = async () => {
       NotificationMutations,
       NotificationQueries,
       CommentMutations,
-      CommentQueries
+      CommentQueries,
+      ReferralMutations,
     ],
     container: Container,
     validate: { forbidUnknownValues: false },

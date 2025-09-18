@@ -7,6 +7,7 @@ import { pubsub } from '../config/pubsub';
 import { UserSortType } from '../modules/common/types/enumTypes';
 import { usersSortingConfig } from '../modules/common/types/sortingTypes';
 import { LoginStreakService } from './loginStreakService';
+import logger from '../config/logger';
 
 export const USER_CREATED = 'USER_CREATED';
 
@@ -184,6 +185,31 @@ export class UsersService {
         throw new NotFoundError(`User with ID ${id} not found`);
       }
       throw error;
+    }
+  }
+
+  async processReferral(referralCode: string, refereeId: number): Promise<void> {
+    const referrer = await this.prisma.user.findUnique({
+      where: { referral_code: referralCode }
+    });
+
+    if (referrer && referrer.id !== refereeId) {
+      // Create the referral record
+      await this.prisma.referral.create({
+        data: {
+          referrer_id: referrer.id,
+          referee_id: refereeId,
+          status: 'pending'
+        }
+      });
+
+      // Also update the referred_by field on the new user
+      // await this.prisma.user.update({
+      //   where: { id: refereeId },
+      //   data: { referred_by: referrer.id }
+      // });
+    } else {
+      logger.warn('Invalid referral code used during signup', { referralCode, refereeId });
     }
   }
 } 

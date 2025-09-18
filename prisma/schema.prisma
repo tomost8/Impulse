@@ -109,6 +109,7 @@ model User {
   created_at      DateTime  @default(now())
   updated_at      DateTime  @default(now()) @updatedAt
   last_login_at   DateTime?
+  referral_code   String?   @unique
 
   friendships_with      Friendship[]            @relation("FriendsWith")
   friendships_of        Friendship[]            @relation("FriendsOf")
@@ -129,6 +130,8 @@ model User {
   login_streak          UserLoginStreak?
   user_challenges       UserChallenge[]
   badges                Badge[]
+  referrals_made        Referral[]              @relation("ReferredBy")
+  referred              Referral?               @relation("ReferredUser")
 
   @@index([username])
   @@map("users")
@@ -521,4 +524,18 @@ model Badge {
   user_challenge_id Int?
 
   userChallenge    UserChallenge? @relation(fields: [user_challenge_id], references: [id])
+}
+
+model Referral {
+  id           Int      @id @default(autoincrement())
+  referrer_id  Int
+  referee_id   Int      @unique // A user can only be referred once
+  status       String   @default("pending") // e.g., "pending", "completed"
+  created_at   DateTime @default(now())
+  completed_at DateTime?
+
+  referrer User @relation("ReferredBy", fields: [referrer_id], references: [id])
+  referee  User @relation("ReferredUser", fields: [referee_id], references: [id])
+
+  @@map("referrals")
 }
