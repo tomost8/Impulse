@@ -17,13 +17,10 @@ export class Challenge {
   title: string;
 
   @Field(() => String,  { nullable: true })
-  description?: string;
+  description?: string | null;
 
   @Field(() => ChallengeLength)
   length: ChallengeLength;
-
-  @Field(() => Int)
-  days: number;
 
   @Field(() => Int)
   points_bronze: number;

@@ -1,23 +1,39 @@
-import { Resolver, Query, Arg, Ctx, Int } from 'type-graphql';
+import { Resolver, Query, Arg, Ctx, Int, UseMiddleware } from 'type-graphql';
+import { Service } from 'typedi';
 import { ChallengeStatus, Category } from '../../common/types/enumTypes';
 import { ExploreChallengesResponse, ExploreChallenge, UserChallengeResponse, MyChallengesResponse, UserChallengeHome, UserChallengeMy, Challenge } from '../schema/challengeTypes';
 import { mapChallengeToExplore, mapToUserChallengeHome, mapToUserChallengeMy } from '../utils/challengeUtils';
+import { ChallengeService } from '../../../services/challengeService';
+import { authMiddleware } from '../../../middleware/authMiddleware';
 
+@Service()
 @Resolver()
 export class ChallengeQueries {
+  constructor(private challengeService: ChallengeService) {}
+
+  private async getUserIdFromContext(ctx: any): Promise<number> {
+    const user = await this.challengeService.prisma.user.findUnique({
+      where: { firebase_uid: ctx.user.uid }
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user.id;
+  }
   @Query(() => ExploreChallengesResponse)
+  @UseMiddleware(authMiddleware)
   async getExploreChallenges(
     @Ctx() ctx: any,
     @Arg('category', () => Category, { nullable: true }) category?: Category
   ): Promise<ExploreChallengesResponse> {
-    const userId = ctx.user.id;
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
 
-    const allChallenges = await ctx.prisma.challenge.findMany({
+    const allChallenges = await this.challengeService.prisma.challenge.findMany({
       where: category ? { category } : {},
-      take: 3,
     });
 
-    const joinedChallenges = await ctx.prisma.userChallenge.findMany({
+    const joinedChallenges = await this.challengeService.prisma.userChallenge.findMany({
       where: { user_id: userId },
       select: { challenge_id: true },
     });
@@ -28,20 +44,25 @@ export class ChallengeQueries {
     );
 
     return { success: true, challenges };
+    } catch (error) {
+      return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
+    }
   }
 
   @Query(() => ExploreChallengesResponse)
+  @UseMiddleware(authMiddleware)
   async getChallengeInfo(
     @Ctx() ctx: any,
     @Arg('challengeId', () => Int) challengeId: number
   ): Promise<ExploreChallengesResponse> {
-    const userId = ctx.user.id;
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
 
-    const challenge = await ctx.prisma.challenge.findUnique({ where: { id: challengeId } });
+    const challenge = await this.challengeService.prisma.challenge.findUnique({ where: { id: challengeId } });
     if (!challenge)
       return { success: false, errors: [{ field: 'challengeId', message: 'Challenge not found' }] };
 
-    const userChallenge = await ctx.prisma.userChallenge.findFirst({
+    const userChallenge = await this.challengeService.prisma.userChallenge.findFirst({
       where: { user_id: userId, challenge_id: challengeId },
     });
 
@@ -51,13 +72,18 @@ export class ChallengeQueries {
         mapChallengeToExplore(challenge, new Set(userChallenge ? [challenge.id] : [])),
       ],
     };
+    } catch (error) {
+      return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
+    }
   }
 
   @Query(() => ExploreChallengesResponse)
+  @UseMiddleware(authMiddleware)
   async getCompletedChallenges(@Ctx() ctx: any): Promise<ExploreChallengesResponse> {
-    const userId = ctx.user.id;
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
 
-    const completed = await ctx.prisma.userChallenge.findMany({
+    const completed = await this.challengeService.prisma.userChallenge.findMany({
       where: { user_id: userId, status: ChallengeStatus.COMPLETED },
       include: { challenge: true },
     });
@@ -70,13 +96,18 @@ export class ChallengeQueries {
     }));
 
     return { success: true, challenges };
+    } catch (error) {
+      return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
+    }
   }
 
   @Query(() => UserChallengeResponse)
-  async getHomePage(@Ctx() ctx: any): Promise<UserChallengeResponse> {
-    const userId = ctx.user.id;
+  @UseMiddleware(authMiddleware)
+  async getActiveChallenges(@Ctx() ctx: any): Promise<UserChallengeResponse> {
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
 
-    const userChallenges: any[] = await ctx.prisma.userChallenge.findMany({
+    const userChallenges: any[] = await this.challengeService.prisma.userChallenge.findMany({
       where: { user_id: userId, status: ChallengeStatus.ACTIVE },
       include: { challenge: true },
     });
@@ -86,13 +117,18 @@ export class ChallengeQueries {
     const challenges: UserChallengeHome[] = userChallenges.map(mapToUserChallengeHome);
 
     return { success: true, challenges };
+    } catch (error) {
+      return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
+    }
   }
 
   @Query(() => MyChallengesResponse)
-  async getMyChallenges(@Ctx() ctx: any): Promise<MyChallengesResponse> {
-    const userId = ctx.user.id;
+  @UseMiddleware(authMiddleware)
+  async getUserChallenges(@Ctx() ctx: any): Promise<MyChallengesResponse> {
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
 
-    const userChallenges: any[] = await ctx.prisma.userChallenge.findMany({
+    const userChallenges: any[] = await this.challengeService.prisma.userChallenge.findMany({
       where: { user_id: userId },
       include: { challenge: true, user: true },
     });
@@ -110,5 +146,8 @@ export class ChallengeQueries {
     }
 
     return { success: true, activeChallenges, completedChallenges };
+    } catch (error) {
+      return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
+    }
   }
 }

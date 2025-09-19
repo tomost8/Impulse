@@ -24,7 +24,7 @@ export function calculateChallengeProgress(uc: UserChallenge): {
   progress: ChallengeProgress;
   badgesEarned: BadgeLevel[];
 } {
-  const totalDays = uc.challenge.days;
+  const totalDays = getDaysFromLength(uc.challenge.length);
   const daysCompleted = uc.days_completed;
   const daysRemaining = totalDays - daysCompleted;
 
@@ -68,6 +68,19 @@ export function getShortDescription(length: ChallengeLength): string {
       return 'Max: 1200 points';
     default:
       return '';
+  }
+}
+
+export function getDaysFromLength(length: ChallengeLength): number {
+  switch (length) {
+    case ChallengeLength.DAYS_7:
+      return 7;
+    case ChallengeLength.DAYS_14:
+      return 14;
+    case ChallengeLength.DAYS_21:
+      return 21;
+    default:
+      return 7;
   }
 }
 

@@ -21,7 +21,7 @@ import { calculateBadgeLevel } from '../modules/challenge/utils/challengeUtils';
 
 @Service()
 export class ChallengeService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(public prisma: PrismaClient) {}
 
   /**
    * Retrieve all challenges and determine unlock status for a user
