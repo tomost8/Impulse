@@ -69,7 +69,7 @@ export class UserChallenge {
   @Field(() => Int)
   days_completed: number;
 
-  @Field(() => BadgeLevel)
+  @Field(() => BadgeLevel, { nullable: true })
   badge_level: BadgeLevel;
 }
 
@@ -113,9 +113,6 @@ export class UserChallengeResponse {
 export class UserChallengeMy extends UserChallengeHome {
   @Field(() => [User], { nullable: true })
   friendsCompleted?: User[];
-
-  @Field(() => [String], { nullable: true })
-  pictures?: string[];
 }
 
 @ObjectType()

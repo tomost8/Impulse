@@ -1,6 +1,6 @@
 // src/services/challengeService.ts
 import { Service } from 'typedi';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import logger from '../config/logger';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
