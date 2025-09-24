@@ -5,7 +5,7 @@ import { NotFoundError, ValidationError } from '../modules/common/errors/graphql
 import logger from '../config/logger';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { ChallengeLength, BadgeLevel, ChallengeStatus } from "../modules/common/types/enumTypes";
-import { calculateBadgeLevel } from '../modules/challenge/utils/challengeUtils';
+import { calculateBadgeLevel, getDaysFromLength } from '../modules/challenge/utils/challengeUtils';
 /**
  * Service handling challenge-related business logic and database operations
  *
@@ -73,10 +73,20 @@ export class ChallengeService {
   /**
    * Join a challenge: ensures one active per category and creates UserChallenge
    */
-  async joinChallenge(userId: number, challengeId: number, deviceLocalOffsetMinutes = 0) {
-    const challenge = await this.prisma.challenge.findUnique({ where: { id: challengeId } });
-    if (!challenge) throw new NotFoundError(`Challenge with id ${challengeId} not found`);
+  async joinChallenge(
+    userId: number,
+    challengeId: number,
+    deviceLocalOffsetMinutes = 0
+  ) {
+    // 1. Check challenge exists
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id: challengeId },
+    });
+    if (!challenge) {
+      throw new NotFoundError(`Challenge with id ${challengeId} not found`);
+    }
 
+    // 2. Ensure only one active challenge per category
     const activeInCategory = await this.prisma.userChallenge.findFirst({
       where: {
         user_id: userId,
@@ -84,18 +94,28 @@ export class ChallengeService {
         challenge: { category: challenge.category },
       },
     });
-
     if (activeInCategory) {
-      throw new ValidationError('User already has an active challenge in this category');
+      throw new ValidationError(
+        "User already has an active challenge in this category"
+      );
     }
 
+    // 3. Calculate start/end dates
     const now = new Date();
-    const days =7; // challenge.length === 'DAYS_7'
+    const days = getDaysFromLength(challenge.length);
 
+    // local start (based on device offset)
     const startLocal = new Date(now.getTime() + deviceLocalOffsetMinutes * 60000);
-    const endLocal = endOfDay(addDays(startLocal, days - 1));
-    const ends_at = new Date(endLocal.getTime() - deviceLocalOffsetMinutes * 60000);
 
+    // end local = end of last challenge day
+    const endLocal = endOfDay(addDays(startLocal, days - 1));
+
+    // store UTC end time
+    const ends_at = new Date(
+      endLocal.getTime() - deviceLocalOffsetMinutes * 60000
+    );
+
+    // 4. Create UserChallenge
     return await this.prisma.userChallenge.create({
       data: {
         user_id: userId,
@@ -104,7 +124,9 @@ export class ChallengeService {
         ends_at,
         status: ChallengeStatus.ACTIVE,
         days_completed: 0,
+        badge_level: null,
       },
+      include: { challenge: true },
     });
   }
 

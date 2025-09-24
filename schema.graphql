@@ -340,6 +340,20 @@ type ExploreChallenge {
   shortDescription: String!
 }
 
+type ExploreChallengeWithStatus {
+  challenge: Challenge!
+  isJoined: Boolean!
+  isLocked: Boolean!
+  shortDescription: String!
+  status: String
+}
+
+type ExploreChallengeWithStatusResponse {
+  challenges: [ExploreChallengeWithStatus!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type ExploreChallengesResponse {
   challenges: [ExploreChallenge!]
   errors: [FieldError!]
@@ -444,7 +458,7 @@ type Mutation {
   deleteUser(id: Int!): UserResponse!
   firebaseAuth(referralCode: String): UserWithStreakResponse!
   generateReferralLink: String!
-  joinChallenge(challengeId: Int!): ExploreChallengesResponse!
+  joinChallenge(challengeId: Int!, deviceLocalOffsetMinutes: Int! = 0): ExploreChallengesResponse!
   likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
@@ -632,7 +646,7 @@ type Query {
   getCommunityMembers(id: Int!, sort_by: UserSortType): CommunityMembersResponse!
   getCommunityNotifications(communityId: Int!, limit: Int = 10, offset: Int = 0): CommunityNotificationsResponse!
   getCompletedChallenges: ExploreChallengesResponse!
-  getExploreChallenges(category: Category): ExploreChallengesResponse!
+  getExploreChallenges(category: Category): ExploreChallengeWithStatusResponse!
   getFriendRequests(id: Int!, role: String!): FriendshipsResponse!
   getFriendships(id: Int!, sort_by: UserSortType): FriendshipsResponse!
   getLatestMessagesForUser(userId: Int!): MessagesResponse!
@@ -834,7 +848,7 @@ type User {
 }
 
 type UserChallenge {
-  badge_level: BadgeLevel!
+  badge_level: BadgeLevel
   challenge: Challenge!
   challenge_id: Int!
   completed_at: DateTimeISO
@@ -856,7 +870,6 @@ type UserChallengeHome {
 type UserChallengeMy {
   badgesEarned: [BadgeLevel!]!
   friendsCompleted: [User!]
-  pictures: [String!]
   progress: ChallengeProgress!
   userChallenge: UserChallenge!
 }

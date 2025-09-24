@@ -88,7 +88,7 @@ export function mapChallengeToExplore(ch: Challenge, joinedIds: Set<number>, sho
   return {
     challenge: ch,
     isJoined: joinedIds.has(ch.id),
-    isLocked: false,
+    isLocked: true,
     shortDescription: shortDescription || getShortDescription(ch.length),
   };
 }

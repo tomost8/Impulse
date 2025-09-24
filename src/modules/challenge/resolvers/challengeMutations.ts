@@ -21,57 +21,40 @@ export class ChallengeMutations {
     return user.id;
   }
 
-  @Mutation(() => ExploreChallengesResponse)
-  @UseMiddleware(authMiddleware)
-  async joinChallenge(
-    @Ctx() ctx: any,
-    @Arg('challengeId', () => Int) challengeId: number
-  ): Promise<ExploreChallengesResponse> {
-    try {
-      const userId = await this.getUserIdFromContext(ctx);
+@Mutation(() => ExploreChallengesResponse)
+@UseMiddleware(authMiddleware)
+async joinChallenge(
+  @Ctx() ctx: any,
+  @Arg('challengeId', () => Int) challengeId: number,
+  @Arg('deviceLocalOffsetMinutes', () => Int, { defaultValue: 0 }) deviceLocalOffsetMinutes: number
+): Promise<ExploreChallengesResponse> {
+  try {
+    const userId = await this.getUserIdFromContext(ctx);
 
-      const existing = await this.challengeService.prisma.userChallenge.findFirst({
-        where: { user_id: userId, challenge_id: challengeId },
-        include: { challenge: true },
-      });
+    const userChallenge = await this.challengeService.joinChallenge(
+      userId,
+      challengeId,
+      deviceLocalOffsetMinutes
+    );
 
-      if (existing) {
-        return {
-          success: true,
-          challenges: [
-            mapChallengeToExplore(existing.challenge as any, new Set([existing.challenge_id])),
-          ],
-        };
-      }
-
-      const now = new Date();
-      const challenge = await this.challengeService.prisma.challenge.findUnique({ where: { id: challengeId } });
-      if (!challenge)
-        return { success: false, errors: [{ field: 'challengeId', message: 'Challenge not found' }] };
-
-      const userChallenge = await this.challengeService.prisma.userChallenge.create({
-        data: {
-          user_id: userId,
-          challenge_id: challengeId,
-          started_at: now,
-          ends_at: new Date(now.getTime() + getDaysFromLength(challenge.length) * 24 * 60 * 60 * 1000),
-          status: ChallengeStatus.ACTIVE,
-          days_completed: 0,
-          badge_level: null,
+    return {
+      success: true,
+      challenges: [
+        mapChallengeToExplore(userChallenge.challenge as any, new Set([userChallenge.challenge_id])),
+      ],
+    };
+  } catch (error) {
+    return {
+      success: false,
+      errors: [
+        {
+          field: 'challengeId',
+          message: error instanceof Error ? error.message : 'Failed to join challenge',
         },
-        include: { challenge: true },
-      });
-
-      return {
-        success: true,
-        challenges: [
-          mapChallengeToExplore(userChallenge.challenge as any, new Set([userChallenge.challenge_id])),
-        ],
-      };
-    } catch (error) {
-      return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
-    }
+      ],
+    };
   }
+}
 
   @Mutation(() => ExploreChallengesResponse)
   @UseMiddleware(authMiddleware)

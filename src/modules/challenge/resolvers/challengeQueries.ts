@@ -1,7 +1,7 @@
 import { Resolver, Query, Arg, Ctx, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
 import { ChallengeStatus, Category } from '../../common/types/enumTypes';
-import { ExploreChallengesResponse, ExploreChallenge, UserChallengeResponse, MyChallengesResponse, UserChallengeHome, UserChallengeMy, Challenge } from '../schema/challengeTypes';
+import { ExploreChallengesResponse, ExploreChallenge, UserChallengeResponse, MyChallengesResponse, UserChallengeHome, UserChallengeMy, Challenge, ExploreChallengeWithStatus, ExploreChallengeWithStatusResponse } from '../schema/challengeTypes';
 import { mapChallengeToExplore, mapToUserChallengeHome, mapToUserChallengeMy } from '../utils/challengeUtils';
 import { ChallengeService } from '../../../services/challengeService';
 import { authMiddleware } from '../../../middleware/authMiddleware';
@@ -20,12 +20,12 @@ export class ChallengeQueries {
     }
     return user.id;
   }
-  @Query(() => ExploreChallengesResponse)
+  @Query(() => ExploreChallengeWithStatusResponse)
   @UseMiddleware(authMiddleware)
   async getExploreChallenges(
     @Ctx() ctx: any,
     @Arg('category', () => Category, { nullable: true }) category?: Category
-  ): Promise<ExploreChallengesResponse> {
+  ): Promise<ExploreChallengeWithStatusResponse> {
     try {
       const userId = await this.getUserIdFromContext(ctx);
 
@@ -35,13 +35,49 @@ export class ChallengeQueries {
 
     const joinedChallenges = await this.challengeService.prisma.userChallenge.findMany({
       where: { user_id: userId },
-      select: { challenge_id: true },
+      select: { challenge_id: true, status: true },
     });
-    const joinedIds = new Set<number>(joinedChallenges.map((j: any) => j.challenge_id));
 
-    const challenges: ExploreChallenge[] = allChallenges.map((ch: Challenge) =>
-      mapChallengeToExplore(ch, joinedIds)
+    const joinedStatusMap = new Map<number, string>(
+      joinedChallenges.map((j) => [j.challenge_id, j.status])
     );
+
+    const challenges: ExploreChallengeWithStatus[] = allChallenges.map((ch: Challenge) => {
+      const base = mapChallengeToExplore(ch, new Set(joinedStatusMap.keys()));
+      
+      const status = joinedStatusMap.get(ch.id) || "";
+
+      if (status !== ChallengeStatus.ACTIVE && status !== ChallengeStatus.COMPLETED) {
+        const sameCategory = allChallenges.filter((c) => c.category === ch.category);
+        
+        const sameCategoryStatuses = sameCategory.map(
+          (c) => joinedStatusMap.get(c.id) || ""
+        );
+
+        const hasActive = sameCategoryStatuses.includes("ACTIVE");
+
+        if (!hasActive) {
+          if (ch.id % 3 === 1) {
+            base.isLocked = false;
+          } else {
+            const prev = sameCategory.find((c) => c.id === ch.id - 1);
+            if (prev) {
+              const prevStatus = joinedStatusMap.get(prev.id) || "";
+              if (prevStatus === ChallengeStatus.COMPLETED) {
+                base.isLocked = false;
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        ...base,
+        status: joinedStatusMap.get(ch.id) || "",
+      };
+    });
+
+    console.log('🪜 Explore Challenges:', challenges);
 
     return { success: true, challenges };
     } catch (error) {
@@ -91,7 +127,7 @@ export class ChallengeQueries {
     const challenges: ExploreChallenge[] = completed.map((uc: any) => ({
       challenge: uc.challenge,
       isJoined: true,
-      isLocked: false,
+      isLocked: true,
       shortDescription: '',
     }));
 

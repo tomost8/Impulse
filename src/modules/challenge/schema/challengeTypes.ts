@@ -157,3 +157,21 @@ export class ExploreChallengesResponse {
   errors?: FieldError[];
 }
 
+@ObjectType()
+export class ExploreChallengeWithStatus extends ExploreChallenge {
+  @Field(() => String, { nullable: true })
+  status: string;
+}
+
+@ObjectType()
+export class ExploreChallengeWithStatusResponse {
+  @Field(() => Boolean)
+  success: boolean;
+
+  @Field(() => [ExploreChallengeWithStatus], { nullable: true })
+  challenges?: ExploreChallengeWithStatus[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
