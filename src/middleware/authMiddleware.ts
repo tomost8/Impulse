@@ -24,6 +24,7 @@ export interface AuthContext {
 export const authMiddleware = async ({ context }: { context: any }, next: () => Promise<any>) => {
   try {
     const token = context.req.headers.authorization?.split('Bearer ')[1];
+    console.log('💫 Auth Token:', token);
     if (!token) {
       throw new AuthenticationError('No token provided');
     }

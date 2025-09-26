@@ -63,6 +63,17 @@ type Challenge {
   title: String!
 }
 
+type ChallengeDayMedia {
+  day_number: Int!
+  mediaUrls: [String!]!
+}
+
+type ChallengeDayMediaResponse {
+  entries: [ChallengeDayMedia!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 enum ChallengeLength {
   DAYS_7
   DAYS_14
@@ -365,6 +376,23 @@ type FieldError {
   message: String!
 }
 
+type FriendChallengeProgress {
+  badge_level: BadgeLevel
+  days_completed: Int!
+  first_name: String
+  id: Int!
+  last_name: String
+  profile_picture: String
+  status: ChallengeStatus!
+  username: String
+}
+
+type FriendsInChallengeResponse {
+  errors: [FieldError!]
+  friends: [FriendChallengeProgress!]
+  success: Boolean!
+}
+
 type Friendship {
   chat: Chat
   chat_id: Int
@@ -638,6 +666,7 @@ type Query {
   getAllCommunities: CommunitiesResponse!
   getAllCommunityMembers: CommunityMembersResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
+  getChallengeDayMedia(userChallengeId: Int!): ChallengeDayMediaResponse!
   getChallengeInfo(challengeId: Int!): ExploreChallengesResponse!
   getChat(id: Int!): ChatResponse!
   getChatMembers(id: Int!, sort_by: UserSortType): ChatMembersResponse!
@@ -648,6 +677,7 @@ type Query {
   getCompletedChallenges: ExploreChallengesResponse!
   getExploreChallenges(category: Category): ExploreChallengeWithStatusResponse!
   getFriendRequests(id: Int!, role: String!): FriendshipsResponse!
+  getFriendsInChallenge(challengeId: Int!, status: ChallengeStatus!): FriendsInChallengeResponse!
   getFriendships(id: Int!, sort_by: UserSortType): FriendshipsResponse!
   getLatestMessagesForUser(userId: Int!): MessagesResponse!
   getMessages(id: Int!): MessagesResponse!

@@ -1,10 +1,11 @@
 import { Resolver, Query, Arg, Ctx, Int, UseMiddleware } from 'type-graphql';
 import { Service } from 'typedi';
 import { ChallengeStatus, Category } from '../../common/types/enumTypes';
-import { ExploreChallengesResponse, ExploreChallenge, UserChallengeResponse, MyChallengesResponse, UserChallengeHome, UserChallengeMy, Challenge, ExploreChallengeWithStatus, ExploreChallengeWithStatusResponse } from '../schema/challengeTypes';
+import { ExploreChallengesResponse, ExploreChallenge, UserChallengeResponse, MyChallengesResponse, UserChallengeHome, UserChallengeMy, Challenge, ExploreChallengeWithStatus, ExploreChallengeWithStatusResponse, ChallengeDayMediaResponse, FriendsInChallengeResponse } from '../schema/challengeTypes';
 import { mapChallengeToExplore, mapToUserChallengeHome, mapToUserChallengeMy } from '../utils/challengeUtils';
 import { ChallengeService } from '../../../services/challengeService';
 import { authMiddleware } from '../../../middleware/authMiddleware';
+import { UsersResponse } from '../../user/schema/userTypes';
 
 @Service()
 @Resolver()
@@ -186,4 +187,52 @@ export class ChallengeQueries {
       return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
     }
   }
+
+  @Query(() => ChallengeDayMediaResponse)
+  @UseMiddleware(authMiddleware)
+  async getChallengeDayMedia(
+    @Ctx() ctx: any,
+    @Arg("userChallengeId", () => Int) userChallengeId: number
+  ): Promise<ChallengeDayMediaResponse> {
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
+      const entries = await this.challengeService.getDayEntriesWithMedia(userChallengeId, userId);
+      return { success: true, entries };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [
+          {
+            field: "userChallengeId",
+            message: error instanceof Error ? error.message : "Failed to fetch challenge day media",
+          },
+        ],
+      };
+    }
+  }
+
+  @Query(() => FriendsInChallengeResponse)
+  @UseMiddleware(authMiddleware)
+  async getFriendsInChallenge(
+    @Ctx() ctx: any,
+    @Arg("challengeId", () => Int) challengeId: number,
+    @Arg("status", () => ChallengeStatus) status: ChallengeStatus
+  ): Promise<FriendsInChallengeResponse> {
+    try {
+      const userId = await this.getUserIdFromContext(ctx);
+
+      const friends = await this.challengeService.getFriendsInChallenge(userId, challengeId, status);
+
+      return { success: true, friends };
+    } catch (error) {
+      return {
+        success: false,
+        friends: [],
+        errors: [
+          { field: "challenge", message: error instanceof Error ? error.message : "Failed to fetch friends in challenge" }
+        ]
+      };
+    }
+  }
+
 }

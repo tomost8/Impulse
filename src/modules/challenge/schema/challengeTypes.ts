@@ -175,3 +175,61 @@ export class ExploreChallengeWithStatusResponse {
   errors?: FieldError[];
 }
 
+@ObjectType()
+export class ChallengeDayMedia {
+  @Field(() => Int)
+  day_number!: number;
+
+  @Field(() => [String])
+  mediaUrls!: string[];
+}
+
+@ObjectType()
+export class ChallengeDayMediaResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [ChallengeDayMedia], { nullable: true })
+  entries?: ChallengeDayMedia[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+@ObjectType()
+export class FriendChallengeProgress {
+  @Field(() => Int)
+  id!: number;
+
+  @Field(() => String, { nullable: true })
+  username!: string | null;
+
+  @Field(() => String, { nullable: true })
+  first_name!: string | null;
+
+  @Field(() => String, { nullable: true })
+  last_name!: string | null;
+
+  @Field(() => Int)
+  days_completed!: number;
+
+  @Field(() => ChallengeStatus)
+  status!: ChallengeStatus;
+
+  @Field(() => String, { nullable: true })
+  profile_picture!: string | null;
+
+  @Field(() => BadgeLevel, { nullable: true })
+  badge_level!: BadgeLevel | null;
+}
+@ObjectType()
+export class FriendsInChallengeResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [FriendChallengeProgress], { nullable: true })
+  friends?: FriendChallengeProgress[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}

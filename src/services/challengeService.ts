@@ -6,6 +6,7 @@ import logger from '../config/logger';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { ChallengeLength, BadgeLevel, ChallengeStatus } from "../modules/common/types/enumTypes";
 import { calculateBadgeLevel, getDaysFromLength } from '../modules/challenge/utils/challengeUtils';
+import { PostService } from './postService';
 /**
  * Service handling challenge-related business logic and database operations
  *
@@ -21,7 +22,10 @@ import { calculateBadgeLevel, getDaysFromLength } from '../modules/challenge/uti
 
 @Service()
 export class ChallengeService {
-  constructor(public prisma: PrismaClient) {}
+  constructor(
+    public prisma: PrismaClient,
+    private postService: PostService
+  ) {}
 
   /**
    * Retrieve all challenges and determine unlock status for a user
@@ -270,5 +274,67 @@ export class ChallengeService {
       }
     }
     return results;
+  }
+
+  async getDayEntriesWithMedia(userChallengeId: number, currentUserId?: number) {
+    // 1. Get all ChallengeDayEntries
+    const entries = await this.prisma.challengeDayEntry.findMany({
+      where: { user_challenge_id: userChallengeId },
+      select: { day_number: true, post_id: true }
+    });
+
+    // 2. Map post_id → mediaUrls
+    const results = [];
+    for (const entry of entries) {
+      let mediaUrls: string[] = [];
+      if (entry.post_id) {
+        const post = await this.postService.findById(entry.post_id, currentUserId);
+        mediaUrls = post.mediaUrls ?? [];
+      }
+      results.push({
+        day_number: entry.day_number,
+        mediaUrls
+      });
+    }
+
+    return results;
+  }
+
+  async getFriendsInChallenge(userId: number, challengeId: number, status: ChallengeStatus) {
+    // 1. Get accepted friends
+    const friendships = await this.prisma.friendship.findMany({
+      where: {
+        user_id: userId,
+        status: "ACCEPTED"
+      },
+      select: { friend_id: true }
+    });
+
+    const friendIds = friendships.map(f => f.friend_id);
+    if (!friendIds.length) return [];
+
+    // 2. Get friends' UserChallenges, and join user
+    const userChallenges = await this.prisma.userChallenge.findMany({
+      where: {
+        user_id: { in: friendIds },
+        challenge_id: challengeId,
+        status
+      },
+      include: {
+        user: true   // <-- fetch from User table
+      }
+    });
+
+    // 3. Map to GraphQL type
+    return userChallenges.map(uc => ({
+      id: uc.user.id,
+      username: uc.user.username,
+      first_name: uc.user.first_name,
+      last_name: uc.user.last_name,
+      profile_picture: uc.user.profile_picture,
+      days_completed: uc.days_completed,
+      status: uc.status,
+      badge_level: uc.badge_level
+    }));
   }
 }
