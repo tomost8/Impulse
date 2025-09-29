@@ -679,13 +679,18 @@ export class PostService {
         AND: [
           {
             OR: [
-              // Posts targeting 'feed' (public posts)
+              // Posts targeting 'feed' (public posts) - BUT ONLY FROM FRIENDS OR SELF
               {
-                post_targets: {
-                  some: {
-                    target_type: 'feed'
+                AND: [
+                  { author_id: { in: allRelevantUserIds } },
+                  {
+                    post_targets: {
+                      some: {
+                        target_type: 'feed'
+                      }
+                    }
                   }
-                }
+                ]
               },
               // Posts targeting specific friends
               {
