@@ -36,17 +36,27 @@ export class ChallengeQueries {
 
     const joinedChallenges = await this.challengeService.prisma.userChallenge.findMany({
       where: { user_id: userId },
-      select: { challenge_id: true, status: true },
+      select: { id: true, challenge_id: true, status: true },
     });
 
-    const joinedStatusMap = new Map<number, string>(
-      joinedChallenges.map((j) => [j.challenge_id, j.status])
+    const joinedStatusMap = new Map<
+      number,
+      { id: number; status: string }
+    >(
+      joinedChallenges.map((j) => [j.challenge_id, { id: j.id, status: j.status }])
     );
+
+    console.log("🎯 ChallengeQueries getExploreChallenges joinedChallenges: ", joinedChallenges);
+    console.log("🎯 ChallengeQueries getExploreChallenges joinedStatusMap: ", joinedStatusMap);
 
     const challenges: ExploreChallengeWithStatus[] = allChallenges.map((ch: Challenge) => {
       const base = mapChallengeToExplore(ch, new Set(joinedStatusMap.keys()));
+
+      // console.log("getExploreChallenges challenges base", base);
       
-      const status = joinedStatusMap.get(ch.id) || "";
+      const joinedEntry = joinedStatusMap.get(ch.id);
+      const status = joinedEntry?.status ?? "";
+      const userChallengeId = joinedEntry?.id ?? null;
 
       if (status !== ChallengeStatus.ACTIVE && status !== ChallengeStatus.COMPLETED) {
         const sameCategory = allChallenges.filter((c) => c.category === ch.category);
@@ -55,7 +65,9 @@ export class ChallengeQueries {
           (c) => joinedStatusMap.get(c.id) || ""
         );
 
-        const hasActive = sameCategoryStatuses.includes("ACTIVE");
+        const hasActive = sameCategory.some(
+          (c) => joinedStatusMap.get(c.id)?.status === ChallengeStatus.ACTIVE
+        );
 
         if (!hasActive) {
           if (ch.id % 3 === 1) {
@@ -63,7 +75,7 @@ export class ChallengeQueries {
           } else {
             const prev = sameCategory.find((c) => c.id === ch.id - 1);
             if (prev) {
-              const prevStatus = joinedStatusMap.get(prev.id) || "";
+              const prevStatus = joinedStatusMap.get(prev.id)?.status ?? "";
               if (prevStatus === ChallengeStatus.COMPLETED) {
                 base.isLocked = false;
               }
@@ -74,7 +86,8 @@ export class ChallengeQueries {
 
       return {
         ...base,
-        status: joinedStatusMap.get(ch.id) || "",
+        status,
+        userChallengeId,
       };
     });
 

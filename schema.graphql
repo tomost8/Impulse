@@ -357,6 +357,7 @@ type ExploreChallengeWithStatus {
   isLocked: Boolean!
   shortDescription: String!
   status: String
+  userChallengeId: Int
 }
 
 type ExploreChallengeWithStatusResponse {

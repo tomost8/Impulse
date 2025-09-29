@@ -159,6 +159,9 @@ export class ExploreChallengesResponse {
 
 @ObjectType()
 export class ExploreChallengeWithStatus extends ExploreChallenge {
+  @Field(() => Int, { nullable: true })
+  userChallengeId: number | null;
+
   @Field(() => String, { nullable: true })
   status: string;
 }
