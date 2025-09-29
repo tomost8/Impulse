@@ -856,6 +856,22 @@ export class PostService {
   }
 
   /**
+   * Added this new method.
+   * Counts the total number of posts created by a specific user.
+   * This is used to check if a user is making their first post to complete a referral.
+   *
+   * @param userId - The ID of the user whose posts are to be counted.
+   * @returns Promise<number> The total count of posts for the user.
+   */
+  async getPostCountForUser(userId: number): Promise<number> {
+    return this.prisma.post.count({
+      where: {
+        author_id: userId,
+      },
+    });
+  }
+
+  /**
    * First finds a post by its ID to get its author and creation date,
    * then finds all posts by that author on that same day.
    *

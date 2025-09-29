@@ -16,6 +16,9 @@ const envSchema = z.object({
   FIREBASE_PROJECT_ID: z.string(),
   FIREBASE_CLIENT_EMAIL: z.string(),
   FIREBASE_PRIVATE_KEY: z.string(),
+  APP_STORE_URL: z.string(),
+  PLAY_STORE_URL: z.string(),
+  FALLBACK_URL: z.string(),
 });
 
 // Validate environment variables
@@ -48,6 +51,9 @@ export const env = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] as string[],
     credentials: true
   } satisfies CorsOptions,
+  APP_STORE_URL: validatedEnv.APP_STORE_URL,
+  PLAY_STORE_URL: validatedEnv.PLAY_STORE_URL,
+  FALLBACK_URL: validatedEnv.FALLBACK_URL ?? "https://impulse.com/download",
   isDevelopment: validatedEnv.NODE_ENV === 'development',
   isProduction: validatedEnv.NODE_ENV === 'production',
   isTest: validatedEnv.NODE_ENV === 'test',

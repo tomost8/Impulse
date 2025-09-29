@@ -150,6 +150,10 @@ export class User {
   /** User's point information */
   @Field(() => Point, { nullable: true })
   point!: Point | null;
+
+  @Field(() => String, { nullable: true })
+  referral_code!: string | null;
+
 }
 
 @ObjectType()

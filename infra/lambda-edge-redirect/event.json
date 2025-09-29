@@ -1,0 +1,16 @@
+{
+  "Records": [
+    {
+      "cf": {
+        "request": {
+          "uri": "/r/ABC123",
+          "headers": {
+            "user-agent": [
+              { "key": "User-Agent", "value": "Mozilla/5.0 (Linux; Android 10)" }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

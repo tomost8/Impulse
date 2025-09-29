@@ -8,6 +8,7 @@ import logger from '../../../config/logger';
 import { authMiddleware } from '../../../middleware/authMiddleware';
 import { UsersService } from '../../../services/userService';
 import { LikeService } from '../../../services/likeService';
+import { ReferralService } from '../../../services/referralService'; 
 
 /**
  * GraphQL mutation resolvers for Post-related operations
@@ -48,7 +49,7 @@ import { LikeService } from '../../../services/likeService';
 @Resolver(Post)
 @UseMiddleware(LogOperationMiddleware)
 export class PostMutations {
-  constructor(private postService: PostService, private usersService: UsersService, private likeService: LikeService) {}
+  constructor( private postService: PostService,  private usersService: UsersService,  private likeService: LikeService, private referralService: ReferralService ) {}
 
   /**
    * Mutation to record a view of a post by a user
@@ -97,7 +98,7 @@ export class PostMutations {
   }
 
   /**
-   * Mutation to create a new post
+   * MODIFIED: This mutation now checks if it's the user's first post.
    * 
    * This mutation creates a single post with multiple targets and handles:
    * - Post metadata creation
@@ -132,14 +133,29 @@ export class PostMutations {
    * ```
    */
   @Mutation(() => PostResponse)
+  @UseMiddleware(authMiddleware) // MODIFICATION: Added auth middleware for security
   async createPost(
-    @Arg('input') input: CreatePostInput
+    @Arg('input') input: CreatePostInput,
+    @Ctx() context: any // MODIFICATION: Added context to get the user
   ): Promise<PostResponse> {
     try {
-      const posts = await this.postService.create(input);
+      const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
+      if (!user) throw new Error("User not found.");
+
+      // This assumes you add a `getPostCountForUser` method to your PostService
+      const postCount = await this.postService.getPostCountForUser(user.id);
+      
+      const newPosts = await this.postService.create({ ...input });
+
+      // MODIFICATION: If it was their first post, try to complete the referral
+      if (postCount === 0) {
+        await this.referralService.completeReferralForUser(user.id);
+      }
+      
       return {
         success: true,
-        post: posts[0] // Return the single created post
+        post: newPosts[0]
       };
     } catch (error) {
       logger.error('Failed to create post:', error);
@@ -253,88 +269,74 @@ export class PostMutations {
     }
   }
 
+  @Mutation(() => BaseResponse)
+  @UseMiddleware(authMiddleware)
+  async likePost(
+    @Arg('postId', () => Int) postId: number,
+    @Ctx() context: any
+  ): Promise<BaseResponse> {
+    try {
+      const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
 
-
-@Mutation(() => BaseResponse)
-@UseMiddleware(authMiddleware)
-async likePost(
-  @Arg('postId', () => Int) postId: number,
-  @Ctx() context: any
-): Promise<BaseResponse> {
-  try {
-    const { uid } = context.user;
-
-    const user = await this.usersService.findByFirebaseUid(uid);
-
-
-    if (!user || !user.id) {
+      if (!user || !user.id) {
+        return {
+          success: false,
+          errors: [{
+            field: 'general',
+            message: 'User not found'
+          }]
+        };
+      }
+      const result = await this.likeService.likePost(postId, user.id);
+      return {
+        success: result.success
+      };
+    } catch (error) {
+      console.error('Failed to like post:', error);
       return {
         success: false,
         errors: [{
           field: 'general',
-          message: 'User not found'
+          message: error instanceof Error ? error.message : 'Failed to like post'
         }]
       };
     }
-
-    const result = await this.likeService.likePost(postId, user.id);
-
-    return {
-      success: result.success
-    };
-  } catch (error) {
-    console.error('Failed to like post:', error);
-    return {
-      success: false,
-      errors: [{
-        field: 'general',
-        message: error instanceof Error ? error.message : 'Failed to like post'
-      }]
-    };
   }
-}
 
+  @Mutation(() => BaseResponse)
+  @UseMiddleware(authMiddleware)
+  async unlikePost(
+    @Arg('postId', () => Int) postId: number,
+    @Ctx() context: any
+  ): Promise<BaseResponse> {
+    try {
+      const { uid } = context.user;
 
-@Mutation(() => BaseResponse)
-@UseMiddleware(authMiddleware)
-async unlikePost(
-  @Arg('postId', () => Int) postId: number,
-  @Ctx() context: any
-): Promise<BaseResponse> {
-  try {
-    const { uid } = context.user;
+      const user = await this.usersService.findByFirebaseUid(uid);
 
-    const user = await this.usersService.findByFirebaseUid(uid);
-
-
-    if (!user || !user.id) {
+      if (!user || !user.id) {
+        return {
+          success: false,
+          errors: [{
+            field: 'general',
+            message: 'User not found'
+          }]
+        };
+      }
+      const result = await this.likeService.unlikePost(postId, user.id);
+      return {
+        success: result.success
+      };
+    } catch (error) {
+      console.error('Failed to unlike post:', error);
       return {
         success: false,
         errors: [{
           field: 'general',
-          message: 'User not found'
+          message: error instanceof Error ? error.message : 'Failed to unlike post'
         }]
       };
     }
-
-    const result = await this.likeService.unlikePost(postId, user.id);
-
-    return {
-      success: result.success
-    };
-  } catch (error) {
-    console.error('Failed to unlike post:', error);
-    return {
-      success: false,
-      errors: [{
-        field: 'general',
-        message: error instanceof Error ? error.message : 'Failed to unlike post'
-      }]
-    };
   }
-}
-
-
-
-
 }

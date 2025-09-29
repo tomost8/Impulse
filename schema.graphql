@@ -30,6 +30,13 @@ type ActivityResponse {
   success: Boolean!
 }
 
+enum BadgeLevel {
+  BRONZE
+  DIAMOND
+  GOLD
+  SILVER
+}
+
 type BaseResponse {
   errors: [FieldError!]
   success: Boolean!
@@ -42,6 +49,48 @@ enum Category {
   STUDYING_WORKING
   WELLNESS
   WORKING_OUT
+}
+
+type Challenge {
+  category: Category!
+  description: String
+  id: Int!
+  length: ChallengeLength!
+  points_bronze: Int!
+  points_diamond: Int!
+  points_gold: Int!
+  points_silver: Int!
+  title: String!
+}
+
+type ChallengeDayMedia {
+  day_number: Int!
+  mediaUrls: [String!]!
+}
+
+type ChallengeDayMediaResponse {
+  entries: [ChallengeDayMedia!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+enum ChallengeLength {
+  DAYS_7
+  DAYS_14
+  DAYS_21
+}
+
+type ChallengeProgress {
+  daysRemaining: Int!
+  daysUntilNextBadge: Int!
+  progressLabel: String!
+}
+
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  NOT_STARTED
 }
 
 type Chat {
@@ -295,9 +344,54 @@ A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `dat
 """
 scalar DateTimeISO
 
+type ExploreChallenge {
+  challenge: Challenge!
+  isJoined: Boolean!
+  isLocked: Boolean!
+  shortDescription: String!
+}
+
+type ExploreChallengeWithStatus {
+  challenge: Challenge!
+  isJoined: Boolean!
+  isLocked: Boolean!
+  shortDescription: String!
+  status: String
+  userChallengeId: Int
+}
+
+type ExploreChallengeWithStatusResponse {
+  challenges: [ExploreChallengeWithStatus!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type ExploreChallengesResponse {
+  challenges: [ExploreChallenge!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
 type FieldError {
   field: String!
   message: String!
+}
+
+type FriendChallengeProgress {
+  badge_level: BadgeLevel
+  days_completed: Int!
+  first_name: String
+  id: Int!
+  last_name: String
+  profile_picture: String
+  status: ChallengeStatus!
+  username: String
+}
+
+type FriendsInChallengeResponse {
+  errors: [FieldError!]
+  friends: [FriendChallengeProgress!]
+  success: Boolean!
 }
 
 type Friendship {
@@ -363,7 +457,9 @@ type MessagesResponse {
 }
 
 type Mutation {
+  acknowledgeChallenge(challengeId: Int!): ExploreChallengesResponse!
   cancelReminder(notificationId: Int!): Boolean!
+  completeChallenge(challengeId: Int!): ExploreChallengesResponse!
   createActivity(input: CreateActivityInput!): ActivityResponse!
   createChat(input: CreateChatInput!): ChatResponse!
   createChatMember(input: CreateChatMemberInput!): ChatMemberResponse!
@@ -389,7 +485,9 @@ type Mutation {
   deleteRedeem(id: Int!): RedeemResponse!
   deleteReward(id: Int!): RewardResponse!
   deleteUser(id: Int!): UserResponse!
-  firebaseAuth: UserWithStreakResponse!
+  firebaseAuth(referralCode: String): UserWithStreakResponse!
+  generateReferralLink: String!
+  joinChallenge(challengeId: Int!, deviceLocalOffsetMinutes: Int! = 0): ExploreChallengesResponse!
   likePost(postId: Int!): BaseResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
@@ -406,6 +504,13 @@ type Mutation {
   updateReward(id: Int!, input: UpdateRewardInput!): RewardResponse!
   updateUser(input: UpdateUserInput!): UserResponse!
   viewPost(postId: Int!, userId: Int!): BaseResponse!
+}
+
+type MyChallengesResponse {
+  activeChallenges: [UserChallengeMy!]
+  completedChallenges: [UserChallengeMy!]
+  errors: [FieldError!]
+  success: Boolean!
 }
 
 type Notification {
@@ -556,19 +661,26 @@ type Query {
   activitiesByUserId(skip: Int, status: String, take: Int, userId: Int!): ActivitiesResponse!
   activity(id: Int!): ActivityResponse!
   friendsFeedPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
+  getActiveChallenges: UserChallengeResponse!
   getAllCategories: CommunityCategoriesResponse!
   getAllChats: ChatsResponse!
   getAllCommunities: CommunitiesResponse!
   getAllCommunityMembers: CommunityMembersResponse!
   getCategoryCommunities(category: Category!): CommunityCategoriesResponse!
+  getChallengeDayMedia(userChallengeId: Int!): ChallengeDayMediaResponse!
+  getChallengeInfo(challengeId: Int!): ExploreChallengesResponse!
   getChat(id: Int!): ChatResponse!
   getChatMembers(id: Int!, sort_by: UserSortType): ChatMembersResponse!
   getCommunity(id: Int!): CommunityResponse!
   getCommunityCategories(id: Int!): CommunityCategoriesResponse!
   getCommunityMembers(id: Int!, sort_by: UserSortType): CommunityMembersResponse!
   getCommunityNotifications(communityId: Int!, limit: Int = 10, offset: Int = 0): CommunityNotificationsResponse!
+  getCompletedChallenges: ExploreChallengesResponse!
+  getExploreChallenges(category: Category): ExploreChallengeWithStatusResponse!
   getFriendRequests(id: Int!, role: String!): FriendshipsResponse!
+  getFriendsInChallenge(challengeId: Int!, status: ChallengeStatus!): FriendsInChallengeResponse!
   getFriendships(id: Int!, sort_by: UserSortType): FriendshipsResponse!
+  getLatestMessagesForUser(userId: Int!): MessagesResponse!
   getMessages(id: Int!): MessagesResponse!
   getPoint(id: Int!): PointResponse!
   getPostTargetsProgress(postId: Int!): PostTargetsProgress!
@@ -576,6 +688,7 @@ type Query {
   getReminderById(id: Int!): NotificationsResponse!
   getReminders: NotificationsResponse!
   getRewards: RewardsResponse!
+  getUserChallenges: MyChallengesResponse!
   getUserChats(id: Int!): ChatMembersResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
   joinedCommunityPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
@@ -586,6 +699,7 @@ type Query {
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
   posts(category: String, currentUserId: Int, skip: Int, take: Int, targetId: Int, targetType: String, unreadOnly: Boolean): PostsResponse!
   postsByUserId(currentUserId: Int, skip: Int, take: Int, userId: Int!): PostsResponse!
+  postsFromSameDayAsPost(postId: Int!): PostsResponse!
   user(firebase_uid: String, id: Int): UserWithStreakResponse!
   users(sort_by: UserSortType): UsersResponse!
 }
@@ -754,6 +868,7 @@ type User {
   point: Point
   primary_goal: Category
   profile_picture: String
+  referral_code: String
   role: String!
   searchable: Boolean!
   secondary_goal: Category
@@ -761,6 +876,39 @@ type User {
   timezone: String
   updated_at: DateTimeISO!
   username: String
+}
+
+type UserChallenge {
+  badge_level: BadgeLevel
+  challenge: Challenge!
+  challenge_id: Int!
+  completed_at: DateTimeISO
+  days_completed: Int!
+  ends_at: DateTimeISO!
+  id: Int!
+  started_at: DateTimeISO!
+  status: ChallengeStatus!
+  user: User!
+  user_id: Int!
+}
+
+type UserChallengeHome {
+  badgesEarned: [BadgeLevel!]!
+  progress: ChallengeProgress!
+  userChallenge: UserChallenge!
+}
+
+type UserChallengeMy {
+  badgesEarned: [BadgeLevel!]!
+  friendsCompleted: [User!]
+  progress: ChallengeProgress!
+  userChallenge: UserChallenge!
+}
+
+type UserChallengeResponse {
+  challenges: [UserChallengeHome!]
+  errors: [FieldError!]
+  success: Boolean!
 }
 
 type UserLoginStreakResponse {
@@ -799,6 +947,7 @@ type UserWithStreak {
   point: Point
   primary_goal: Category
   profile_picture: String
+  referral_code: String
   role: String!
   searchable: Boolean!
   secondary_goal: Category
