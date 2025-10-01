@@ -126,6 +126,9 @@ export class MyChallengesResponse {
   @Field(() => [UserChallengeMy], { nullable: true })
   completedChallenges?: UserChallengeMy[];
 
+  @Field(() => [UserChallengeMy], { nullable: true })
+  failedChallenges?: UserChallengeMy[];
+
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
 }

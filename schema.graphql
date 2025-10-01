@@ -510,6 +510,7 @@ type MyChallengesResponse {
   activeChallenges: [UserChallengeMy!]
   completedChallenges: [UserChallengeMy!]
   errors: [FieldError!]
+  failedChallenges: [UserChallengeMy!]
   success: Boolean!
 }
 

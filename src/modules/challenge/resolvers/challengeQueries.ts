@@ -60,10 +60,6 @@ export class ChallengeQueries {
 
       if (status !== ChallengeStatus.ACTIVE && status !== ChallengeStatus.COMPLETED) {
         const sameCategory = allChallenges.filter((c) => c.category === ch.category);
-        
-        const sameCategoryStatuses = sameCategory.map(
-          (c) => joinedStatusMap.get(c.id) || ""
-        );
 
         const hasActive = sameCategory.some(
           (c) => joinedStatusMap.get(c.id)?.status === ChallengeStatus.ACTIVE
@@ -187,15 +183,17 @@ export class ChallengeQueries {
 
     const activeChallenges: UserChallengeMy[] = [];
     const completedChallenges: UserChallengeMy[] = [];
+    const failedChallenges: UserChallengeMy[] = [];
 
     for (const uc of userChallenges) {
       const myChallenge = mapToUserChallengeMy(uc);
-
+      
       if (uc.status === ChallengeStatus.ACTIVE) activeChallenges.push(myChallenge);
       else if (uc.status === ChallengeStatus.COMPLETED) completedChallenges.push(myChallenge);
+      else if (uc.status === ChallengeStatus.FAILED) failedChallenges.push(myChallenge);
     }
 
-    return { success: true, activeChallenges, completedChallenges };
+    return { success: true, activeChallenges, completedChallenges, failedChallenges };
     } catch (error) {
       return { success: false, errors: [{ field: 'auth', message: error instanceof Error ? error.message : 'Authentication failed' }] };
     }
