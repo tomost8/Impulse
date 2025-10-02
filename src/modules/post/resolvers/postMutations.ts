@@ -151,7 +151,7 @@ export class PostMutations {
       const createdPost = newPosts[0];
 
       await this.challengeService.submitDayEntry({
-        userId: uid,
+        userId: user.id,
         category: input.category,
         postId: createdPost.id,
         deviceLocalOffsetMinutes: input.deviceLocalOffsetMinutes ?? 0,
