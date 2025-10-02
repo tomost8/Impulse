@@ -9,6 +9,7 @@ import { authMiddleware } from '../../../middleware/authMiddleware';
 import { UsersService } from '../../../services/userService';
 import { LikeService } from '../../../services/likeService';
 import { ReferralService } from '../../../services/referralService'; 
+import { ChallengeService } from '../../../services/challengeService';
 
 /**
  * GraphQL mutation resolvers for Post-related operations
@@ -49,7 +50,7 @@ import { ReferralService } from '../../../services/referralService';
 @Resolver(Post)
 @UseMiddleware(LogOperationMiddleware)
 export class PostMutations {
-  constructor( private postService: PostService,  private usersService: UsersService,  private likeService: LikeService, private referralService: ReferralService ) {}
+  constructor( private postService: PostService,  private usersService: UsersService,  private likeService: LikeService, private referralService: ReferralService, private challengeService: ChallengeService ) {}
 
   /**
    * Mutation to record a view of a post by a user
@@ -147,6 +148,14 @@ export class PostMutations {
       const postCount = await this.postService.getPostCountForUser(user.id);
       
       const newPosts = await this.postService.create({ ...input });
+      const createdPost = newPosts[0];
+
+      await this.challengeService.submitDayEntry({
+        userId: user.id,
+        category: input.category,
+        postId: createdPost.id,
+        deviceLocalOffsetMinutes: input.deviceLocalOffsetMinutes ?? 0,
+      });
 
       // MODIFICATION: If it was their first post, try to complete the referral
       if (postCount === 0) {

@@ -314,10 +314,12 @@ input CreatePostInput {
   activityId: Int!
   authorId: Int!
   caption: String!
-  category: String
+  category: Category!
+  deviceLocalOffsetMinutes: Int
   expires_at: DateTimeISO
   mediaUrls: [String!]
   post_targets: [PostTargetInput!]!
+  userChallengeId: Int
 }
 
 input CreateRedeemInput {

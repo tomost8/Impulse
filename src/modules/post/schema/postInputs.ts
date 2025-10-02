@@ -1,5 +1,6 @@
 import { InputType, Field, Int } from 'type-graphql';
 import { IsString, IsOptional, IsInt, IsBoolean, IsArray, IsDate } from 'class-validator';
+import { Category } from '@prisma/client';
 
 @InputType()
 class PostTargetInput {
@@ -18,8 +19,8 @@ export class CreatePostInput {
   @Field(() => Int)
   activityId: number;
 
-  @Field(() => String, { nullable: true })
-  category?: string | null;
+  @Field(() => Category)
+  category: Category;
 
   @Field(() => Int)
   authorId: number;
@@ -32,6 +33,12 @@ export class CreatePostInput {
 
   @Field(() => Date, { nullable: true })
   expires_at?: Date;
+
+  @Field(() => Int, { nullable: true })
+  userChallengeId: number;
+
+  @Field(() => Int, { nullable: true })
+  deviceLocalOffsetMinutes?: number;
 }
 
 @InputType()

@@ -1,6 +1,6 @@
 // src/services/challengeService.ts
 import { Service } from 'typedi';
-import { PrismaClient } from '@prisma/client';
+import { Category, PrismaClient } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';
 import logger from '../config/logger';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
@@ -139,14 +139,32 @@ export class ChallengeService {
    */
   async submitDayEntry(params: {
     userId: number;
-    userChallengeId: number;
+    category: Category; 
     postId?: number | null;
     deviceLocalOffsetMinutes?: number;
   }) {
-    const { userId, userChallengeId, postId, deviceLocalOffsetMinutes = 0 } = params;
+    const { userId, category, postId, deviceLocalOffsetMinutes = 0 } = params;
 
-    const uc = await this.prisma.userChallenge.findUnique({ where: { id: userChallengeId } });
-    if (!uc) throw new NotFoundError(`UserChallenge ${userChallengeId} not found`);
+    const challenges = await this.prisma.challenge.findMany({
+      where: { category },
+      select: { id: true }
+    });
+
+    if (!challenges.length) {
+      throw new NotFoundError(`No challenges found for category ${category}`);
+    }
+
+    const uc = await this.prisma.userChallenge.findFirst({
+      where: {
+        user_id: userId,
+        status: ChallengeStatus.ACTIVE,
+        challenge_id: { in: challenges.map(c => c.id) },
+      },
+    });
+    
+    if (!uc) {
+      throw new ValidationError(`No active challenge found for category ${category}`);
+    }
     if (uc.user_id !== userId) throw new ValidationError('Not your challenge');
     if (uc.status !== ChallengeStatus.ACTIVE) throw new ValidationError('Challenge is not active');
 
@@ -188,7 +206,7 @@ export class ChallengeService {
     try {
       const created = await this.prisma.challengeDayEntry.create({
         data: {
-          user_challenge_id: userChallengeId,
+          user_challenge_id: uc.id,
           day_number: dayNumber,
           date: new Date(),
           post_id: postId ?? undefined,
@@ -196,7 +214,7 @@ export class ChallengeService {
       });
 
       await this.prisma.userChallenge.update({
-        where: { id: userChallengeId },
+        where: { id: uc.id },
         data: { days_completed: { increment: 1 } },
       });
 
