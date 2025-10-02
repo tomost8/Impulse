@@ -11,6 +11,7 @@ logs/
 # node_modules
 node_modules/
 
+infra/lambda-edge-redirect/function.zip
 
 # temp
 backup.dump
