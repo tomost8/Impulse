@@ -27,7 +27,7 @@ export function calculateChallengeProgress(uc: UserChallenge): {
   const totalDays = getDaysFromLength(uc.challenge.length);
   const daysCompleted = uc.days_completed;
   // const daysRemaining = totalDays - daysCompleted;
-  const daysRemaining = Math.ceil((uc.ends_at.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const daysRemaining = Math.ceil((uc.ends_at.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) - 1;
 
   const nextBadge = badgeOrder.find(b => (badgePctMap[b] * totalDays) / 7 > daysCompleted);
   const daysUntilNextBadge = nextBadge ? Math.ceil((badgePctMap[nextBadge] * totalDays) / 7 - daysCompleted) : 0;
