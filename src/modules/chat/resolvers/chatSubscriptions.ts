@@ -2,18 +2,14 @@ import { Resolver, Subscription, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Message } from '../schema/chatTypes';
 import { CHAT_MESSAGE_SENT } from '../../../config/pubsub';
-import { PrismaClient, ChatMember, Chat } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 interface SubscriptionPayload {
-  messageSent: Message & {
-    chat_id: number;
-  };
+  messageSent: Message & { chat_id: number };
 }
 
 interface Context {
-  user: {
-    id: number;
-  };
+  user: { id: number };
 }
 
 @Service()
@@ -21,74 +17,45 @@ interface Context {
 export class ChatSubscriptions {
   constructor(private prisma: PrismaClient) {}
 
-  private async isMessageRecipient(userId: number, chatId: number): Promise<boolean> {
-    // 1. 检查是否是聊天室成员
-    const isChatMember = await this.prisma.chatMember.findUnique({
-      where: {
-        chat_id_user_id: {
-          chat_id: chatId,
-          user_id: userId
-        }
-      }
+  /** Check if a user should receive this message */
+  private isMessageRecipient = async (userId: number, chatId: number, senderId: number): Promise<boolean> => {
+    // Sender always receives own message
+    if (userId === senderId) return true;
+
+    console.log("isMessageRecipient");
+
+    // Is the user a chat member?
+    const member = await this.prisma.chatMember.findUnique({
+      where: { chat_id_user_id: { chat_id: chatId, user_id: userId } },
     });
 
-    if (isChatMember) return true;
+    console.log("isMessageRecipient userId", userId, "chatId", chatId, "senderId", senderId, "member", member)
+    if (member) return true;
 
-    // 2. 如果不是成员，检查是否是新创建的私聊
+    // If private chat (2 members), allow member to receive
     const chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
-      include: {
-        chat_members: true
-      }
+      include: { chat_members: true },
     });
-
-    // 如果是新创建的双人聊天，且用户是其中之一
     if (chat?.chat_members.length === 2) {
-      return chat.chat_members.some(member => member.user_id === userId);
+      return chat.chat_members.some((m: any) => m.user_id === userId);
     }
 
     return false;
   }
-  
+
+  /** Subscription for new messages */
   @Subscription(() => Message, {
     topics: CHAT_MESSAGE_SENT,
-    filter: async ({ payload, context }: { payload: SubscriptionPayload, context: Context }) => {
-      const userId = context.user.id;
-      console.log('userId', userId);
-      const senderId = payload.messageSent.sender_id;
-      console.log('senderId', senderId);
-      const chatId = payload.messageSent.chat_id;
-      console.log('chatId', chatId);
-      
-      const prisma = new PrismaClient();
-      const isChatMember = await prisma.chatMember.findUnique({
-        where: {
-          chat_id_user_id: {
-            chat_id: chatId,
-            user_id: userId
-          }
-        }
-      });
-
-      if (isChatMember) return true;
-
-      const chat = await prisma.chat.findUnique({
-        where: { id: chatId },
-        include: {
-          chat_members: true
-        }
-      });
-
-      if (chat?.chat_members.length === 2) {
-        return chat.chat_members.some(member => member.user_id === userId);
-      }
-
-      return false;
+    filter: async ({ payload, context }: { payload: SubscriptionPayload; context: Context }) => {
+      const { user } = context;
+      console.log("Subscription filter");
+      console.log("Subscription filter user", user);
+      return await this?.isMessageRecipient(user.id, payload.messageSent.chat_id, payload.messageSent.sender_id);
     },
-    description: 'Subscribe to messages in chats where user is a member or recipient'
   })
   messageSent(@Root() payload: SubscriptionPayload): Message {
-    console.log('Resolving chat message subscription data:', payload);
+    console.log("in subscription")
     return payload.messageSent;
   }
-} 
+}
