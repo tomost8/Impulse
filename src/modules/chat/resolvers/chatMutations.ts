@@ -1,4 +1,4 @@
-import { Resolver, Mutation, Arg, Int, UseMiddleware } from 'type-graphql';
+import { Resolver, Mutation, Arg, Int, UseMiddleware, Ctx } from 'type-graphql';
 import { Service } from 'typedi';
 import { Chat, ChatResponse } from '../schema/chatTypes';
 import { CreateChatInput, UpdateChatInput } from '../schema/chatInputs';
@@ -12,6 +12,10 @@ import { MessagesService } from '../../../services/messageService';
 import { ValidationError } from '../../common/errors/graphql.error';
 import { LogOperationMiddleware } from '../../../middleware/loggerMiddleware';
 import logger from '../../../config/logger';
+import { MessageStatus } from '../../common/types/enumTypes';
+import { AuthContext, authMiddleware } from '../../../middleware/authMiddleware';
+import { PrismaClient } from '@prisma/client';
+import { UsersService } from '../../../services/userService';
 
 /**
  * GraphQL mutation resolvers for chat-related operations
@@ -297,7 +301,11 @@ export class ChatMemberMutations {
 @Resolver(Message)
 @UseMiddleware(LogOperationMiddleware)
 export class MessageMutations {
-  constructor(private messagesService: MessagesService) {}
+  constructor(
+    private messagesService: MessagesService,
+    private usersService: UsersService,
+    private prisma: PrismaClient,
+  ) {}
 
   /**
    * Mutation to add a message
@@ -337,5 +345,63 @@ export class MessageMutations {
         }]
       };
     }
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(authMiddleware)
+  async markMessagesDelivered(
+    @Arg('chatId', () => Int) chatId: number,
+    @Arg('messageIds', () => [Int]) messageIds: number[],
+    @Ctx() ctx: AuthContext // include current user from auth
+  ): Promise<boolean> {
+    const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+
+    await this.prisma.messageReceipt.updateMany({
+      where: {
+        message_id: { in: messageIds },
+        recipient_id: user?.id,
+        status: MessageStatus.SENT
+      },
+      data: {
+        status: MessageStatus.DELIVERED,
+        delivered_at: new Date()
+      }
+    });
+
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(authMiddleware)
+  async markChatRead(
+    @Arg('chatId', () => Int) chatId: number,
+    @Arg('lastMessageId', () => Int) lastMessageId: number,
+    @Ctx() ctx: AuthContext
+  ): Promise<boolean> {
+    const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+    if (!user) throw new Error('User not found');
+
+    await this.prisma.messageReceipt.updateMany({
+      where: {
+        message: { chat_id: chatId, id: { lte: lastMessageId } },
+        recipient_id: user?.id,
+        status: { in: [MessageStatus.SENT, MessageStatus.DELIVERED] }
+      },
+      data: {
+        status: MessageStatus.READ,
+        read_at: new Date()
+      }
+    });
+
+    // optional: also store last_read_message_id/last_read_at on ChatMember
+    await this.prisma.chatMember.update({
+      where: { chat_id_user_id: { chat_id: chatId, user_id: user.id } },
+      data: {
+        last_read_message_id: lastMessageId,
+        last_read_at: new Date()
+      }
+    });
+
+    return true;
   }
 } 

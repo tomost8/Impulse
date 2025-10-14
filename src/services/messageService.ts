@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Message } from '../modules/chat/schema/chatTypes';
+import { ChatMember, Message } from '../modules/chat/schema/chatTypes';
 import { CreateMessageInput } from '../modules/chat/schema/chatInputs';
 import { pubsub, CHAT_MESSAGE_SENT } from '../config/pubsub';
 /**
@@ -60,37 +60,49 @@ export class MessagesService {
    */
   async create(input: CreateMessageInput): Promise<Message> {
     try {
-        const message = await this.prisma.message.create({
-            data: input,
-            include: {
-              chat: {
-                include: {
-                  creator: {
-                    include: {point: true}
-                  }
-                }
-              },
-              sender: {
-                include: {point: true}
-              },
-              post: {
-                include: {
-                  author: {
-                    include: {point: true}
-                  },
-                  post_targets: true,
-                  post_views: true,
+      const message = await this.prisma.message.create({
+          data: input,
+          include: {
+            chat: {
+              include: {
+                creator: {
+                  include: {point: true}
                 }
               }
+            },
+            sender: {
+              include: {point: true}
+            },
+            post: {
+              include: {
+                author: {
+                  include: {point: true}
+                },
+                post_targets: true,
+                post_views: true,
+              }
             }
-        });
+          }
+      });
 
-        // 发布消息事件
-        await pubsub.publish(CHAT_MESSAGE_SENT, {
-          messageSent: message
-        });
+      const members = await this.prisma.chatMember.findMany({
+        where: { chat_id: input.chat_id },
+        select: { user_id: true },
+      });
 
-        return message;
+      const receiptData = members
+        .filter((member: any) => member.user_id !== input.sender_id)
+        .map((member: any) => ({
+          message_id: message.id,
+          recipient_id: member.user_id,
+        }));
+
+      if (receiptData.length) {
+        await this.prisma.messageReceipt.createMany({ data: receiptData });
+      }
+
+      await pubsub.publish(CHAT_MESSAGE_SENT, { messageSent: message });
+      return message;
     } catch (error: any) {
       throw error;
     }
@@ -107,11 +119,13 @@ export class MessagesService {
       select: { chat_id: true }
     });
 
-    const chatIds = chatMemberships.map(cm => cm.chat_id);
+    console.log("getLatestMessagesForUser chatMemberships", chatMemberships)
+
+    const chatIds = chatMemberships.map((cm: { chat_id: number }) => cm.chat_id);
     if (chatIds.length === 0) return [];
 
     const latestMessages: (Message | null)[] = await Promise.all(
-      chatIds.map(async (chat_id) => {
+      chatIds.map(async (chat_id: number) => {
         return this.prisma.message.findFirst({
           where: { chat_id },
           orderBy: { created_at: 'desc' },
@@ -144,4 +158,46 @@ export class MessagesService {
     return latestMessages.filter((msg): msg is Message => msg !== null);
   }
 
-} 
+  async getMessagesAfter(
+    chatId: number,
+    options: { after?: Date; afterMessageId?: number; limit?: number }
+  ): Promise<{ messages: Message[]; hasMore: boolean }> {
+    const { after, afterMessageId, limit = 50 } = options;
+    const where: any = { chat_id: chatId };
+
+    if (after) where.created_at = { gt: after };
+    if (afterMessageId) where.id = { gt: afterMessageId };
+
+    const messages = await this.prisma.message.findMany({
+      where,
+      orderBy: { created_at: 'asc' },
+      include: {
+        chat: {
+          include: {
+            creator: {
+              include: {point: true}
+            }
+          }
+        },
+        sender: {
+          include: {point: true}
+        },
+        post: {
+          include: {
+            author: {
+              include: {point: true}
+            },
+            post_targets: true,
+            post_views: true,
+          }
+        }
+      },
+      take: limit + 1,
+    });
+    const hasMore = messages.length > limit;
+    return {
+      messages: hasMore ? messages.slice(0, limit) : messages,
+      hasMore,
+    };
+  }
+}

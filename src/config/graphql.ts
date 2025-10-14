@@ -62,7 +62,7 @@ export const createSchema = async () => {
     container: Container,
     validate: { forbidUnknownValues: false },
     // @ts-ignore: type-graphql 和 yoga pubsub 类型不匹配
-    pubSub: pubsub,
+    pubSub: pubsub as any,
     emitSchemaFile: process.env.NODE_ENV !== 'production', // 只在非生产环境生成 schema 文件
   });
 

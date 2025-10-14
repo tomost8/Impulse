@@ -198,6 +198,43 @@ export class ChatMembersResponse {
  * };
  * ```
  */
+
+@ObjectType()
+export class UserChatPreview {
+  @Field(() => Chat)
+  chat!: Chat;
+
+  @Field(() => Role)
+  role!: Role;
+
+  @Field(() => RequestStatus)
+  status!: RequestStatus;
+
+  @Field(() => Message, { nullable: true })
+  lastMessage?: Message | null;
+
+  @Field(() => Int)
+  unreadCount!: number;
+
+  @Field(() => Int, { nullable: true })
+  lastReadMessageId?: number | null;
+
+  @Field(() => Date, { nullable: true })
+  lastReadAt?: Date | null;
+}
+
+@ObjectType()
+export class UserChatsResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [UserChatPreview], { nullable: true })
+  chats?: UserChatPreview[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
 @ObjectType()
 export class Message {
   /** Unique identifier for message */
@@ -237,7 +274,6 @@ export class Message {
   created_at!: Date;
 }
 
-
 @ObjectType()
 export class MessageResponse {
   @Field(() => Boolean)
@@ -260,4 +296,61 @@ export class MessagesResponse {
 
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
-} 
+}
+
+@ObjectType()
+export class MessagePageInfo {
+  @Field(() => Boolean)
+  hasMore!: boolean;
+
+  @Field(() => Int, { nullable: true })
+  lastMessageId?: number | null;
+
+  @Field(() => Date, { nullable: true })
+  lastCreatedAt?: Date | null;
+}
+
+@ObjectType()
+export class PaginatedMessagesResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [Message], { nullable: true })
+  messages?: Message[];
+
+  @Field(() => MessagePageInfo, { nullable: true })
+  pageInfo?: MessagePageInfo;
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}
+
+@ObjectType()
+export class ChatListEntry {
+  @Field(() => Chat)
+  chat!: Chat;
+
+  @Field(() => Message, { nullable: true })
+  lastMessage?: Message | null;
+
+  @Field(() => Int)
+  unreadCount!: number;
+
+  @Field(() => Int, { nullable: true })
+  lastReadMessageId?: number | null;
+
+  @Field(() => Date, { nullable: true })
+  lastReadAt?: Date | null;
+}
+
+@ObjectType()
+export class ChatListResponse {
+  @Field(() => Boolean)
+  success!: boolean;
+
+  @Field(() => [ChatListEntry], { nullable: true })
+  chats?: ChatListEntry[];
+
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+}

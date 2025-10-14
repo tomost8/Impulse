@@ -1,5 +1,5 @@
 import { registerEnumType } from 'type-graphql';
-import { Role as PrismaRole, RequestStatus as PrismaRequestStatus, Category as PrismaCategory, UserSortType as PrismaUserSortType, ChallengeLength as PrismaChallengeLength, ChallengeStatus as PrismaChallengeStatus, BadgeLevel as PrismaBadgeLevel } from '@prisma/client';
+import { Role as PrismaRole, RequestStatus as PrismaRequestStatus, Category as PrismaCategory, UserSortType as PrismaUserSortType, ChallengeLength as PrismaChallengeLength, ChallengeStatus as PrismaChallengeStatus, BadgeLevel as PrismaBadgeLevel, MessageStatus as PrismaMessageStatus } from '@prisma/client';
 
 // Re-export Prisma's enums
 export const Category = PrismaCategory;
@@ -22,6 +22,9 @@ export type ChallengeStatus = PrismaChallengeStatus;
 
 export const BadgeLevel = PrismaBadgeLevel;
 export type BadgeLevel = PrismaBadgeLevel;
+
+export const MessageStatus = PrismaMessageStatus;
+export type MessageStatus = PrismaMessageStatus;
 
 // Register the enums with type-graphql
 registerEnumType(Category, {
@@ -50,4 +53,8 @@ registerEnumType(ChallengeStatus, {
 
 registerEnumType(BadgeLevel, {
   name: 'BadgeLevel',
+});
+
+registerEnumType(MessageStatus, {
+  name: 'MessageStatus',
 });

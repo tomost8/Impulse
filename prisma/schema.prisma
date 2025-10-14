@@ -85,6 +85,12 @@ enum ChallengeStatus {
   FAILED
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 // 示例模型
 model User {
   id              Int       @id @default(autoincrement()) @map("user_id")
@@ -132,6 +138,8 @@ model User {
   badges                Badge[]
   referrals_made        Referral[]              @relation("ReferredBy")
   referred              Referral?               @relation("ReferredUser")
+  message_receipts      MessageReceipt[]
+
 
   @@index([username])
   @@map("users")
@@ -231,14 +239,16 @@ model Chat {
 }
 
 model ChatMember {
-  id        Int           @id @default(autoincrement())
-  chat      Chat          @relation(fields: [chat_id], references: [id], onDelete: Cascade)
-  chat_id   Int
-  user      User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id   Int
-  role      Role          @default(USER)
-  status    RequestStatus @default(PENDING)
-  joined_at DateTime      @default(now())
+  id                   Int           @id @default(autoincrement())
+  chat                 Chat          @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_id              Int
+  user                 User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id              Int
+  role                 Role          @default(USER)
+  status               RequestStatus @default(PENDING)
+  joined_at            DateTime      @default(now())
+  last_read_message_id Int?
+  last_read_at         DateTime?
 
   @@unique([chat_id, user_id])
   @@map("chat_members")
@@ -254,9 +264,26 @@ model Message {
   post       Post?    @relation(fields: [post_id], references: [id])
   post_id    Int?
   created_at DateTime @default(now())
+  receipts    MessageReceipt[]
 
   @@index([chat_id, created_at])
   @@map("messages")
+}
+
+model MessageReceipt {
+  id           Int           @id @default(autoincrement())
+  message      Message       @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  message_id   Int
+  recipient    User          @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  recipient_id Int
+  status       MessageStatus @default(SENT)
+  delivered_at DateTime?
+  read_at      DateTime?
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  @@unique([message_id, recipient_id])
+  @@index([recipient_id, status])
 }
 
 //activity

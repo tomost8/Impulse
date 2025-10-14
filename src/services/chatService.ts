@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { Chat, ChatMember, Message } from '../modules/chat/schema/chatTypes';
+import { Chat, ChatListEntry, Message } from '../modules/chat/schema/chatTypes';
 import { CreateChatInput, CreateChatMemberInput, CreateMessageInput } from '../modules/chat/schema/chatInputs';
 import { UpdateChatInput, UpdateChatMemberInput } from '../modules/chat/schema/chatInputs';
 import { NotFoundError, ValidationError } from '../modules/common/errors/graphql.error';

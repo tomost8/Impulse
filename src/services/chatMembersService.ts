@@ -1,8 +1,8 @@
 import { Service } from 'typedi';
 import { PrismaClient } from '@prisma/client';
-import { ChatMember  } from '../modules/chat/schema/chatTypes';
+import { ChatMember, Message, UserChatPreview  } from '../modules/chat/schema/chatTypes';
 import { NotFoundError } from '../modules/common/errors/graphql.error';
-import { UserSortType } from '../modules/common/types/enumTypes';
+import { MessageStatus, UserSortType } from '../modules/common/types/enumTypes';
 import { usersSortingConfig } from '../modules/common/types/sortingTypes';
 import { CreateChatMemberInput, UpdateChatMemberInput } from '../modules/chat/schema/chatInputs';
 /**
@@ -179,6 +179,78 @@ export class ChatMembersService {
       throw error;
     }
   }
-} 
 
+  async findUserChatPreviews(userId: number): Promise<UserChatPreview[]> {
+    const memberships = await this.prisma.chatMember.findMany({
+      where: { user_id: userId },
+      include: {
+        chat: {
+          include: {
+            creator: { include: { point: true } },
+          },
+        },
+        user: {
+          include: {point: true}
+        },
+      },
+    });
 
+    if (!memberships.length) {
+      return [];
+    }
+
+    const chatIds = memberships.map((m: ChatMember) => m.chat_id);
+
+    const lastMessages = await Promise.all(
+      chatIds.map((chatId: number) =>
+        this.prisma.message.findFirst({
+          where: { chat_id: chatId },
+          orderBy: { created_at: 'desc' },
+          include: {
+            chat: { include: { creator: { include: { point: true } } } },
+            sender: { include: { point: true } },
+            post: {
+              include: {
+                author: { include: { point: true } },
+                post_targets: true,
+                post_views: true,
+              },
+            },
+          },
+        })
+      )
+    );
+
+    const lastMessageByChat = new Map<number, Message>();
+    lastMessages.forEach((message) => {
+      if (message) lastMessageByChat.set(message.chat_id, message);
+    });
+
+    const unreadReceipts = await this.prisma.messageReceipt.findMany({
+      where: {
+        recipient_id: userId,
+        status: { not: MessageStatus.READ },
+        message: { chat_id: { in: chatIds } },
+      },
+      select: { message_id: true, message: { select: { chat_id: true } } },
+    });
+
+    console.log("😒 findUserChatPreviews unreadReceipts", unreadReceipts);
+
+    const unreadByChat = new Map<number, number>();
+    unreadReceipts.forEach((receipt: any) => {
+      const chatId = receipt.message.chat_id;
+      unreadByChat.set(chatId, (unreadByChat.get(chatId) ?? 0) + 1);
+    });
+
+    return memberships.map((member: any) => ({
+      chat: member.chat,
+      role: member.role,
+      status: member.status,
+      lastMessage: lastMessageByChat.get(member.chat_id) ?? null,
+      unreadCount: unreadByChat.get(member.chat_id) ?? 0,
+      lastReadMessageId: member.last_read_message_id ?? null,
+      lastReadAt: member.last_read_at ?? null,
+    }));
+  }
+}

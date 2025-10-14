@@ -446,6 +446,12 @@ type Message {
   sender_id: Int!
 }
 
+type MessagePageInfo {
+  hasMore: Boolean!
+  lastCreatedAt: DateTimeISO
+  lastMessageId: Int
+}
+
 type MessageResponse {
   errors: [FieldError!]
   message: Message
@@ -491,6 +497,8 @@ type Mutation {
   generateReferralLink: String!
   joinChallenge(challengeId: Int!, deviceLocalOffsetMinutes: Int! = 0): ExploreChallengesResponse!
   likePost(postId: Int!): BaseResponse!
+  markChatRead(chatId: Int!, lastMessageId: Int!): Boolean!
+  markMessagesDelivered(chatId: Int!, messageIds: [Int!]!): Boolean!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
   unlikePost(postId: Int!): BaseResponse!
@@ -573,6 +581,13 @@ enum NotificationType {
 type NotificationsResponse {
   errors: [FieldError!]
   notifications: [Notification!]!
+  success: Boolean!
+}
+
+type PaginatedMessagesResponse {
+  errors: [FieldError!]
+  messages: [Message!]
+  pageInfo: MessagePageInfo
   success: Boolean!
 }
 
@@ -692,11 +707,12 @@ type Query {
   getReminders: NotificationsResponse!
   getRewards: RewardsResponse!
   getUserChallenges: MyChallengesResponse!
-  getUserChats(id: Int!): ChatMembersResponse!
+  getUserChats(id: Int!): UserChatsResponse!
   getUserCommunities(id: Int!): CommunityMembersResponse!
   joinedCommunityPosts(currentUserId: Int!, skip: Int, take: Int): PostsResponse!
   loginStreak(id: Int!): UserLoginStreakResponse!
   me: UserResponse!
+  messagesAfter(after: DateTimeISO, afterMessageId: Int, chatId: Int!, limit: Int! = 50): PaginatedMessagesResponse!
   myLoginStreak: UserLoginStreakResponse!
   post(currentUserId: Int, id: Int!): PostResponse!
   postComments(postId: Int!, skip: Int, take: Int): CommentsResponse!
@@ -768,8 +784,6 @@ enum Role {
 
 type Subscription {
   currentTime: CurrentTime!
-
-  """Subscribe to messages in chats where user is a member or recipient"""
   messageSent: Message!
 
   """Subscribe to user creation events"""
@@ -910,6 +924,22 @@ type UserChallengeMy {
 
 type UserChallengeResponse {
   challenges: [UserChallengeHome!]
+  errors: [FieldError!]
+  success: Boolean!
+}
+
+type UserChatPreview {
+  chat: Chat!
+  lastMessage: Message
+  lastReadAt: DateTimeISO
+  lastReadMessageId: Int
+  role: Role!
+  status: RequestStatus!
+  unreadCount: Int!
+}
+
+type UserChatsResponse {
+  chats: [UserChatPreview!]
   errors: [FieldError!]
   success: Boolean!
 }

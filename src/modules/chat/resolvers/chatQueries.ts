@@ -1,6 +1,6 @@
 import { Resolver, Query, Arg, Int, UseMiddleware, FieldResolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
-import { Chat, ChatResponse, ChatsResponse } from '../schema/chatTypes';
+import { Chat, ChatResponse, ChatsResponse, PaginatedMessagesResponse, UserChatsResponse } from '../schema/chatTypes';
 import { ChatMember, ChatMemberResponse, ChatMembersResponse } from '../schema/chatTypes';
 import { Message, MessageResponse, MessagesResponse } from '../schema/chatTypes';
 import { ChatsService } from '../../../services/chatService';
@@ -170,40 +170,38 @@ export class ChatMemberQueries {
    * } errors { field message } } }
    * ```
    */
-  @Query(() => ChatMembersResponse)
-  async getUserChats(@Arg('id', () => Int) id: number): Promise<ChatMembersResponse> {
+  @Query(() => UserChatsResponse)
+  async getUserChats(@Arg('id', () => Int) id: number): Promise<UserChatsResponse> {
     try {
-      const chat_members = await this.chatMembersService.findByUserId(id);
-      if (!chat_members) {
+      const chats = await this.chatMembersService.findUserChatPreviews(id);
+
+      console.log("💬 getUserChats chats", chats)
+
+      if (!chats) {
         logger.warn('User not found', { userId: id });
         return {
           success: false,
-          errors: [{
-            field: 'id',
-            message: `User with ID ${id} not found`
-          }]
-        }
+          errors: [{ field: 'id', message: `User with ID ${id} not found` }],
+        };
       }
+
       return {
         success: true,
-        chat_members
+        chats,
       };
     } catch (error) {
       return {
         success: false,
-        errors: [{
-          field: 'general',
-          message: error instanceof Error ? error.message : 'Failed to fetch chats'
-        }]
+        errors: [
+          {
+            field: 'general',
+            message: error instanceof Error ? error.message : 'Failed to fetch chats',
+          },
+        ],
       };
     }
   }
 }
-
-
-
-
-
 
 /**
  * GraphQL query resolvers for message-related operations
@@ -269,6 +267,40 @@ export class MessageQueries {
       return {
         success: false,
         errors: [{ field: 'general', message: error instanceof Error ? error.message : 'Failed to fetch messages' }]
+      };
+    }
+  }
+
+  @Query(() => PaginatedMessagesResponse)
+  async messagesAfter(
+    @Arg('chatId', () => Int) chatId: number,
+    @Arg('after', () => Date, { nullable: true }) after: Date | null,
+    @Arg('afterMessageId', () => Int, { nullable: true }) afterMessageId: number | null,
+    @Arg('limit', () => Int, { defaultValue: 50 }) limit: number,
+  ): Promise<PaginatedMessagesResponse> {
+    try {
+      const { messages, hasMore } = await this.messagesService.getMessagesAfter(chatId, {
+        after: after ?? undefined,
+        afterMessageId: afterMessageId ?? undefined,
+        limit,
+      });
+
+      return {
+        success: true,
+        messages,
+        pageInfo: {
+          hasMore,
+          lastMessageId: messages.length ? messages[messages.length - 1].id : null,
+          lastCreatedAt: messages.length ? messages[messages.length - 1].created_at : null,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          field: 'general',
+          message: error instanceof Error ? error.message : 'Failed to fetch messages',
+        }],
       };
     }
   }
