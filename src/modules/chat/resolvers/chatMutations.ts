@@ -347,61 +347,75 @@ export class MessageMutations {
     }
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => MessageResponse)
   @UseMiddleware(authMiddleware)
   async markMessagesDelivered(
     @Arg('chatId', () => Int) chatId: number,
     @Arg('messageIds', () => [Int]) messageIds: number[],
     @Ctx() ctx: AuthContext // include current user from auth
-  ): Promise<boolean> {
-    const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
-
-    await this.prisma.messageReceipt.updateMany({
-      where: {
-        message_id: { in: messageIds },
-        recipient_id: user?.id,
-        status: MessageStatus.SENT
-      },
-      data: {
-        status: MessageStatus.DELIVERED,
-        delivered_at: new Date()
-      }
-    });
-
-    return true;
+  ): Promise<MessageResponse> {
+    try {
+      const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+  
+      await this.prisma.messageReceipt.updateMany({
+        where: {
+          message_id: { in: messageIds },
+          recipient_id: user?.id,
+          status: MessageStatus.SENT
+        },
+        data: {
+          status: MessageStatus.DELIVERED,
+          delivered_at: new Date()
+        }
+      });
+  
+      return { success: true };
+    } catch (err) {
+      logger.error('Error marking messages as delivered', { error: err });
+      return { 
+        success: false, 
+        errors: [{ field: 'general', message: 'Failed to mark messages as delivered' }] }; // Unreachable but satisfies return type
+    }
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => MessageResponse)
   @UseMiddleware(authMiddleware)
   async markChatRead(
     @Arg('chatId', () => Int) chatId: number,
     @Arg('lastMessageId', () => Int) lastMessageId: number,
     @Ctx() ctx: AuthContext
-  ): Promise<boolean> {
-    const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
-    if (!user) throw new Error('User not found');
-
-    await this.prisma.messageReceipt.updateMany({
-      where: {
-        message: { chat_id: chatId, id: { lte: lastMessageId } },
-        recipient_id: user?.id,
-        status: { in: [MessageStatus.SENT, MessageStatus.DELIVERED] }
-      },
-      data: {
-        status: MessageStatus.READ,
-        read_at: new Date()
-      }
-    });
-
-    // optional: also store last_read_message_id/last_read_at on ChatMember
-    await this.prisma.chatMember.update({
-      where: { chat_id_user_id: { chat_id: chatId, user_id: user.id } },
-      data: {
-        last_read_message_id: lastMessageId,
-        last_read_at: new Date()
-      }
-    });
-
-    return true;
+  ): Promise<MessageResponse> {
+    try {
+      const user = await this.usersService.findByFirebaseUid(ctx.user.uid);
+      if (!user) throw new Error('User not found');
+  
+      await this.prisma.messageReceipt.updateMany({
+        where: {
+          message: { chat_id: chatId, id: { lte: lastMessageId } },
+          recipient_id: user?.id,
+          status: { in: [MessageStatus.SENT, MessageStatus.DELIVERED] }
+        },
+        data: {
+          status: MessageStatus.READ,
+          read_at: new Date()
+        }
+      });
+  
+      // optional: also store last_read_message_id/last_read_at on ChatMember
+      await this.prisma.chatMember.update({
+        where: { chat_id_user_id: { chat_id: chatId, user_id: user.id } },
+        data: {
+          last_read_message_id: lastMessageId,
+          last_read_at: new Date()
+        }
+      });
+  
+      return { success: true };
+    } catch (err) {
+      logger.error('Error marking messages as delivered', { error: err });
+      return { 
+        success: false, 
+        errors: [{ field: 'general', message: 'Failed to mark messages as delivered' }] }; // Unreachable but satisfies return type
+    }
   }
 } 

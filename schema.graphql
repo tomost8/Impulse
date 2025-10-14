@@ -497,8 +497,8 @@ type Mutation {
   generateReferralLink: String!
   joinChallenge(challengeId: Int!, deviceLocalOffsetMinutes: Int! = 0): ExploreChallengesResponse!
   likePost(postId: Int!): BaseResponse!
-  markChatRead(chatId: Int!, lastMessageId: Int!): Boolean!
-  markMessagesDelivered(chatId: Int!, messageIds: [Int!]!): Boolean!
+  markChatRead(chatId: Int!, lastMessageId: Int!): MessageResponse!
+  markMessagesDelivered(chatId: Int!, messageIds: [Int!]!): MessageResponse!
   sendBroadcastNotification(input: CreateNotificationInput!): Boolean!
   sendCommunityNotification(communityId: Int!, input: CreateNotificationInput!): Boolean!
   unlikePost(postId: Int!): BaseResponse!
