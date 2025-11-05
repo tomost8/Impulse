@@ -7,6 +7,7 @@ import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { ChallengeLength, BadgeLevel, ChallengeStatus } from "../modules/common/types/enumTypes";
 import { calculateBadgeLevel, getDaysFromLength } from '../modules/challenge/utils/challengeUtils';
 import { PostService } from './postService';
+import { ChallengeQueueService } from './challengeQueueService';
 /**
  * Service handling challenge-related business logic and database operations
  *
@@ -24,7 +25,8 @@ import { PostService } from './postService';
 export class ChallengeService {
   constructor(
     public prisma: PrismaClient,
-    private postService: PostService
+    private postService: PostService,
+    private queueService: ChallengeQueueService
   ) {}
 
   /**
@@ -120,7 +122,7 @@ export class ChallengeService {
     );
 
     // 4. Create UserChallenge
-    return await this.prisma.userChallenge.create({
+    const created = await this.prisma.userChallenge.create({
       data: {
         user_id: userId,
         challenge_id: challengeId,
@@ -132,7 +134,18 @@ export class ChallengeService {
       },
       include: { challenge: true },
     });
-  }
+
+    // Schedule exact-time finalization
+    const delayMs = ends_at.getTime() - Date.now();
+    if (delayMs > 0) {
+      await this.queueService.challengeFinalizeQueue.add(
+        { userChallengeId: created.id },
+        { delay: delayMs, jobId: `finalize-${created.id}`, removeOnComplete: true }
+      );
+    }
+
+    return created;
+    }
 
   /**
    * Submit a daily entry for an active UserChallenge
@@ -264,7 +277,7 @@ export class ChallengeService {
     await this.prisma.userChallenge.update({
       where: { id: uc.id },
       data: {
-        status: ChallengeStatus.COMPLETED,
+        status: daysCompleted / totalDays >= 4 / 7 ? ChallengeStatus.COMPLETED : ChallengeStatus.FAILED,
         completed_at: new Date(),
         badge_level: level ?? undefined,
       },
@@ -279,7 +292,7 @@ export class ChallengeService {
   async finalizeDueChallenges() {
     const now = new Date();
     const due = await this.prisma.userChallenge.findMany({
-      where: { status: ChallengeStatus.ACTIVE, ends_at: { lte: now } },
+      where: { status: ChallengeStatus.ACTIVE, ends_at: { lte: new Date() } },
     });
 
     const results = [];
